@@ -1,0 +1,34 @@
+plugins {
+    id 'fabric-loom' version '1.13-SNAPSHOT'
+    id 'java'
+}
+
+version = '1.0.0'
+group = 'mc.client'
+
+base { archivesName = 'mc-client-standalone-12111' }
+
+repositories { mavenCentral() }
+
+dependencies {
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
+    modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    // Chỉ lấy module cần (HUD render + tick event) — tránh module javadoc lỗi trong fabric-api bundle
+    modImplementation fabricApi.module("fabric-rendering-v1", project.fabric_version)
+    modImplementation fabricApi.module("fabric-lifecycle-events-v1", project.fabric_version)
+}
+
+java { sourceCompatibility = JavaVersion.VERSION_21; targetCompatibility = JavaVersion.VERSION_21 }
+
+processResources {
+    inputs.property 'version', project.version
+    filesMatching('fabric.mod.json') {
+        expand 'version': project.version
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    it.options.encoding = 'UTF-8'
+    it.options.release = 21
+}
