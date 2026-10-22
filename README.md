@@ -48,8 +48,8 @@ The launcher downloads the matching ZIP from the [latest GitHub Release](https:/
 
 | Profile | Package | Included mod JARs | Package size |
 |---|---|---:|---:|
-| **Sodium** | [`Sodium_v1.2.zip`](https://github.com/nlvtai25/valkaw-client/releases/latest/download/Sodium_v1.2.zip) | 37 | 33.9 MiB |
-| **VulkanMod** | [`Vulkan_v1.2.zip`](https://github.com/nlvtai25/valkaw-client/releases/latest/download/Vulkan_v1.2.zip) | 28 | 54.7 MiB |
+| **Sodium** | [`Sodium_v1.3.zip`](https://github.com/nlvtai25/valkaw-client/releases/latest/download/Sodium_v1.3.zip) | 37 | 33.9 MiB |
+| **VulkanMod** | [`Vulkan_v1.3.zip`](https://github.com/nlvtai25/valkaw-client/releases/latest/download/Vulkan_v1.3.zip) | 28 | 54.7 MiB |
 
 Each package includes its profile's mods, default game options, configuration files, and the SapixCraft and Transparent Buttons resource packs. Package size is approximate.
 
@@ -156,6 +156,12 @@ These are the resource packs present in both profile ZIPs. Other packs from prev
 | Transparent Buttons | [Project on Modrinth](https://modrinth.com/resourcepack/transparent-buttons) |
 
 ## 📝 Changelog
+
+### v1.3
+
+- Refreshed the profile window titles to identify the current client version.
+- Removed a locally bundled cape image from both packages.
+- Verified Packet Fixer and its configuration are absent from the Sodium and VulkanMod packages.
 
 ### v1.2
 
