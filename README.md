@@ -37,8 +37,8 @@ A lightweight Minecraft client with two distinct profiles, a custom in-game HUD,
 
 The current launcher is included **directly in this repository**:
 
-**[Download Valkaw Launcher.exe](downloads/Valkaw%20Launcher.exe)** · Windows · 600,064 bytes
-SHA-256: `4735A4623E135E77982C3094AFC4B5A8F0D4377431BA8783AD210E2E7B2347A5`
+**[Download Valkaw Launcher.exe](downloads/Valkaw%20Launcher.exe)** · Windows · 602,112 bytes
+SHA-256: `50E257A9F7D8786825BEF3FE7C5A5A22D39665ED60DF48D9DBF8481F54C729EB`
 
 > The launcher is currently unsigned, so Windows may show a warning when you open it.
 
