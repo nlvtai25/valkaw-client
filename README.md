@@ -38,7 +38,7 @@ A lightweight Minecraft client with two distinct profiles, a custom in-game HUD,
 The current launcher is included **directly in this repository**:
 
 **[Download Valkaw Launcher.exe](downloads/Valkaw%20Launcher.exe)** · Windows · 600,064 bytes
-SHA-256: `AA7D1915799DFA3DF2F6C0F3D855C449CC1B6950345DBBEA5026555699873767`
+SHA-256: `4735A4623E135E77982C3094AFC4B5A8F0D4377431BA8783AD210E2E7B2347A5`
 
 > The launcher is currently unsigned, so Windows may show a warning when you open it.
 
@@ -48,8 +48,8 @@ The launcher downloads the matching ZIP from the [latest GitHub Release](https:/
 
 | Profile | Package | Included mod JARs | Package size |
 |---|---|---:|---:|
-| **Sodium** | [`Sodium_v1.0.zip`](https://github.com/nlvtai25/valkaw-client/releases/latest/download/Sodium_v1.0.zip) | 38 | 33.9 MiB |
-| **VulkanMod** | [`Vulkan_v1.0.zip`](https://github.com/nlvtai25/valkaw-client/releases/latest/download/Vulkan_v1.0.zip) | 29 | 54.7 MiB |
+| **Sodium** | [`Sodium_v1.1.zip`](https://github.com/nlvtai25/valkaw-client/releases/latest/download/Sodium_v1.1.zip) | 37 | 33.9 MiB |
+| **VulkanMod** | [`Vulkan_v1.1.zip`](https://github.com/nlvtai25/valkaw-client/releases/latest/download/Vulkan_v1.1.zip) | 28 | 54.7 MiB |
 
 Each package includes its profile's mods, default game options, configuration files, and the SapixCraft and Transparent Buttons resource packs. Package size is approximate.
 
@@ -86,7 +86,7 @@ When a profile package is installed or its package version changes, the launcher
 
 The profile tables below list every mod JAR included in the current release packages, grouped into **shared**, **Sodium-only**, and **VulkanMod-only** entries. Version numbers come from the installed JAR metadata. Source links point to project pages or repositories identified by that metadata.
 
-### Shared by both profiles · 23 mods
+### Shared by both profiles · 22 mods
 
 | Mod | Version | Source |
 |---|---:|---|
@@ -106,7 +106,6 @@ The profile tables below list every mod JAR included in the current release pack
 | Lithium | 0.21.4+1.21.11 | [GitHub](https://github.com/CaffeineMC/lithium-fabric) |
 | ModernFix | 5.26.3-build.2 | [GitHub](https://github.com/embeddedt/ModernFix) |
 | More Culling | 1.6.2 | [GitHub](https://github.com/fxmorin/moreculling) |
-| Packet Fixer | 3.3.5 | [GitHub](https://github.com/TonimatasDEV/PacketFixer) |
 | SignFaster | 1.0.3 | **Source unverified** |
 | Simple Menu | 2.1 | [GitHub](https://github.com/Serilum/Simple-Menu) |
 | ThreadTweak | 0.1.8+1.21.11 | [GitHub](https://github.com/getchoo/threadtweak) |
@@ -157,6 +156,11 @@ These are the resource packs present in both profile ZIPs. Other packs from prev
 | Transparent Buttons | [Project on Modrinth](https://modrinth.com/resourcepack/transparent-buttons) |
 
 ## 📝 Changelog
+
+### v1.1
+
+- Identified and resolved a compatibility conflict between Packet Fixer and Lomka during testing.
+- Removed Packet Fixer from the distributed client packages.
 
 ### v1.0.1
 
