@@ -10,6 +10,7 @@ A lightweight Minecraft client with two distinct profiles, a custom in-game HUD,
 [![Fabric](https://img.shields.io/badge/Loader-Fabric-dbd0b4?style=for-the-badge)](https://fabricmc.net/)
 [![Java](https://img.shields.io/badge/Java-21%2B-ed8b00?style=for-the-badge&logo=openjdk&logoColor=white)](https://adoptium.net/)
 [![Windows](https://img.shields.io/badge/Platform-Windows-0078d4?style=for-the-badge&logo=windows&logoColor=white)](https://www.microsoft.com/windows/)
+[![Linux](https://img.shields.io/badge/Platform-Linux-fcc624?style=for-the-badge&logo=linux&logoColor=black)](https://www.linux.org/)
 
 <br>
 
@@ -26,21 +27,23 @@ A lightweight Minecraft client with two distinct profiles, a custom in-game HUD,
 | Pick **Sodium** for a broadly compatible, performance-focused renderer, or **VulkanMod** for Vulkan-based rendering on a compatible system. Each profile ships with its own curated mod set. | The launcher fetches and installs the selected profile package when needed. It saves your username and preferences, and keeps existing settings files when installing package defaults. |
 | 🧭 **A HUD you can make yours** | 🧰 **Everyday conveniences** |
 | Edit and share HUD profiles. Arrange widgets for system information, armor, biome, hitboxes, quick chat, and more. | Tune RAM and JVM arguments, select a player name, switch themes, and choose what happens when the game closes. Game files and logs are separated by profile. |
-| 🖥️ **A lightweight Windows launcher** | 📦 **A ready-to-play setup** |
-| A small launcher with a system-tray option and clear launch status. The profile packages include mods, sensible default options, configuration, and the included resource packs. | Install or update the client package from the launcher's **Play** action instead of manually copying a folder of mods. |
+| 🖥️ **Lightweight Windows and Linux launchers** | 📦 **A ready-to-play setup** |
+| Choose the portable Windows launcher or the Python-based Linux launcher. Both fetch and install the selected profile package for you. | Install or update the client package from the launcher's **Play** action instead of manually copying a folder of mods. |
 
-> **Made for Minecraft Java Edition 1.21.11 on Windows.** You need Java 21 or later, plus the Minecraft version libraries and assets on your machine or bundled beside the launcher.
+> **Made for Minecraft Java Edition 1.21.11 on Windows and Linux.** You need Java 21 or later, plus the Minecraft version libraries and assets on your machine or bundled beside the launcher.
 
 ## ⬇️ Downloads
 
-### Valkaw Launcher
+### Valkaw Launcher 1.4
 
-The current launcher is included **directly in this repository**:
+Both current launchers are included **directly in this repository**:
 
-**[Download Valkaw Launcher.exe](downloads/Valkaw%20Launcher.exe)** · Windows · 602,112 bytes
-SHA-256: `50E257A9F7D8786825BEF3FE7C5A5A22D39665ED60DF48D9DBF8481F54C729EB`
+| Platform | Download | Size | SHA-256 |
+|---|---|---:|---|
+| **Windows** | [Valkaw.Launcher-1.4.exe](downloads/Valkaw.Launcher-1.4.exe) | 613,376 bytes | `7B05A498531EAB8A7A7E249A660959A7331521969064BBD4051F43BABB53B2D7` |
+| **Linux** | [Valkaw.Launcher-linux-1.4.py](downloads/Valkaw.Launcher-linux-1.4.py) | 177,962 bytes | `2B9DAEF12D2AE3644EAC0DBD25667890ACEB3CDF129DC9BAA8581691D23ABDEB` |
 
-> The launcher is currently unsigned, so Windows may show a warning when you open it.
+> The Windows launcher is unsigned, so Windows may show a warning when you open it. Linux requires Python 3; the launcher opens a GUI when Tkinter is available and otherwise provides a command-line interface.
 
 ### Client profiles
 
@@ -55,13 +58,19 @@ Each package includes its profile's mods, default game options, configuration fi
 
 ## 🚀 Getting started
 
-1. Download and open `Valkaw Launcher.exe`.
+1. Download and open `Valkaw.Launcher-1.4.exe`.
 2. Choose the **Sodium** or **VulkanMod** profile and enter a player name.
 3. Make sure Java 21 or later is installed; adjust the RAM allocation if needed.
 4. Press **Play**. On first use, the launcher downloads and installs the selected profile package, then starts the game.
 5. For troubleshooting, check the profile-specific `latest.log` under `log_launcher`.
 
-The default game directories are `%AppData%\.valkaw\game_sodium` and `%AppData%\.valkaw\game_vulkan`. A previous `%AppData%\.valkaw\game` directory is migrated to the Sodium profile when possible.
+### Linux quick start
+
+1. Install Java 21 or later and Python 3.
+2. Download [Valkaw.Launcher-linux-1.4.py](downloads/Valkaw.Launcher-linux-1.4.py).
+3. Run it with `python3 Valkaw.Launcher-linux-1.4.py`. Add `--cli` to use the command-line interface, `--install` to create an application menu entry, or `--prefetch` to download the client and runtime without launching the game.
+
+The default game directories are `%AppData%\.valkaw\game_sodium` and `%AppData%\.valkaw\game_vulkan` on Windows, and `~/.valkaw/game_sodium` and `~/.valkaw/game_vulkan` on Linux. A previous `%AppData%\.valkaw\game` directory is migrated to the Sodium profile when possible.
 
 **Authentication:** The launcher currently starts Minecraft with an offline username and a fixed UUID; it does not provide Microsoft/Mojang sign-in. Servers that require an authenticated account may refuse the connection. Do not enter account credentials into this launcher.
 
