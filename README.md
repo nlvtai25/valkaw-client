@@ -14,7 +14,7 @@ A lightweight Minecraft client with two distinct profiles, a custom in-game HUD,
 
 <br>
 
-[⬇️ **DOWNLOAD THE LAUNCHER**](downloads/Valkaw%20Launcher.exe)　·　[📦 Profile downloads](https://github.com/nlvtai25/valkaw-client/releases/latest)　·　[🧩 Mods & sources](#mods-and-sources)　·　[🚀 Getting started](#getting-started)
+[⬇️ **DOWNLOADS**](#downloads)　·　[📦 Profile releases](https://github.com/nlvtai25/valkaw-client/releases/latest)　·　[🧩 Mods & sources](#mods-and-sources)　·　[🚀 Getting started](#getting-started)
 
 </div>
 
@@ -24,51 +24,51 @@ A lightweight Minecraft client with two distinct profiles, a custom in-game HUD,
 
 | ⚡ Two ways to play | 🎛️ A launcher that remembers |
 |---|---|
-| Pick **Sodium** for a broadly compatible, performance-focused renderer, or **VulkanMod** for Vulkan-based rendering on a compatible system. Each profile ships with its own curated mod set. | The launcher fetches and installs the selected profile package when needed. It saves your username and preferences, and keeps existing settings files when installing package defaults. |
+| Pick **Sodium** for a broadly compatible, performance-focused renderer, or **VulkanMod** for Vulkan-based rendering on a compatible system. Each profile ships with its own curated mod set. | Choose **Online** to use a package from GitHub Releases or **Offline** to install a downloaded local bundle JAR. Your username, preferences, and existing settings are preserved. |
 | 🧭 **A HUD you can make yours** | 🧰 **Everyday conveniences** |
 | Edit and share HUD profiles. Arrange widgets for system information, armor, biome, hitboxes, quick chat, and more. | Tune RAM and JVM arguments, select a player name, switch themes, and choose what happens when the game closes. Game files and logs are separated by profile. |
 | 🖥️ **Lightweight Windows and Linux launchers** | 📦 **A ready-to-play setup** |
-| Choose the portable Windows launcher or the Python-based Linux launcher. Both fetch and install the selected profile package for you. | Install or update the client package from the launcher's **Play** action instead of manually copying a folder of mods. |
+| Choose the portable Windows launcher or the Python-based Linux launcher. The launcher can set up Minecraft, Fabric, libraries, assets, and Java 21 when needed. | Install or update a profile from the launcher's **Play** action instead of manually copying a folder of mods. |
 
-> **Made for Minecraft Java Edition 1.21.11 on Windows and Linux.** You need Java 21 or later, plus the Minecraft version libraries and assets on your machine or bundled beside the launcher.
+> **Made for Minecraft Java Edition 1.21.11 on Windows and Linux.** The game requires Java 21 or later; the launcher can install Java and the required Minecraft runtime files when they are missing.
 
 ## ⬇️ Downloads
 
-### Valkaw Launcher 1.4
+### Valkaw Launcher 1.5
 
 Both current launchers are included **directly in this repository**:
 
 | Platform | Download | Size | SHA-256 |
 |---|---|---:|---|
-| **Windows** | [Valkaw.Launcher-1.4.exe](downloads/Valkaw.Launcher-1.4.exe) | 613,376 bytes | `7B05A498531EAB8A7A7E249A660959A7331521969064BBD4051F43BABB53B2D7` |
-| **Linux** | [Valkaw.Launcher-linux-1.4.py](downloads/Valkaw.Launcher-linux-1.4.py) | 177,962 bytes | `2B9DAEF12D2AE3644EAC0DBD25667890ACEB3CDF129DC9BAA8581691D23ABDEB` |
+| **Windows** | [Valkaw.Launcher-1.5.exe](downloads/Valkaw.Launcher-1.5.exe) | 631,808 bytes | `A7A9A0F0C81A0E99CF32AB4C56B58F77147C0A8D73364FA43AC85C98EBA7CD9C` |
+| **Linux** | [Valkaw.Launcher-linux-1.5.py](downloads/Valkaw.Launcher-linux-1.5.py) | 190,049 bytes | `A884729B72DE12D31CA89F12C5853F30D57E954CE3FE5B69B87E06C3782164DB` |
 
 > The Windows launcher is unsigned, so Windows may show a warning when you open it. Linux requires Python 3; the launcher opens a GUI when Tkinter is available and otherwise provides a command-line interface.
 
 ### Client profiles
 
-The launcher downloads the matching ZIP from the [latest GitHub Release](https://github.com/nlvtai25/valkaw-client/releases/latest) the first time a profile is installed, or when its packaged client version changes.
+Each v1.4 profile is distributed here as one Fabric bundle JAR containing its nested mod JARs, configuration, options, and resource packs:
 
-| Profile | Package | Included mod JARs | Package size |
+| Profile | Single-file bundle | Included mod JARs | File size |
 |---|---|---:|---:|
-| **Sodium** | [`Sodium_v1.3.zip`](https://github.com/nlvtai25/valkaw-client/releases/latest/download/Sodium_v1.3.zip) | 37 | 33.9 MiB |
-| **VulkanMod** | [`Vulkan_v1.3.zip`](https://github.com/nlvtai25/valkaw-client/releases/latest/download/Vulkan_v1.3.zip) | 28 | 54.7 MiB |
+| **Sodium** | [Sodium_v1.4.jar](downloads/Sodium_v1.4.jar) | 37 | 33.9 MiB |
+| **VulkanMod** | [Vulkan_v1.4.jar](downloads/Vulkan_v1.4.jar) | 28 | 54.7 MiB |
 
-Each package includes its profile's mods, default game options, configuration files, and the SapixCraft and Transparent Buttons resource packs. Package size is approximate.
+To install these repository bundles, download the JAR for your profile, set the launcher's **Source** to **Offline**, and select the downloaded file when prompted. Offline mode skips the profile-package download; the launcher may still need an internet connection to obtain Minecraft, Fabric, libraries, assets, or Java. **Online** mode continues to use compatible JAR or ZIP assets attached to the [latest GitHub Release](https://github.com/nlvtai25/valkaw-client/releases/latest); these v1.4 repository files are not release assets.
 
 ## 🚀 Getting started
 
-1. Download and open `Valkaw.Launcher-1.4.exe`.
+1. Download and open `Valkaw.Launcher-1.5.exe` on Windows, or run `Valkaw.Launcher-linux-1.5.py` on Linux.
 2. Choose the **Sodium** or **VulkanMod** profile and enter a player name.
-3. Make sure Java 21 or later is installed; adjust the RAM allocation if needed.
-4. Press **Play**. On first use, the launcher downloads and installs the selected profile package, then starts the game.
+3. Choose **Online** to use a GitHub Release package or **Offline** to select a downloaded profile JAR from this page.
+4. Press **Play**. On first use, the launcher installs the profile and sets up missing game runtime files, then starts Minecraft.
 5. For troubleshooting, check the profile-specific `latest.log` under `log_launcher`.
 
 ### Linux quick start
 
-1. Install Java 21 or later and Python 3.
-2. Download [Valkaw.Launcher-linux-1.4.py](downloads/Valkaw.Launcher-linux-1.4.py).
-3. Run it with `python3 Valkaw.Launcher-linux-1.4.py`. Add `--cli` to use the command-line interface, `--install` to create an application menu entry, or `--prefetch` to download the client and runtime without launching the game.
+1. Install Python 3; the launcher can install Java 21 if it is missing.
+2. Download [Valkaw.Launcher-linux-1.5.py](downloads/Valkaw.Launcher-linux-1.5.py).
+3. Run it with `python3 Valkaw.Launcher-linux-1.5.py`. Add `--cli` to use the command-line interface, `--install` to create an application menu entry, or `--prefetch` to download the client and runtime without launching the game.
 
 The default game directories are `%AppData%\.valkaw\game_sodium` and `%AppData%\.valkaw\game_vulkan` on Windows, and `~/.valkaw/game_sodium` and `~/.valkaw/game_vulkan` on Linux. A previous `%AppData%\.valkaw\game` directory is migrated to the Sodium profile when possible.
 
@@ -89,11 +89,11 @@ The default game directories are `%AppData%\.valkaw\game_sodium` and `%AppData%\
 
 ### Package updates and settings
 
-When a profile package is installed or its package version changes, the launcher downloads the ZIP and updates the bundled mod files. Default settings are only copied when the corresponding file does not already exist, so your existing configuration is preserved. The launcher keeps separate game directories and logs for Sodium and VulkanMod.
+When a profile bundle is installed or updated, the launcher extracts the nested mods and bundled defaults. Default settings are only copied when the corresponding file does not already exist, so your existing configuration is preserved. The launcher keeps separate game directories and logs for Sodium and VulkanMod.
 
 ## 🧩 Mods and sources
 
-The profile tables below list every mod JAR included in the current release packages, grouped into **shared**, **Sodium-only**, and **VulkanMod-only** entries. Version numbers come from the installed JAR metadata. Source links point to project pages or repositories identified by that metadata.
+The profile tables below list every mod JAR included in the current profile bundle JARs, grouped into **shared**, **Sodium-only**, and **VulkanMod-only** entries. Version numbers come from the installed JAR metadata. Source links point to project pages or repositories identified by that metadata.
 
 ### Shared by both profiles · 22 mods
 
@@ -157,7 +157,7 @@ The profile tables below list every mod JAR included in the current release pack
 
 ## 🎨 Included resource packs
 
-These are the resource packs present in both profile ZIPs. Other packs from previous local installations are not included in the current release packages.
+These are the resource packs present in both profile bundle JARs. Other packs from previous local installations are not included in the current bundles.
 
 | Resource pack | Source |
 |---|---|
@@ -165,6 +165,16 @@ These are the resource packs present in both profile ZIPs. Other packs from prev
 | Transparent Buttons | [Project on Modrinth](https://modrinth.com/resourcepack/transparent-buttons) |
 
 ## 📝 Changelog
+
+### Client v1.4
+
+- Repackaged Sodium and VulkanMod as single Fabric bundle JARs, each containing its profile's nested mods and defaults.
+- Fixed HUD editor modifier-key handling, saved Auto Sprint across launches, and prevented Clear Fluid from mutating the copied fog color.
+
+### Launcher v1.5
+
+- Added **Online** and **Offline (Local JAR)** package sources; the launcher remembers the last local JAR folder and detects the profile from the selected bundle.
+- Added first-launch setup for Minecraft 1.21.11, Fabric Loader, libraries, assets, and Java 21 when needed. The clean-install flow passed on Windows.
 
 ### v1.3
 
