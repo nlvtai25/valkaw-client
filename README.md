@@ -14,7 +14,7 @@ A lightweight Minecraft client with two distinct profiles, a custom in-game HUD,
 
 <br>
 
-[⬇️ **DOWNLOADS**](#downloads)　·　[📦 Profile releases](https://github.com/nlvtai25/valkaw-client/releases/latest)　·　[🧩 Mods & sources](#mods-and-sources)　·　[🚀 Getting started](#getting-started)
+[⬇️ **DOWNLOADS**](#downloads)　·　[📦 Get client v1.4](https://github.com/nlvtai25/valkaw-client/releases/tag/v1.4)　·　[🧩 Mods & sources](#mods-and-sources)　·　[🚀 Getting started](#getting-started)
 
 </div>
 
@@ -45,16 +45,16 @@ Both current launchers are included **directly in this repository**:
 
 > The Windows launcher is unsigned, so Windows may show a warning when you open it. Linux requires Python 3; the launcher opens a GUI when Tkinter is available and otherwise provides a command-line interface.
 
-### Client profiles
+### Client v1.4
 
-Each v1.4 profile is distributed here as one Fabric bundle JAR containing its nested mod JARs, configuration, options, and resource packs:
+Each profile is distributed as one Fabric bundle JAR containing its nested mod JARs, configuration, options, and resource packs. Download the profile directly from the [v1.4 GitHub Release](https://github.com/nlvtai25/valkaw-client/releases/tag/v1.4):
 
-| Profile | Single-file bundle | Included mod JARs | File size |
+| Profile | Release asset | Included mod JARs | File size |
 |---|---|---:|---:|
-| **Sodium** | [Sodium_v1.4.jar](downloads/Sodium_v1.4.jar) | 37 | 33.9 MiB |
-| **VulkanMod** | [Vulkan_v1.4.jar](downloads/Vulkan_v1.4.jar) | 28 | 54.7 MiB |
+| **Sodium** | [Sodium_v1.4.jar](https://github.com/nlvtai25/valkaw-client/releases/download/v1.4/Sodium_v1.4.jar) | 37 | 33.9 MiB |
+| **VulkanMod** | [Vulkan_v1.4.jar](https://github.com/nlvtai25/valkaw-client/releases/download/v1.4/Vulkan_v1.4.jar) | 28 | 54.7 MiB |
 
-To install these repository bundles, download the JAR for your profile, set the launcher's **Source** to **Offline**, and select the downloaded file when prompted. Offline mode skips the profile-package download; the launcher may still need an internet connection to obtain Minecraft, Fabric, libraries, assets, or Java. **Online** mode continues to use compatible JAR or ZIP assets attached to the [latest GitHub Release](https://github.com/nlvtai25/valkaw-client/releases/latest); these v1.4 repository files are not release assets.
+To install the client manually, download the JAR for your profile, set the launcher's **Source** to **Offline**, and select the downloaded file when prompted. **Online** mode fetches the matching profile asset from the [latest GitHub Release](https://github.com/nlvtai25/valkaw-client/releases/latest). Offline mode skips the profile-package download; the launcher may still need an internet connection to obtain Minecraft, Fabric, libraries, assets, or Java.
 
 ## 🚀 Getting started
 
