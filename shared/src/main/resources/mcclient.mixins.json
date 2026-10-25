@@ -1,0 +1,28 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "mc.client.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "client": [
+    "InGameHudMixin",
+    "EntityFreelookMixin",
+    "CameraFreelookMixin",
+    "GameOptionsFreelookMixin",
+    "GameOptionsKeysMixin",
+    "ChatScreenMixin",
+    "ChatHudMixin",
+    "ScreenInvoker",
+    "TitleScreenMixin",
+    "NametagMixin",
+    "HurtCamMixin",
+    "FireOverlayMixin",
+    "ClearFluidMixin",
+    "SkinMixin",
+    "NoFogMixin",
+    "NoDarknessMixin",
+    "NoPumpkinMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
