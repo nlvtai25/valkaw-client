@@ -1,0 +1,13 @@
+# --- build / công cụ ---
+/.gradle/
+/build/
+/dist/
+*.exe
+
+# --- dữ liệu game + asset phát hành (đưa lên GitHub Releases, không đưa vào git) ---
+/game-content.zip
+/client/
+/config/
+/natives/
+/saves/
+/logs/

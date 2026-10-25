@@ -1,0 +1,20 @@
+# Generated client builds and local game data
+client_sodium/.gradle/
+client_sodium/build/
+client_sodium/client/
+client_sodium/config/
+client_sodium/dist/
+client_sodium/libs/
+client_vulkanmod/.gradle/
+client_vulkanmod/build/
+client_vulkanmod/client/
+client_vulkanmod/config/
+client_vulkanmod/dist/
+client_vulkanmod/libs/
+
+# Local launcher output and generated release bundles
+launcher/log_launcher/
+launcher/*.exe
+launcher/__pycache__/
+Release/
+_publish/
