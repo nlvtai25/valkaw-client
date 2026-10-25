@@ -162,6 +162,7 @@ This is the resource pack present in both profile bundle JARs. Other packs from 
 | Resource pack | Source |
 |---|---|
 | SapixCraft 32x r1.4 (Minecraft 1.21.11) | [SapixCraft on Modrinth](https://modrinth.com/resourcepack/sapixcraft) |
+
 ## 📝 Changelog
 
 ### Client v1.5
@@ -174,7 +175,7 @@ This is the resource pack present in both profile bundle JARs. Other packs from 
 ### Launcher v1.6
 
 - Updated package installation to accept JAR bundles only.
-- Refined the launcher footer and changelog presentation.
+- Reworked the footer into two rows and improved changelog card spacing, scrolling, and status visibility.
 
 ### Client v1.4
 
