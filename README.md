@@ -14,7 +14,7 @@ A lightweight Minecraft client with two distinct profiles, a custom in-game HUD,
 
 <br>
 
-[⬇️ **DOWNLOADS**](#downloads)　·　[📦 Get client v1.4](https://github.com/nlvtai25/valkaw-client/releases/tag/v1.4)　·　[🧩 Mods & sources](#mods-and-sources)　·　[🚀 Getting started](#getting-started)
+[⬇️ **DOWNLOADS**](#downloads)　·　[📦 Get client v1.5](https://github.com/nlvtai25/valkaw-client/releases/tag/v1.5)　·　[🧩 Mods & sources](#mods-and-sources)　·　[🚀 Getting started](#getting-started)
 
 </div>
 
@@ -34,31 +34,31 @@ A lightweight Minecraft client with two distinct profiles, a custom in-game HUD,
 
 ## ⬇️ Downloads
 
-### Valkaw Launcher 1.5
+### Valkaw Launcher 1.6
 
 Both current launchers are included **directly in this repository**:
 
 | Platform | Download | Size | SHA-256 |
 |---|---|---:|---|
-| **Windows** | [Valkaw.Launcher-1.5.exe](downloads/Valkaw.Launcher-1.5.exe) | 631,808 bytes | `A7A9A0F0C81A0E99CF32AB4C56B58F77147C0A8D73364FA43AC85C98EBA7CD9C` |
-| **Linux** | [Valkaw.Launcher-linux-1.5.py](downloads/Valkaw.Launcher-linux-1.5.py) | 190,049 bytes | `A884729B72DE12D31CA89F12C5853F30D57E954CE3FE5B69B87E06C3782164DB` |
+| **Windows** | [Valkaw.Launcher-1.6.exe](downloads/Valkaw.Launcher-1.6.exe) | 636,416 bytes | `2AEAE3025A43A7B4D99F8E46AA6F127FBD9D3CB980F886FA3740AD9CE572FC42` |
+| **Linux** | [Valkaw.Launcher-linux-1.6.py](downloads/Valkaw.Launcher-linux-1.6.py) | 193,170 bytes | `8DD77513723BDF55A4361D1C75EAFCC1558D037561741963B3063CD3A02E9212` |
 
 > The Windows launcher is unsigned, so Windows may show a warning when you open it. Linux requires Python 3; the launcher opens a GUI when Tkinter is available and otherwise provides a command-line interface.
 
-### Client v1.4
+### Client v1.5
 
-Each profile is distributed as one Fabric bundle JAR containing its nested mod JARs, configuration, options, and resource packs. Download the profile directly from the [v1.4 GitHub Release](https://github.com/nlvtai25/valkaw-client/releases/tag/v1.4):
+Each profile is distributed as one Fabric bundle JAR containing its nested mod JARs, configuration, options, and resource packs. Download the profile directly from the [v1.5 GitHub Release](https://github.com/nlvtai25/valkaw-client/releases/tag/v1.5):
 
 | Profile | Release asset | Included mod JARs | File size |
 |---|---|---:|---:|
-| **Sodium** | [Sodium_v1.4.jar](https://github.com/nlvtai25/valkaw-client/releases/download/v1.4/Sodium_v1.4.jar) | 37 | 33.9 MiB |
-| **VulkanMod** | [Vulkan_v1.4.jar](https://github.com/nlvtai25/valkaw-client/releases/download/v1.4/Vulkan_v1.4.jar) | 28 | 54.7 MiB |
+| **Sodium** | [Sodium_v1.5.jar](https://github.com/nlvtai25/valkaw-client/releases/download/v1.5/Sodium_v1.5.jar) | 37 | 33.9 MiB |
+| **VulkanMod** | [Vulkan_v1.5.jar](https://github.com/nlvtai25/valkaw-client/releases/download/v1.5/Vulkan_v1.5.jar) | 28 | 54.7 MiB |
 
 To install the client manually, download the JAR for your profile, set the launcher's **Source** to **Offline**, and select the downloaded file when prompted. **Online** mode fetches the matching profile asset from the [latest GitHub Release](https://github.com/nlvtai25/valkaw-client/releases/latest). Offline mode skips the profile-package download; the launcher may still need an internet connection to obtain Minecraft, Fabric, libraries, assets, or Java.
 
 ## 🚀 Getting started
 
-1. Download and open `Valkaw.Launcher-1.5.exe` on Windows, or run `Valkaw.Launcher-linux-1.5.py` on Linux.
+1. Download and open `Valkaw.Launcher-1.6.exe` on Windows, or run `Valkaw.Launcher-linux-1.6.py` on Linux.
 2. Choose the **Sodium** or **VulkanMod** profile and enter a player name.
 3. Choose **Online** to use a GitHub Release package or **Offline** to select a downloaded profile JAR from this page.
 4. Press **Play**. On first use, the launcher installs the profile and sets up missing game runtime files, then starts Minecraft.
@@ -67,8 +67,8 @@ To install the client manually, download the JAR for your profile, set the launc
 ### Linux quick start
 
 1. Install Python 3; the launcher can install Java 21 if it is missing.
-2. Download [Valkaw.Launcher-linux-1.5.py](downloads/Valkaw.Launcher-linux-1.5.py).
-3. Run it with `python3 Valkaw.Launcher-linux-1.5.py`. Add `--cli` to use the command-line interface, `--install` to create an application menu entry, or `--prefetch` to download the client and runtime without launching the game.
+2. Download [Valkaw.Launcher-linux-1.6.py](downloads/Valkaw.Launcher-linux-1.6.py).
+3. Run it with `python3 Valkaw.Launcher-linux-1.6.py`. Add `--cli` to use the command-line interface, `--install` to create an application menu entry, or `--prefetch` to download the client and runtime without launching the game.
 
 The default game directories are `%AppData%\.valkaw\game_sodium` and `%AppData%\.valkaw\game_vulkan` on Windows, and `~/.valkaw/game_sodium` and `~/.valkaw/game_vulkan` on Linux. A previous `%AppData%\.valkaw\game` directory is migrated to the Sodium profile when possible.
 
@@ -157,14 +157,25 @@ The profile tables below list every mod JAR included in the current profile bund
 
 ## 🎨 Included resource packs
 
-These are the resource packs present in both profile bundle JARs. Other packs from previous local installations are not included in the current bundles.
+This is the resource pack present in both profile bundle JARs. Other packs from previous local installations are not included in the current bundles.
 
 | Resource pack | Source |
 |---|---|
 | SapixCraft 32x r1.4 (Minecraft 1.21.11) | [SapixCraft on Modrinth](https://modrinth.com/resourcepack/sapixcraft) |
-| Transparent Buttons | [Project on Modrinth](https://modrinth.com/resourcepack/transparent-buttons) |
 
 ## 📝 Changelog
+
+### Client v1.5
+
+- Redesigned Client Settings as a compact app-style layout with a left navigation rail, header, and footer.
+- Made the settings content responsive, with an adaptive module grid and consistent alignment for tabs, search, and footer controls.
+- Removed the Transparent Buttons resource pack from both profiles.
+- Switched distribution to single-JAR bundles; ZIP client packages are no longer supported.
+
+### Launcher v1.6
+
+- Updated package installation to accept JAR bundles only.
+- Reworked the footer into two rows and improved changelog card spacing, scrolling, and status visibility.
 
 ### Client v1.4
 

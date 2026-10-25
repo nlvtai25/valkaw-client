@@ -37,8 +37,8 @@ UA = "ValkawLauncher/linux"
 # Version cua launcher (doc lap voi version client). Ban phat hanh la 1 file nen asset
 # phai ten "Valkaw.Launcher-linux-<APP_VERSION>.py" - launcher so version trong ten de biet
 # co ban moi, roi tai de va ghi de chinh no.
-APP_VERSION = "1.5"
-CLIENT_VERSION = "1.4"   # khop ten pack <Variant>_v<ver>.jar, hien trong header changelog
+APP_VERSION = "1.6"
+CLIENT_VERSION = "1.5"   # khop ten pack <Variant>_v<ver>.jar, hien trong header changelog
 SELF_PREFIX = "Valkaw.Launcher-linux-"
 UPDATE_DIR = os.path.join(ROOT, "update")
 
@@ -48,19 +48,15 @@ UPDATE_DIR = os.path.join(ROOT, "update")
 # va cac dong bat dau bang "+ ". Mac dinh tieng Anh.
 # Khoi MOI NHAT dung placeholder {launcher} / {client} de version luon lay tu APP_VERSION /
 # CLIENT_VERSION (sua 1 cho, khong bao gio lech ten version). Khoi cu de nguyen so da phat hanh.
-CHANGELOG = """Valkaw {launcher} - 24/10/2026 - client v{client}
+CHANGELOG = """Valkaw {launcher} - client v{client} - 25/10/2026
 Launcher
-+ Promote tested one-JAR packs to production release; launchers now install `.jar` or legacy `.zip`.
-+ New Source selector: Online (GitHub) or Offline (Local JAR), default Online each start.
-+ Offline picker remembers the last OS-specific directory and does not remove the selected file.
-+ Offline hides the Version picker until a local pack is installed; the picked JAR decides the variant.
-+ First Play on a clean machine installs the whole runtime (Minecraft 1.21.11 client, libraries, assets, Fabric loader 0.19.5, Java 21 when missing) into `.valkaw\minecraft`; resumes if interrupted and reuses an existing `.minecraft`.
++ Launcher version 1.6; client stays v1.5 (no bump requested).
++ Single-source changelog block; titles pull the real version from the launcher constants.
++ Launcher UI: footer reorganized into 2 rows, changelog card with scroll padding and status line made bolder.
 Client
-+ Fixed HUD editor keybind for modifier keys (Right Shift).
-+ Persist Auto Sprint across launches.
-+ Clear Fluid returns a copied fog color.
-+ Client becomes v1.4.
-Valkaw {launcher} - 23/10/2026 - client v{client}
++ Client Settings redesigned: 400px app shell with left nav rail, header and footer; adaptive module grid.
++ Tabs, search and footer action align to one content grid; all tabs keep scrolling.
+Valkaw 1.5 - 23/10/2026 - client v1.4
 Launcher
 + Checks for a new launcher build on every start (Windows + Linux) and asks before updating.
 + Windows: replaces itself and relaunches. Linux: applies the update on the next start.
@@ -1401,12 +1397,11 @@ def latest_assets():
 
 def pick_pack(variant):
     prefix = ("Vulkan" if variant == "VulkanMod" else "Sodium") + "_"
-    best, best_ver, best_jar = None, None, False
+    best, best_ver = None, None
     for n in latest_assets():
         if not n.lower().startswith(prefix.lower()):
             continue
-        jar = n.lower().endswith(".jar")
-        if not jar and not n.lower().endswith(".zip"):
+        if not n.lower().endswith(".jar"):
             continue
         m = re.search(r"\d+(?:\.\d+)+", n)
         ver = None
@@ -1415,11 +1410,10 @@ def pick_pack(variant):
                 ver = tuple(int(x) for x in m.group(0).split("."))
             except ValueError:
                 ver = None
-        if (best is None or (ver and (best_ver is None or ver > best_ver))
-                or (ver and best_ver and ver == best_ver and jar and not best_jar)):
-            best, best_ver, best_jar = n, ver, jar
+        if best is None or (ver and (best_ver is None or ver > best_ver)):
+            best, best_ver = n, ver
     if not best:
-        raise RuntimeError("Khong tim thay %s*.jar/.zip tren GitHub Releases "
+        raise RuntimeError("Khong tim thay %s*.jar tren GitHub Releases "
                            "(kiem tra mang hoac tai tay)." % prefix)
     return best
 
@@ -2120,7 +2114,13 @@ def run_gui(cfg):
 
     theme = "dark" if _read_text("theme.txt").strip().lower() == "dark" else "light"
     P = THEMES[theme]
+    EXTRA = {"ok": "#3FB950", "err": "#F85149"}
+    # Thanh cuộn/timestamp có thumb accent tương phản rõ ở cả 2 theme
     win = tk.Tk()
+    gtk = ttk.Style(win)
+    gtk.configure("Val.TScrollbar", thumbcolor=P["accent"], troughcolor=P["bg"],
+                  background=P["bg"], bordercolor=P["bg"], darkcolor=P["accent"],
+                  lightcolor=P["accent_hi"], arrowcolor=P["dim"])
     fam = tkfont.nametofont("TkDefaultFont").actual("family")
     F = {"base": (fam, 10), "small": (fam, 9), "bold": (fam, 10, "bold"),
          "title": (fam, 16, "bold"), "play": (fam, 12, "bold")}
@@ -2165,9 +2165,6 @@ def run_gui(cfg):
         "prio": cfg.get("priority", "Normal"), "after": cfg.get("after", "Hide"),
         "source": "Online",
     }.items()}
-    state["source_mode"] = "Online"
-    state["offline_jar"] = None
-    state["offline_lastdir"] = cfg.get("offline.lastdir", "") or os.path.join(os.path.expanduser("~"), "Downloads")
 
     def pick_local_jar_click():
         path, newdir = pick_local_jar(var["variant"].get(), state["offline_lastdir"])
@@ -2185,8 +2182,14 @@ def run_gui(cfg):
             state["offline_jar"] = None
 
     def on_source_change(*_):
-        show_version(var["source"].get() != "Offline")
-        if var["source"].get() == "Offline" and not state["offline_jar"]:
+        is_offline = var["source"].get() == "Offline"
+        show_version(not is_offline)
+        if "jar_btn" in w:
+            try:
+                w["jar_btn"].grid() if is_offline else w["jar_btn"].grid_remove()
+            except tk.TclError:
+                pass
+        if is_offline and not state["offline_jar"]:
             pick_local_jar_click()
 
     var["source"].trace_add("write", on_source_change)
@@ -2236,14 +2239,27 @@ def run_gui(cfg):
             except OSError:
                 continue
 
+    def _lum(c):
+        r, g, b = int(c[1:3], 16) / 255, int(c[3:5], 16) / 255, int(c[5:7], 16) / 255
+        def f(x):
+            return x / 12.92 if x <= 0.03928 else ((x + 0.055) / 1.055) ** 2.4
+        return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b)
+
+    def _contrast(a, b):
+        la, lb = _lum(a), _lum(b)
+        return (max(la, lb) + 0.05) / (min(la, lb) + 0.05)
+
     def show_page(idx):
         state["page"] = idx
         for i, page in enumerate(w["pages"]):
             if i == idx:
                 page.tkraise()
         for i, b in enumerate(w["nav"]):
-            b.config(bg=P["accent"] if i == idx else P["panel"],
-                     fg=P["on_accent"] if i == idx else P["txt"])
+            active = i == idx
+            b.config(bg=P["hover"] if active else P["panel"],
+                     fg=P["accent"] if active else P["txt"])
+            if "nav_inds" in w:
+                w["nav_inds"][i].config(bg=P["accent"] if active else P["panel"])
 
     def on_scale(value):
         try:
@@ -2294,9 +2310,10 @@ def run_gui(cfg):
     # ---- build ---------------------------------------------------
     def build_changelog(page):
         """Moi version 1 khoi thu gon duoc, lay tu CHANGELOG (ca launcher + client)."""
+        tk.Label(page, text="What's new", bg=P["bg"], fg=P["txt"],
+                 font=F["title"], anchor="w").pack(anchor="w", pady=(0, 12))
         canvas = tk.Canvas(page, bg=P["bg"], highlightthickness=0, bd=0)
-        sb = tk.Scrollbar(page, command=canvas.yview, bg=P["card"],
-                          troughcolor=P["bg"], relief="flat", bd=0)
+        sb = ttk.Scrollbar(page, command=canvas.yview, style="Val.TScrollbar")
         canvas.configure(yscrollcommand=sb.set)
         sb.pack(side="right", fill="y")
         canvas.pack(side="left", fill="both", expand=True)
@@ -2327,7 +2344,7 @@ def run_gui(cfg):
             for name, items in groups:
                 if name:
                     tk.Label(body, text=name, bg=P["panel"], fg=P["accent"],
-                             font=F["small"], anchor="w").pack(fill="x", pady=(8, 2))
+                             font=F["bold"], anchor="w").pack(fill="x", pady=(10, 4))
                 for it in items:
                     lbl = tk.Label(body, text="\u2022  " + it, bg=P["panel"], fg=P["dim"],
                                    font=F["small"], anchor="w", justify="left")
@@ -2376,8 +2393,8 @@ def run_gui(cfg):
             style.theme_use("clam")  # de to duoc mau cho progressbar
         except tk.TclError:
             pass
-        style.configure("V.Horizontal.TProgressbar", troughcolor=P["card"],
-                        background=P["accent"], bordercolor=P["card"],
+        style.configure("V.Horizontal.TProgressbar", troughcolor=P["line"],
+                        background=P["accent"], bordercolor=P["dim"],
                         lightcolor=P["accent_hi"], darkcolor=P["accent"], thickness=6)
 
         head = tk.Frame(win, bg=P["bg"], height=74)
@@ -2387,8 +2404,9 @@ def run_gui(cfg):
             tk.Label(head, image=logo, bg=P["bg"]).place(x=14, y=8, width=58, height=58)
         tk.Label(head, text="VALKAW", bg=P["bg"], fg=P["accent"],
                  font=F["title"]).place(x=86, y=10)
+        subtitle_fg = P["txt"] if _contrast(P["dim"], P["bg"]) < 4.5 else P["dim"]
         tk.Label(head, text="Minecraft %s  \u00b7  Sodium / VulkanMod" % MC,
-                 bg=P["bg"], fg=P["dim"], font=F["small"]).place(x=88, y=40)
+                 bg=P["bg"], fg=subtitle_fg, font=F["small"]).place(x=88, y=40)
         tk.Frame(win, bg=P["accent"], height=2).pack(fill="x")
 
         body = tk.Frame(win, bg=P["bg"])
@@ -2403,7 +2421,7 @@ def run_gui(cfg):
 
         w["pages"] = []
         for _ in range(5):
-            page = tk.Frame(content, bg=P["bg"], padx=16, pady=14)
+            page = tk.Frame(content, bg=P["bg"], padx=24, pady=20)
             page.grid(row=0, column=0, sticky="nsew")
             w["pages"].append(page)
         p_cl, p_ram, p_jvm, p_opt, p_dir = w["pages"]
@@ -2412,42 +2430,49 @@ def run_gui(cfg):
         build_changelog(p_cl)
 
         # RAM
-        label(p_ram, "RAM (GB, buoc 0.25)").pack(anchor="w")
+        label(p_ram, "RAM allocation", font=F["bold"]).pack(anchor="w")
+        label(p_ram, "How much memory to give Minecraft.", dim=True,
+              font=F["small"]).pack(anchor="w", pady=(2, 12))
         tk.Scale(p_ram, from_=4, to=64, resolution=1, orient="horizontal",
                  showvalue=False, bg=P["bg"], fg=P["txt"], troughcolor=P["card"],
                  highlightthickness=0, bd=0, sliderrelief="flat", width=10,
                  activebackground=P["accent"], command=on_scale).pack(
-                     fill="x", pady=(6, 10))
+                     fill="x", pady=(0, 10))
         row = tk.Frame(p_ram, bg=P["bg"])
         row.pack(anchor="w")
-        entry(row, var["ram"], 8).pack(side="left", ipady=3)
+        entry(row, var["ram"], 8).pack(side="left", ipady=4)
         label(row, "GB").pack(side="left", padx=8)
 
         # JVM args
-        label(p_jvm, "Extra JVM arguments (cach nhau bang dau cach)").pack(anchor="w")
+        label(p_jvm, "JVM arguments", font=F["bold"]).pack(anchor="w")
+        label(p_jvm, "Extra flags passed to Java. Use spaces between flags.",
+              dim=True, font=F["small"]).pack(anchor="w", pady=(2, 12))
         wrap = tk.Frame(p_jvm, bg=P["bg"])
-        wrap.pack(fill="both", expand=True, pady=(6, 0))
+        wrap.pack(fill="both", expand=True, pady=(0, 0))
         w["jvm"] = tk.Text(wrap, bg=P["card"], fg=P["txt"], insertbackground=P["txt"],
                            relief="flat", highlightthickness=1, highlightbackground=P["line"],
                            highlightcolor=P["accent"], wrap="word", height=8,
                            font=(fam, 9))
         w["jvm"].insert("1.0", _read_text("jvmargs.txt").strip())
-        sb = tk.Scrollbar(wrap, command=w["jvm"].yview, bg=P["card"], troughcolor=P["bg"],
-                          relief="flat", bd=0)
+        sb = tk.Scrollbar(wrap, command=w["jvm"].yview, bg=P["line"],
+                          troughcolor=P["bg"], relief="flat", bd=0)
         w["jvm"].config(yscrollcommand=sb.set)
         w["jvm"].pack(side="left", fill="both", expand=True)
         sb.pack(side="right", fill="y")
         flat(p_jvm, "Ve mac dinh (G1)", P["card"], P["txt"], P["hover"],
              lambda: (w["jvm"].delete("1.0", "end"),
                       w["jvm"].insert("1.0", DEFAULT_JVM), save())).pack(anchor="w",
-                                                                       pady=(8, 0))
+                                                                       pady=(12, 0))
 
         # Options
+        label(p_opt, "Launch options", font=F["bold"]).pack(anchor="w")
+        label(p_opt, "Process priority and launcher behavior after starting.",
+              dim=True, font=F["small"]).pack(anchor="w", pady=(2, 12))
         for title, key, items in (("Priority", "prio", ["Normal", "High"]),
                                   ("After run", "after", ["Hide", "Keep", "Close"])):
             label(p_opt, title, dim=True, font=F["small"]).pack(anchor="w")
             box_row = tk.Frame(p_opt, bg=P["panel"], padx=10, pady=6)
-            box_row.pack(fill="x", pady=(2, 10))
+            box_row.pack(fill="x", pady=(2, 12))
             for it in items:
                 tk.Radiobutton(box_row, text=it, value=it, variable=var[key],
                                bg=P["panel"], fg=P["txt"], selectcolor=P["card"],
@@ -2460,10 +2485,12 @@ def run_gui(cfg):
               font=F["small"]).pack(anchor="w")
 
         # Game dir
-        label(p_dir, "Game directory").pack(anchor="w")
+        label(p_dir, "Game directory", font=F["bold"]).pack(anchor="w")
+        label(p_dir, "Where the game instance and logs live.", dim=True,
+              font=F["small"]).pack(anchor="w", pady=(2, 12))
         row = tk.Frame(p_dir, bg=P["bg"])
-        row.pack(fill="x", pady=(6, 8))
-        entry(row, var["gdir"]).pack(side="left", fill="x", expand=True, ipady=3)
+        row.pack(fill="x", pady=(0, 8))
+        entry(row, var["gdir"]).pack(side="left", fill="x", expand=True, ipady=4)
         flat(row, "Chon...", P["card"], P["txt"], P["hover"],
              lambda: var["gdir"].set(filedialog.askdirectory() or var["gdir"].get())
              ).pack(side="left", padx=8)
@@ -2476,75 +2503,114 @@ def run_gui(cfg):
         label(p_dir, "Trong = ~/.valkaw/game_sodium (Vulkan: game_vulkan)", dim=True,
               font=F["small"]).pack(anchor="w", pady=(10, 0))
 
-        # sidebar nav
+        # sidebar nav with accent active indicator
         w["nav"] = []
+        w["nav_inds"] = []
         names = ["Changelog", "RAM", "JVM Args", "Options", "Game Dir"]
         for i, name in enumerate(names):
-            b = flat(side, name, P["panel"], P["txt"], P["hover"],
-                     lambda i=i: show_page(i), font=F["base"], anchor="w", padx=14)
-            b.pack(fill="x", padx=8, pady=(8 if i == 0 else 2, 0), ipady=6)
+            fr = tk.Frame(side, bg=P["panel"])
+            fr.pack(fill="x", padx=8, pady=(8 if i == 0 else 2, 0))
+            ind = tk.Frame(fr, bg=P["panel"], width=3)
+            ind.pack(side="left", fill="y")
+            ind.pack_propagate(False)
+            b = flat(fr, name, P["panel"], P["txt"], P["hover"],
+                     lambda i=i: show_page(i), font=F["base"], anchor="w", padx=12)
+            b.pack(side="left", fill="x", expand=True, ipady=6)
             w["nav"].append(b)
+            w["nav_inds"].append(ind)
 
         # footer
         tk.Frame(win, bg=P["line"], height=1).pack(fill="x")
-        foot = tk.Frame(win, bg=P["panel"], padx=14, pady=10)
+        foot = tk.Frame(win, bg=P["panel"])
         foot.pack(fill="x")
-        # cot 1 an het cho trong -> cum theme / Play / link day sat mep phai (cua so rong gap ruoi)
-        foot.grid_columnconfigure(1, weight=1)
 
-        label(foot, "Username", dim=True, font=F["small"], bg=P["panel"]).grid(
-            row=0, column=0, sticky="w")
-        urow = tk.Frame(foot, bg=P["panel"])
-        urow.grid(row=1, column=0, sticky="w")
-        entry(urow, var["user"], 16).pack(side="left", ipady=3)
-        flat(urow, "+", P["card"], P["txt"], P["hover"], add_user, width=2).pack(
-            side="left", padx=(6, 0))
-        flat(urow, "\u25BC", P["card"], P["txt"], P["hover"], pick_user, width=2).pack(
-            side="left", padx=(4, 0))
+        foot_main = tk.Frame(foot, bg=P["panel"], padx=16, pady=12)
+        foot_main.pack(fill="x")
+        foot_main.grid_columnconfigure(4, weight=1)
 
-        label(foot, "Source", dim=True, font=F["small"], bg=P["panel"]).grid(
-            row=0, column=0, sticky="w", padx=(18, 0))
-        src_om = tk.OptionMenu(foot, var["source"], "Online", "Offline")
+        # 0: Account
+        acct_g = tk.Frame(foot_main, bg=P["panel"])
+        acct_g.grid(row=0, column=0, rowspan=2, sticky="nw", padx=(0, 24))
+        label(acct_g, "Account", dim=True, font=F["small"],
+              bg=P["panel"]).grid(row=0, column=0, sticky="w")
+        urow = tk.Frame(acct_g, bg=P["panel"])
+        urow.grid(row=1, column=0, sticky="w", pady=(4, 0))
+        entry(urow, var["user"], 16).pack(side="left", ipady=4)
+        flat(urow, "+", P["card"], P["txt"], P["hover"], add_user,
+             width=2, height=1).pack(side="left", padx=(6, 0))
+        flat(urow, "\u25BC", P["card"], P["txt"], P["hover"], pick_user,
+             width=2, height=1).pack(side="left", padx=(4, 0))
+
+        # 1: Source
+        src_g = tk.Frame(foot_main, bg=P["panel"])
+        src_g.grid(row=0, column=1, rowspan=2, sticky="nw", padx=(0, 24))
+        label(src_g, "Source", dim=True, font=F["small"],
+              bg=P["panel"]).grid(row=0, column=0, sticky="w")
+        src_om = tk.OptionMenu(src_g, var["source"], "Online", "Offline")
         src_om.config(bg=P["card"], fg=P["txt"], activebackground=P["hover"],
-                      activeforeground=P["txt"], relief="flat", highlightthickness=0,
-                      font=F["base"], width=9, anchor="w")
+                      activeforeground=P["txt"], relief="flat", bd=0,
+                      highlightthickness=0, font=F["base"], width=9, anchor="w")
         src_om["menu"].config(bg=P["card"], fg=P["txt"], activebackground=P["hover"],
-                              font=F["base"])
-        src_om.grid(row=1, column=0, sticky="w", padx=(18, 0))
+                              activeforeground=P["txt"], font=F["base"])
+        src_om.grid(row=1, column=0, sticky="w", pady=(4, 0))
 
-        flat(foot, "Chon JAR", P["card"], P["txt"], P["hover"],
-             lambda: pick_local_jar_click(), width=9).grid(row=1, column=0, sticky="w", padx=(130, 0))
-
-        w["ver_label"] = label(foot, "Client", dim=True, font=F["small"], bg=P["panel"])
-        w["ver_label"].grid(row=0, column=1, sticky="w", padx=(18, 0))
-        om = tk.OptionMenu(foot, var["variant"], *VARIANTS)
+        # 2: Client/Version
+        ver_g = tk.Frame(foot_main, bg=P["panel"])
+        ver_g.grid(row=0, column=2, rowspan=2, sticky="nw", padx=(0, 24))
+        w["ver_label"] = label(ver_g, "Client", dim=True, font=F["small"],
+                               bg=P["panel"])
+        w["ver_label"].grid(row=0, column=0, sticky="w")
+        om = tk.OptionMenu(ver_g, var["variant"], *VARIANTS)
         om.config(bg=P["card"], fg=P["txt"], activebackground=P["hover"],
-                  activeforeground=P["txt"], relief="flat", highlightthickness=0,
-                  font=F["base"], width=9, anchor="w")
+                  activeforeground=P["txt"], relief="flat", bd=0,
+                  highlightthickness=0, font=F["base"], width=9, anchor="w")
         om["menu"].config(bg=P["card"], fg=P["txt"], activebackground=P["hover"],
-                          font=F["base"])
-        om.grid(row=1, column=1, sticky="w", padx=(18, 0))
+                          activeforeground=P["txt"], font=F["base"])
+        om.grid(row=1, column=0, sticky="w", pady=(4, 0))
         w["ver_om"] = om
-        show_version(state.get("source_mode") != "Offline")
 
-        flat(foot, "\u2600 Light" if theme == "dark" else "\u263D Dark",
-             P["card"], P["txt"], P["hover"], toggle_theme).grid(
-                 row=0, column=2, columnspan=2, sticky="e")
+        # 3: Offline JAR picker (aligned with controls, not label row)
+        w["jar_btn"] = flat(foot_main, "Chon JAR", P["card"], P["txt"], P["hover"],
+                            lambda: pick_local_jar_click(), width=9, height=1)
+        w["jar_btn"].grid(row=1, column=3, sticky="w", padx=(0, 24))
 
-        w["play"] = flat(foot, "Play", P["accent"], P["on_accent"], P["accent_hi"],
-                         start, font=F["play"], width=12)
-        w["play"].grid(row=1, column=2, rowspan=2, sticky="e", padx=(0, 4), ipady=7)
-
-        w["bar"] = ttk.Progressbar(foot, mode="indeterminate", length=140,
-                                   style="V.Horizontal.TProgressbar")
-        w["bar"].grid(row=2, column=0, columnspan=2, sticky="w", pady=(8, 0))
-        w["status"] = tk.Label(foot, text=state["status"], bg=P["panel"],
+        # 5: status + progress directly above Play
+        w["status"] = tk.Label(foot_main, text=state["status"], bg=P["panel"],
                                fg=P["dim"], font=F["small"], anchor="w")
-        w["status"].grid(row=3, column=0, columnspan=3, sticky="w")
+        w["status"].grid(row=0, column=5, sticky="sw", padx=(0, 16))
+        w["bar"] = ttk.Progressbar(foot_main, mode="indeterminate", length=160,
+                                   style="V.Horizontal.TProgressbar")
+        w["bar"].grid(row=1, column=5, sticky="ew", padx=(0, 16), pady=(6, 0))
 
-        link = tk.Label(foot, text="GitHub Releases \u2014 tai / cap nhat thu cong",
+        # 6: Play (dominant, right)
+        w["play"] = flat(foot_main, "Play", P["accent"], P["on_accent"],
+                         P["accent_hi"], start, font=F["play"], width=14)
+        w["play"].grid(row=0, column=6, rowspan=2, sticky="nse", ipady=9)
+
+        # Restore status colour hint after rebuild
+        txt = state["status"]
+        if txt == "Ready.":
+            w["status"].config(fg=EXTRA["ok"])
+        elif "loi" in txt.lower():
+            w["status"].config(fg=EXTRA["err"])
+
+        is_offline = state.get("source_mode") == "Offline"
+        show_version(not is_offline)
+        if "jar_btn" in w:
+            try:
+                w["jar_btn"].grid() if is_offline else w["jar_btn"].grid_remove()
+            except tk.TclError:
+                pass
+
+        # tertiary bar: theme bottom-left, GitHub bottom-right
+        tert = tk.Frame(foot, bg=P["panel"], padx=16, pady=10)
+        tert.pack(fill="x")
+        flat(tert, "\u2600 Light" if theme == "dark" else "\u263D Dark",
+             P["card"], P["txt"], P["hover"], toggle_theme,
+             font=F["small"]).pack(side="left")
+        link = tk.Label(tert, text="GitHub Releases \u2014 tai / cap nhat thu cong",
                         bg=P["panel"], fg=P["ink"], font=F["small"], cursor="hand2")
-        link.grid(row=3, column=2, sticky="e")
+        link.pack(side="right")
         link.bind("<Button-1>", lambda _e: webbrowser.open(REPO + "/releases/latest"))
 
         show_page(min(state["page"], 4))
@@ -2640,10 +2706,14 @@ def run_gui(cfg):
                         return
                     if var["after"].get() == "Hide":
                         win.deiconify()
-                    state["status"] = ("Ready." if val == 0 else
-                                       "Game thoat voi loi (xem ~/.valkaw/log_launcher)")
+                    if val == 0:
+                        state["status"] = "Ready."
+                        status_fg = EXTRA["ok"]
+                    else:
+                        state["status"] = "Game thoat voi loi (xem ~/.valkaw/log_launcher)"
+                        status_fg = EXTRA["err"]
                     if "status" in w:
-                        w["status"].config(text=state["status"])
+                        w["status"].config(text=state["status"], fg=status_fg)
         except queue.Empty:
             pass
         try:
