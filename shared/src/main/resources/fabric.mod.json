@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "id": "valkaw-std",
+  "version": "${version}",
+  "name": "Valkaw",
+  "description": "Client tối ưu hiệu năng + HUD widget cho 1.21.11",
+  "icon": "assets/valkaw-std/logo.png",
+  "environment": "client",
+  "mixins": [ "mcclient.mixins.json" ],
+  "entrypoints": {
+    "client": [ "mc.client.standalone.ClientMod" ]
+  },
+  "depends": {
+    "fabricloader": ">=0.15.0",
+    "fabric-api": "*",
+    "minecraft": "~1.21.11"
+  }
+}
