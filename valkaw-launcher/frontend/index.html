@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Valkaw Launcher v1.0.0</title>
+</head>
+<body>
+<div id="app">
+    <aside class="sidebar">
+        <div class="brand">
+            <img src="./src/assets/images/logo-universal.png" alt="" class="logo" />
+            <div>
+                <h1>Valkaw</h1>
+                <span class="ver">Launcher v1.0.0</span>
+            </div>
+        </div>
+        <nav>
+            <button class="nav active" data-page="play"><span class="icon">▶</span> Play</button>
+            <button class="nav" data-page="settings"><span class="icon">⚙</span> Settings</button>
+        </nav>
+        <div class="sidebar-foot">
+            <button id="updateBtn" class="btn ghost small">Check updates</button>
+            <p id="updateStatus" class="muted small"></p>
+        </div>
+    </aside>
+
+    <main>
+        <header class="topbar">
+            <div>
+                <p class="eyebrow" id="pageEyebrow">Ready to play</p>
+                <h2 id="pageTitle">Play</h2>
+            </div>
+            <div class="userchip" id="userChip">Guest</div>
+        </header>
+
+        <section id="page-play" class="page">
+            <div class="hero">
+                <div>
+                    <h3 id="welcome">Welcome back</h3>
+                    <p id="heroMeta" class="muted">Minecraft 1.21.11 • Valkaw Client</p>
+                </div>
+                <div class="hero-version">
+                    <label for="version">Minecraft</label>
+                    <select id="version"></select>
+                </div>
+                <button id="playBtn" class="play-btn">▶ Play</button>
+            </div>
+
+            <div class="profile-grid">
+                <label class="profile-card">
+                    <input type="radio" name="profile" value="gl" hidden>
+                    <div class="profile-icon gl">GL</div>
+                    <div class="profile-info">
+                        <strong>Sodium</strong>
+                        <span>OpenGL • fast & stable</span>
+                    </div>
+                    <span class="check">✓</span>
+                </label>
+                <label class="profile-card">
+                    <input type="radio" name="profile" value="vk" hidden>
+                    <div class="profile-icon vk">VK</div>
+                    <div class="profile-info">
+                        <strong>VulkanMod</strong>
+                        <span>Vulkan • max performance</span>
+                    </div>
+                    <span class="check">✓</span>
+                </label>
+            </div>
+
+            <div class="card">
+                <div class="install-row">
+                    <div>
+                        <strong>Game files</strong>
+                        <span id="installHint" class="muted small">Minecraft 1.21.11 + Fabric + Valkaw mods</span>
+                    </div>
+                    <button id="installBtn" class="btn ghost">Install / Repair</button>
+                </div>
+                <div class="progress"><div id="installBar"></div></div>
+                <p id="installStage" class="muted small"></p>
+            </div>
+
+            <div class="card">
+                <label>Username</label>
+                <input id="username" type="text" placeholder="Steve" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+                <pre id="status"></pre>
+            </div>
+        </section>
+
+        <section id="page-settings" class="page hidden">
+            <div class="settings-grid">
+                <div class="card">
+                    <h3>Graphics</h3>
+                    <div id="gpuList" class="gpu-list"></div>
+                    <p id="gpuStatus" class="muted small"></p>
+                </div>
+                <div class="card">
+                    <h3>Java</h3>
+                    <label>Java path</label>
+                    <input id="javaPath" type="text" />
+                    <button id="detectJavaBtn" class="btn ghost small">Detect Java</button>
+                    <p id="javaStatus" class="muted small"></p>
+                    <label>Memory (MB)</label>
+                    <input id="memoryMB" type="number" />
+                </div>
+                <div class="card">
+                    <h3>Game</h3>
+                    <label>Game directory</label>
+                    <input id="gameDir" type="text" />
+                    <label>Window preset</label>
+                    <select id="windowPreset">
+                        <option value="1280x720">1280 × 720 (HD)</option>
+                        <option value="1600x900" selected>1600 × 900 (HD+)</option>
+                        <option value="1920x1080">1920 × 1080 (Full HD)</option>
+                        <option value="2560x1440">2560 × 1440 (2K)</option>
+                        <option value="custom">Custom</option>
+                    </select>
+                    <div class="field-row">
+                        <div><label>Width</label><input id="windowWidth" type="number" min="320" max="7680" /></div>
+                        <div><label>Height</label><input id="windowHeight" type="number" min="240" max="4320" /></div>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3>Updates</h3>
+                    <label class="checkbox"><input id="autoUpdate" type="checkbox"> Auto-update</label>
+                    <button id="openReleases" class="btn ghost">Open releases</button>
+                </div>
+                <div class="card">
+                    <h3>Launcher</h3>
+                    <label>After run</label>
+                    <div class="segmented">
+                        <label class="seg"><input type="radio" name="afterRun" value="hide" hidden><span>Hide</span></label>
+                        <label class="seg"><input type="radio" name="afterRun" value="close" hidden><span>Close</span></label>
+                        <label class="seg"><input type="radio" name="afterRun" value="appear" hidden><span>Appear</span></label>
+                    </div>
+                </div>
+            </div>
+            <div class="actions">
+                <button id="saveBtn" class="btn primary">Save settings</button>
+                <pre id="saveStatus"></pre>
+            </div>
+        </section>
+    </main>
+</div>
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>

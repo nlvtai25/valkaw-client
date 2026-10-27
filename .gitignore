@@ -1,0 +1,26 @@
+# build output
+valkaw-client/.gradle/
+valkaw-client/build/
+valkaw-launcher/build/
+valkaw-launcher/frontend/node_modules/
+valkaw-launcher/frontend/dist/
+
+# build inputs that ship as release assets, not as source
+valkaw-launcher/assets/clients/
+
+# local notes and read-only vanilla reference
+AGENTS.md
+docs/
+.directory
+MCP-Reborn/
+
+# editors and OS
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+
+# stray go build output
+valkaw-launcher/valkaw-launcher
+valkaw-launcher/frontend/package.json.md5

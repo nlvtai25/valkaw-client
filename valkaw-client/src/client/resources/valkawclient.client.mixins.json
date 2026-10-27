@@ -1,0 +1,28 @@
+{
+	"required": true,
+	"package": "com.valkaw.client.mixin",
+	"compatibilityLevel": "JAVA_21",
+	"client": [
+		"MinecraftScreenMixin",
+		"GuiHudMixin",
+		"GuiCrosshairMixin",
+		"GameRendererMixin",
+		"ScreenEffectRendererMixin",
+		"ChatComponentMixin",
+		"ChatSymbolMixin",
+		"MouseHandlerMixin",
+		"CameraMixin",
+		"LightTextureMixin",
+		"MultiPlayerGameModeMixin",
+		"LevelRendererMixin",
+		"FogRendererAccessor",
+		"WaterFogEnvironmentMixin",
+		"LavaFogEnvironmentMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	},
+	"overwrites": {
+		"requireAnnotations": true
+	}
+}

@@ -1,0 +1,96 @@
+plugins {
+	id 'net.fabricmc.fabric-loom-remap' version "${loom_version}"
+	id 'maven-publish'
+}
+
+repositories {
+	maven {
+		url = "https://api.modrinth.com/maven"
+		content { includeGroup "maven.modrinth" }
+	}
+}
+
+def valkawVariant = (project.findProperty("valkaw_variant") ?: "sodium").toString()
+
+loom {
+	splitEnvironmentSourceSets()
+	enableTransitiveAccessWideners = false
+
+	mods {
+		"valkawclient" {
+			sourceSet sourceSets.main
+			sourceSet sourceSets.client
+		}
+	}
+}
+
+dependencies {
+	// To change the versions see the gradle.properties file
+	minecraft "com.mojang:minecraft:${project.minecraft_version}"
+	mappings loom.officialMojangMappings()
+	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+
+	// Fabric API. This is technically optional, but you probably want it anyway.
+	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+
+	// Jar-in-jar: one client jar carries its own dependencies.
+	include "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+
+	// Shared optimization mods. Tick/network/RAM only; no renderer conflicts.
+	[
+		"maven.modrinth:dynamic-fps:3.11.6",
+		"maven.modrinth:lithium:mc1.21.11-0.21.4-fabric",
+		"maven.modrinth:ferrite-core:8.2.0-fabric",
+		"maven.modrinth:krypton:0.2.10",
+		"maven.modrinth:badoptimizations:2.4.1",
+		"maven.modrinth:clumps:29.0.0.1",
+		"maven.modrinth:c2me-fabric:0.4.0-alpha.0.28+1.21.11",
+	].each { include it }
+
+	if (valkawVariant == "vulkan") {
+		[
+			"maven.modrinth:vulkanmod:0.6.8+1.21.11",
+			"maven.modrinth:not-enough-vulkan:1.6.2+1.21.11",
+			"maven.modrinth:beryl:0.2.1-alpha",
+		].each { include it }
+	} else {
+		[
+			"maven.modrinth:sodium:mc1.21.11-0.8.15-beta.1-fabric",
+			"maven.modrinth:sodium-extra:mc1.21.11-0.9.6-beta.1+fabric",
+			"maven.modrinth:reeses-sodium-options:mc1.21.11-2.2.6-beta.1+fabric",
+			"maven.modrinth:iris:1.10.8+1.21.11-fabric",
+			"maven.modrinth:immediatelyfast:1.14.3+1.21.11-fabric",
+			"maven.modrinth:moreculling:1.6.2",
+			"maven.modrinth:cloth-config:21.11.153+fabric",
+			"maven.modrinth:particle-core:0.3.2+1.21.11",
+			"maven.modrinth:fzzy-config:0.7.7+1.21.11",
+			"maven.modrinth:fabric-language-kotlin:1.14.2+kotlin.2.4.21",
+		].each { include it }
+	}
+}
+
+tasks.named("remapJar") {
+	archiveClassifier = valkawVariant
+	notCompatibleWithConfigurationCache("Loom nested jar generation")
+}
+tasks.matching { it.name == "processIncludeJars" }.configureEach {
+	notCompatibleWithConfigurationCache("Loom nested jar generation")
+}
+
+tasks.withType(JavaCompile).configureEach {
+	it.options.release = 21
+}
+
+def modVersion = project.version
+processResources {
+	inputs.property "version", modVersion
+	filesMatching("fabric.mod.json") {
+		expand "version": modVersion
+	}
+}
+
+java {
+	withSourcesJar()
+	sourceCompatibility = JavaVersion.VERSION_21
+	targetCompatibility = JavaVersion.VERSION_21
+}

@@ -1,0 +1,31 @@
+{
+	"schemaVersion": 1,
+	"id": "valkawclient",
+	"version": "${version}",
+	"name": "Valkaw Client",
+	"description": "Optimized Minecraft client (HUD, performance, utility).",
+	"authors": ["Valkaw"],
+	"contact": {
+		"sources": "https://github.com/nlvtai25/valkaw-client"
+	},
+	"license": "MIT",
+	"icon": "assets/valkawclient/icon.png",
+	"environment": "client",
+	"entrypoints": {
+		"client": [
+			"com.valkaw.client.ValkawClient"
+		]
+	},
+	"mixins": [
+		{
+			"config": "valkawclient.client.mixins.json",
+			"environment": "client"
+		}
+	],
+	"depends": {
+		"fabricloader": ">=0.20.1",
+		"minecraft": "~1.21.11",
+		"java": ">=21",
+		"fabric-api": "*"
+	}
+}
