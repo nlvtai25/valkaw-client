@@ -6,11 +6,10 @@ Two profiles ship from the same source: **Sodium** for OpenGL and **VulkanMod** 
 
 ## Download
 
-Grab everything from [Releases](https://github.com/nlvtai25/valkaw-client/releases).
+Client jars come from [Releases](https://github.com/nlvtai25/valkaw-client/releases). The launcher binary lives in this repository at `assets/downloads/valkaw-launcher-v1.0.0-linux-amd64`.
 
 | File | What it is |
 | --- | --- |
-| `valkaw-launcher-v1.0.0-linux-amd64` | Launcher binary |
 | `valkawclient-1.0.0-sodium.jar` | Sodium profile client |
 | `valkawclient-1.0.0-vulkan.jar` | Vulkan profile client |
 
