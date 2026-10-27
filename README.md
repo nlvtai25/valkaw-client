@@ -45,7 +45,7 @@ Output lands in `valkaw-client/build/libs/`. Both variants read the same `src/` 
 
 ## Build the launcher
 
-The launcher embeds the two client jars from `valkaw-launcher/assets/clients/1.21.11/`, so build the client first and copy the jars there.
+The launcher downloads the client jar from the latest release at install time, so it builds on its own.
 
 ```sh
 cd valkaw-launcher
