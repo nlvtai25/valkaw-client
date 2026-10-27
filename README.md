@@ -59,7 +59,6 @@ go build -o build/bin/valkaw-launcher .
 ```
 valkaw-client/     Fabric mod source, one tree, two build variants
 valkaw-launcher/   Go + Wails launcher
-MODULES.txt        Module spec and settings reference
 ```
 
 ## License
