@@ -6,7 +6,6 @@ valkaw-launcher/frontend/node_modules/
 valkaw-launcher/frontend/dist/
 
 # build inputs that ship as release assets, not as source
-valkaw-launcher/assets/clients/
 
 # local notes and read-only vanilla reference
 AGENTS.md

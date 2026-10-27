@@ -23,15 +23,45 @@ func TestProfilePaths(t *testing.T) {
 }
 
 func TestClientVersions(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	dir := filepath.Dir(clientJarPath(defaultMCVersion, "vk"))
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(clientJarPath(defaultMCVersion, "vk"), []byte("x"), 0644); err != nil {
+		t.Fatal(err)
+	}
 	got := availableVersions()
 	if len(got) == 0 || got[0] != defaultMCVersion {
 		t.Fatalf("versions = %v", got)
 	}
-	if _, err := clientJar(defaultMCVersion, "gl"); err != nil {
-		t.Fatal(err)
-	}
 	if _, err := clientJar(defaultMCVersion, "vk"); err != nil {
 		t.Fatal(err)
+	}
+	if _, err := clientJar(defaultMCVersion, "gl"); err == nil {
+		t.Fatal("expected missing sodium build")
+	}
+}
+
+// ensureClientJar must keep the cached build when the release lookup fails.
+func TestEnsureClientJarFallsBackToCache(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	old := releaseDL
+	releaseDL = "http://127.0.0.1:1/"
+	defer func() { releaseDL = old }()
+
+	p := clientJarPath(defaultMCVersion, "gl")
+	if err := os.MkdirAll(filepath.Dir(p), 0755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(p, []byte("cached"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	if err := ensureClientJar(defaultMCVersion, "gl"); err != nil {
+		t.Fatalf("fallback failed: %v", err)
+	}
+	if b, _ := os.ReadFile(p); string(b) != "cached" {
+		t.Fatal("cached build was replaced")
 	}
 }
 
@@ -67,6 +97,24 @@ func TestFullscreenEnabled(t *testing.T) {
 }
 
 func TestInstallModsJij(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	p := clientJarPath("1.21.11", "vk")
+	if err := os.MkdirAll(filepath.Dir(p), 0755); err != nil {
+		t.Fatal(err)
+	}
+	var buf bytes.Buffer
+	zw := zip.NewWriter(&buf)
+	w, err := zw.Create("META-INF/jars/vulkanmod-0.6.8.jar")
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, _ = w.Write([]byte("x"))
+	if err := zw.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(p, buf.Bytes(), 0644); err != nil {
+		t.Fatal(err)
+	}
 	a := &App{config: Config{GameDir: t.TempDir(), Version: "1.21.11", Profile: "vk"}}
 	if err := a.installMods("vk"); err != nil {
 		t.Fatal(err)

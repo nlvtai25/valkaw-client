@@ -18,6 +18,15 @@ import (
 	wailsruntime "github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
+const (
+	repoDownloads = "https://github.com/nlvtai25/valkaw-client/raw/main/assets/downloads/"
+)
+
+var (
+	releasesAPI = "https://api.github.com/repos/nlvtai25/valkaw-client/releases/latest"
+	releaseDL   = "https://github.com/nlvtai25/valkaw-client/releases/latest/download/"
+)
+
 // Config holds launcher settings.
 type Config struct {
 	LauncherVersion string `json:"launcherVersion"`
@@ -175,7 +184,7 @@ type ghRelease struct {
 
 func fetchLatestRelease() (*ghRelease, error) {
 	client := &http.Client{Timeout: 10 * time.Second}
-	req, _ := http.NewRequest(http.MethodGet, "https://api.github.com/repos/nlvtai25/valkaw-client/releases/latest", nil)
+	req, _ := http.NewRequest(http.MethodGet, releasesAPI, nil)
 	req.Header.Set("User-Agent", "ValkawLauncher/1.0")
 	resp, err := client.Do(req)
 	if err != nil {
@@ -235,33 +244,10 @@ func (a *App) CheckUpdate() string {
 	return "update available: " + r.TagName + " (current " + a.config.LauncherVersion + ")"
 }
 
-func updateAsset(r *ghRelease) (string, string) {
-	ext := ""
-	if runtime.GOOS == "windows" {
-		ext = ".exe"
-	}
-	names := []string{
-		fmt.Sprintf("valkaw-launcher-%s-%s%s", runtime.GOOS, runtime.GOARCH, ext),
-		fmt.Sprintf("valkaw-launcher-%s%s", runtime.GOOS, ext),
-		"valkaw-launcher" + ext,
-	}
-	for _, want := range names {
-		for _, asset := range r.Assets {
-			if strings.EqualFold(asset.Name, want) {
-				return asset.Name, asset.URL
-			}
-		}
-	}
-	for _, asset := range r.Assets {
-		name := strings.ToLower(asset.Name)
-		if strings.Contains(name, "launcher") && strings.Contains(name, runtime.GOOS) {
-			return asset.Name, asset.URL
-		}
-	}
-	return "", ""
-}
+
 
 // InstallUpdate downloads the latest launcher binary and restarts it.
+// InstallUpdate downloads the latest launcher binary from the repository copy.
 func (a *App) InstallUpdate() string {
 	r, err := fetchLatestRelease()
 	if err != nil {
@@ -270,10 +256,8 @@ func (a *App) InstallUpdate() string {
 	if !newerVersion(r.TagName, a.config.LauncherVersion) {
 		return "already up to date"
 	}
-	name, assetURL := updateAsset(r)
-	if assetURL == "" {
-		return "error: no launcher asset for " + runtime.GOOS + "/" + runtime.GOARCH
-	}
+	name := fmt.Sprintf("valkaw-launcher-%s-%s-%s", r.TagName, runtime.GOOS, runtime.GOARCH)
+	assetURL := repoDownloads + name
 	exe, err := os.Executable()
 	if err != nil {
 		return "error: " + err.Error()

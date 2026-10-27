@@ -69,9 +69,53 @@ dependencies {
 	}
 }
 
+// Mods Modrinth's Maven can't serve (bad metadata) or that ship outside the Maven list.
+// Nested into the client jar after remapping so one jar carries everything.
+def valkawExtras = (valkawVariant == "vulkan" ? [
+	"greedy-meshing-0.6.1+1.21.11.jar",
+	"lambdynamiclights-4.9.1+1.21.11.jar",
+	"ImmediatelyFast-Fabric-1.14.3+1.21.11.jar",
+] : [
+	"entityculling-fabric-1.11.3-mc1.21.11.jar",
+	"greedy-meshing-0.6.1+1.21.11.jar",
+	"lambdynamiclights-4.9.1+1.21.11.jar",
+	"sodiumfpscapfix-fabric-1.21.11-1.0.37.jar",
+])
+
 tasks.named("remapJar") {
 	archiveClassifier = valkawVariant
 	notCompatibleWithConfigurationCache("Loom nested jar generation")
+	doLast {
+		def out = archiveFile.get().asFile
+		def extras = valkawExtras.collect { new File(projectDir, "libs/" + it) }
+		extras.each { if (!it.exists()) throw new GradleException("missing nested mod: " + it) }
+		def tmp = new File(out.parentFile, out.name + ".tmp")
+		def zin = new java.util.zip.ZipInputStream(new FileInputStream(out))
+		def zout = new java.util.zip.ZipOutputStream(new FileOutputStream(tmp))
+		def entry
+		while ((entry = zin.nextEntry) != null) {
+			byte[] data = zin.readAllBytes()
+			if (entry.name == "fabric.mod.json") {
+				def json = new groovy.json.JsonSlurper().parseText(new String(data, "UTF-8"))
+				json.jars = (json.jars ?: []) + extras.collect { [file: "META-INF/jars/" + it.name] }
+				data = new groovy.json.JsonOutput().toJson(json).getBytes("UTF-8")
+			}
+			zout.putNextEntry(new java.util.zip.ZipEntry(entry.name))
+			zout.write(data)
+			zout.closeEntry()
+		}
+		extras.each {
+			zout.putNextEntry(new java.util.zip.ZipEntry("META-INF/jars/" + it.name))
+			zout.write(it.bytes)
+			zout.closeEntry()
+		}
+		zin.close()
+		zout.close()
+		if (!tmp.renameTo(out)) {
+			out.delete()
+			tmp.renameTo(out)
+		}
+	}
 }
 tasks.matching { it.name == "processIncludeJars" }.configureEach {
 	notCompatibleWithConfigurationCache("Loom nested jar generation")

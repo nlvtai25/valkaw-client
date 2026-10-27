@@ -4,13 +4,11 @@ import (
 	"archive/zip"
 	"context"
 	"crypto/sha1"
-	"embed"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
-	"io/fs"
 	"net/http"
 	"os"
 	"os/exec"
@@ -29,14 +27,12 @@ import (
 
 const (
 	defaultMCVersion   = "1.21.11"
+	clientVersion      = "1.0.0"
 	fabricLoader       = "0.20.1"
 	fabricInstaller    = "1.0.1"
 	versionManifestURL = "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json"
 	fabricInstallerURL = "https://maven.fabricmc.net/net/fabricmc/fabric-installer/1.0.1/fabric-installer-1.0.1.jar"
 )
-
-//go:embed assets/clients/*/*.jar
-var clientFS embed.FS
 
 var httpClient = &http.Client{Timeout: 30 * time.Minute}
 
@@ -263,19 +259,48 @@ func (a *App) gamePath(profile string, parts ...string) string {
 	return filepath.Join(append([]string{a.baseDir(), profileDir(profile)}, parts...)...)
 }
 
+func clientCacheDir() string {
+	return filepath.Join(configDir(), "clients")
+}
+
+func clientJarPath(version, profile string) string {
+	return filepath.Join(clientCacheDir(), version, profileDir(profile)+".jar")
+}
+
 func clientJar(version, profile string) ([]byte, error) {
-	return clientFS.ReadFile("assets/clients/" + version + "/" + profileDir(profile) + ".jar")
+	return os.ReadFile(clientJarPath(version, profile))
+}
+
+// ensureClientJar pulls the client build from the latest GitHub release into the
+// local cache. An existing cache copy is used when the download fails.
+func ensureClientJar(version, profile string) error {
+	path := clientJarPath(version, profile)
+	want := fmt.Sprintf("valkawclient-%s-%s.jar", clientVersion, profileDir(profile))
+	tmp := path + ".new"
+	_ = os.Remove(tmp)
+	if err := downloadFile(releaseDL+want, tmp, 0, "", nil); err != nil {
+		_ = os.Remove(tmp)
+		if _, e := os.Stat(path); e == nil {
+			return nil
+		}
+		return err
+	}
+	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+		return err
+	}
+	if err := os.Rename(tmp, path); err != nil {
+		_ = os.Remove(tmp)
+		return err
+	}
+	return nil
 }
 
 func availableVersions() []string {
-	matches, _ := fs.Glob(clientFS, "assets/clients/*/*.jar")
-	seen := map[string]bool{}
-	out := make([]string, 0, len(matches))
-	for _, m := range matches {
-		v := filepath.Base(filepath.Dir(m))
-		if !seen[v] {
-			seen[v] = true
-			out = append(out, v)
+	dirs, _ := os.ReadDir(clientCacheDir())
+	out := make([]string, 0, len(dirs))
+	for _, d := range dirs {
+		if d.IsDir() {
+			out = append(out, d.Name())
 		}
 	}
 	sort.Slice(out, func(i, j int) bool {
@@ -316,8 +341,9 @@ func (a *App) InstallClient(profile string) string {
 	if profile != "gl" && profile != "vk" {
 		profile = "gl"
 	}
-	if _, err := clientJar(a.gameVersion(), profile); err != nil {
-		return "error: no Valkaw client build for " + a.gameVersion()
+	a.emitInstall("Fetching Valkaw client...", 1)
+	if err := ensureClientJar(a.gameVersion(), profile); err != nil {
+		return "error: " + err.Error()
 	}
 	java, major, err := findJava(a.config.JavaPath)
 	if err != nil {
