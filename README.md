@@ -63,4 +63,4 @@ valkaw-launcher/   Go + Wails launcher
 
 ## License
 
-Client sources under `valkaw-client/` (see `valkaw-client/LICENSE`). Bundled third-party mods keep their own licenses.
+Apache License 2.0 — see [`LICENSE`](LICENSE). Bundled third-party mods keep their own licenses.
