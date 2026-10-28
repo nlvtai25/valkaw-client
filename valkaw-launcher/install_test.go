@@ -46,9 +46,10 @@ func TestClientVersions(t *testing.T) {
 // ensureClientJar must keep the cached build when the release lookup fails.
 func TestEnsureClientJarFallsBackToCache(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
-	old := releaseDL
+	oldDL, oldPage := releaseDL, releasesPage
 	releaseDL = "http://127.0.0.1:1/"
-	defer func() { releaseDL = old }()
+	releasesPage = "http://127.0.0.1:1/"
+	defer func() { releaseDL, releasesPage = oldDL, oldPage }()
 
 	p := clientJarPath(defaultMCVersion, "gl")
 	if err := os.MkdirAll(filepath.Dir(p), 0755); err != nil {
@@ -62,6 +63,20 @@ func TestEnsureClientJarFallsBackToCache(t *testing.T) {
 	}
 	if b, _ := os.ReadFile(p); string(b) != "cached" {
 		t.Fatal("cached build was replaced")
+	}
+}
+
+func TestTagVersion(t *testing.T) {
+	cases := map[string]string{
+		"https://github.com/nlvtai25/valkaw-client/releases/tag/v1.0.1": "1.0.1",
+		"https://github.com/nlvtai25/valkaw-client/releases/tag/1.0.1":  "1.0.1",
+		"": "",
+		"https://github.com/nlvtai25/valkaw-client/releases/latest": "",
+	}
+	for in, want := range cases {
+		if got := tagVersion(in); got != want {
+			t.Fatalf("tagVersion(%q) = %q, want %q", in, got, want)
+		}
 	}
 }
 

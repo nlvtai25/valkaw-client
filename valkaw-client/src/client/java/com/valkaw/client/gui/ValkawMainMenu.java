@@ -23,10 +23,12 @@ public class ValkawMainMenu extends Screen {
 	private static final Logger LOGGER = LoggerFactory.getLogger("valkawclient");
 	private static final boolean BERYL = FabricLoader.getInstance().isModLoaded("beryl");
 	private static final Style MONO = Style.EMPTY.withFont(new FontDescription.Resource(Minecraft.UNIFORM_FONT));
+	private static final String VERSION = FabricLoader.getInstance().getModContainer("valkawclient")
+			.map(container -> "v" + container.getMetadata().getVersion().getFriendlyString()).orElse("v1.0.1");
 	private static final Component BRAND = Component.literal("VALKAW").withStyle(MONO);
 	private static final Component BRAND_TAIL = Component.literal("CLIENT").withStyle(MONO);
 	private static final Component SUBTITLE = Component.literal("1.21.11  //  FABRIC").withStyle(MONO);
-	private static final Component BUILD = Component.literal("BUILD v1.0.0").withStyle(MONO);
+	private static final Component BUILD = Component.literal("BUILD " + VERSION).withStyle(MONO);
 	private static final Component NAV_LABEL = Component.literal("// NAVIGATION").withStyle(MONO);
 	private static final Component SESSION_LABEL = Component.literal("// SESSION").withStyle(MONO);
 	private static final Component READY = Component.literal("READY TO PLAY").withStyle(MONO);
@@ -34,13 +36,13 @@ public class ValkawMainMenu extends Screen {
 	private static final Component FABRIC_VALUE = Component.literal("0.20.1").withStyle(MONO);
 	private static final Component RENDER_LABEL = Component.literal("RENDERER").withStyle(MONO);
 	private static final Component CLIENT_LABEL = Component.literal("CLIENT BUILD").withStyle(MONO);
-	private static final Component CLIENT_VALUE = Component.literal("v1.0.0").withStyle(MONO);
+	private static final Component CLIENT_VALUE = Component.literal(VERSION).withStyle(MONO);
 	private static final Component USER_LABEL = Component.literal("USER").withStyle(MONO);
 	private static final Component MEMORY_LABEL = Component.literal("MEMORY").withStyle(MONO);
 	private static final Component WINDOW_LABEL = Component.literal("WINDOW").withStyle(MONO);
 	private static final Component JAVA_LABEL = Component.literal("JAVA").withStyle(MONO);
 	private static final Component NOMINAL = Component.literal("SYSTEM NOMINAL").withStyle(MONO);
-	private static final Component FOOTER_LEFT = Component.literal("VALKAW CLIENT  v1.0.0").withStyle(MONO);
+	private static final Component FOOTER_LEFT = Component.literal("VALKAW CLIENT  " + VERSION).withStyle(MONO);
 	private static final Component FOOTER_RIGHT = Component.literal("FABRIC 0.20.1").withStyle(MONO);
 
 	private static final int CYAN = 0xFF7DF9FF;

@@ -12,12 +12,12 @@ public class ValkawClient implements ClientModInitializer {
 		ClientTickEvents.START_CLIENT_TICK.register(client -> ModuleManager.get().tick());
 	}
 
-	/** Window title: Valkaw <profile> <version>, e.g. Valkaw Sodium v1.0.0. */
+	/** Window title: Valkaw <profile> <version>, e.g. Valkaw Sodium v1.0.1. */
 	public static String windowTitle() {
 		String profile = FabricLoader.getInstance().isModLoaded("vulkanmod") ? "Vulkan" : "Sodium";
 		String version = FabricLoader.getInstance().getModContainer("valkawclient")
 				.map(container -> container.getMetadata().getVersion().getFriendlyString())
-				.orElse("1.0.0");
+				.orElse("1.0.1");
 		if (!version.startsWith("v")) {
 			version = "v" + version;
 		}

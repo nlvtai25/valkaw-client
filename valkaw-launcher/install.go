@@ -10,8 +10,10 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"regexp"
 	"runtime"
@@ -27,7 +29,6 @@ import (
 
 const (
 	defaultMCVersion   = "1.21.11"
-	clientVersion      = "1.0.0"
 	fabricLoader       = "0.20.1"
 	fabricInstaller    = "1.0.1"
 	versionManifestURL = "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json"
@@ -271,14 +272,58 @@ func clientJar(version, profile string) ([]byte, error) {
 	return os.ReadFile(clientJarPath(version, profile))
 }
 
-// ensureClientJar pulls the client build from the latest GitHub release into the
-// local cache. An existing cache copy is used when the download fails.
+// latestClientVersion reads the tag from the /releases/latest redirect. The static
+// URL is used instead of the REST API because unauthenticated API calls hit the
+// 60 requests/hour/IP limit.
+func latestClientVersion() (string, error) {
+	client := &http.Client{
+		Timeout: 30 * time.Second,
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, releasesPage, nil)
+	if err != nil {
+		return "", err
+	}
+	req.Header.Set("User-Agent", "ValkawLauncher/1.0")
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	tag := tagVersion(resp.Header.Get("Location"))
+	if tag == "" {
+		return "", fmt.Errorf("no release tag at %s (HTTP %d)", releasesPage, resp.StatusCode)
+	}
+	return tag, nil
+}
+
+// tagVersion turns .../releases/tag/v1.0.1 into 1.0.1.
+func tagVersion(location string) string {
+	u, err := url.Parse(location)
+	if err != nil {
+		return ""
+	}
+	tag := strings.TrimPrefix(path.Base(u.Path), "v")
+	if tag == "." || tag == "/" || tag == "latest" {
+		return ""
+	}
+	return tag
+}
+
+// ensureClientJar pulls the newest client build from GitHub releases into the local
+// cache. An existing cache copy is used when the download fails.
 func ensureClientJar(version, profile string) error {
 	path := clientJarPath(version, profile)
-	want := fmt.Sprintf("valkawclient-%s-%s.jar", clientVersion, profileDir(profile))
 	tmp := path + ".new"
 	_ = os.Remove(tmp)
-	if err := downloadFile(releaseDL+want, tmp, 0, "", nil); err != nil {
+	clientVersion, err := latestClientVersion()
+	if err == nil {
+		want := fmt.Sprintf("valkawclient-%s-%s.jar", clientVersion, profileDir(profile))
+		err = downloadFile(releaseDL+want, tmp, 0, "", nil)
+	}
+	if err != nil {
 		_ = os.Remove(tmp)
 		if _, e := os.Stat(path); e == nil {
 			return nil

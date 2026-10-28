@@ -28,6 +28,8 @@ public class ChatComponentMixin {
 		if (!(module instanceof ChatTimestampsModule timestamps) || !timestamps.isEnabled()) {
 			return message;
 		}
-		return Component.literal(timestamps.stamp()).withStyle(ChatFormatting.GRAY).append(message);
+		return Component.empty()
+				.append(Component.literal(timestamps.stamp() + "§r").withStyle(ChatFormatting.WHITE))
+				.append(message);
 	}
 }

@@ -23,8 +23,9 @@ const (
 )
 
 var (
-	releasesAPI = "https://api.github.com/repos/nlvtai25/valkaw-client/releases/latest"
-	releaseDL   = "https://github.com/nlvtai25/valkaw-client/releases/latest/download/"
+	releasesAPI  = "https://api.github.com/repos/nlvtai25/valkaw-client/releases/latest"
+	releasesPage = "https://github.com/nlvtai25/valkaw-client/releases/latest"
+	releaseDL    = "https://github.com/nlvtai25/valkaw-client/releases/latest/download/"
 )
 
 // Config holds launcher settings.
@@ -54,7 +55,7 @@ type App struct {
 func NewApp() *App {
 	a := &App{}
 	a.config = Config{
-		LauncherVersion: "v1.0.0",
+		LauncherVersion: "v1.0.1",
 		JavaPath:        "java",
 		GameDir:         defaultGameDir(),
 		Version:         defaultMCVersion,
@@ -81,7 +82,7 @@ func (a *App) startup(ctx context.Context) {
 		_ = json.Unmarshal(data, &a.config)
 	}
 	if a.config.LauncherVersion == "" {
-		a.config.LauncherVersion = "v1.0.0"
+		a.config.LauncherVersion = "v1.0.1"
 	}
 	if a.config.MemoryMB == 0 {
 		a.config.MemoryMB = 4096
@@ -243,8 +244,6 @@ func (a *App) CheckUpdate() string {
 	}
 	return "update available: " + r.TagName + " (current " + a.config.LauncherVersion + ")"
 }
-
-
 
 // InstallUpdate downloads the latest launcher binary and restarts it.
 // InstallUpdate downloads the latest launcher binary from the repository copy.

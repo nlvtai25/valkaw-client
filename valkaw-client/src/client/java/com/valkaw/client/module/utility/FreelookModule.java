@@ -1,26 +1,47 @@
 package com.valkaw.client.module.utility;
 
+import com.google.gson.JsonObject;
 import com.valkaw.client.module.Category;
 import com.valkaw.client.module.Module;
+import com.valkaw.client.module.ModuleManager;
+import com.valkaw.client.module.Setting;
 import com.mojang.blaze3d.platform.InputConstants;
+import java.util.List;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.util.Mth;
 import org.lwjgl.glfw.GLFW;
 
-/** Hold-to-look: moves only the camera, leaves the player rotation untouched. */
+/**
+ * Toggle Perspective with an unlocked camera: the view turns on its own while the
+ * player body keeps facing where it was. {@code CameraMixin} puts the camera behind
+ * (or in front of) the player using the freelook rotation.
+ */
 public class FreelookModule extends Module {
 	private static float yaw;
 	private static float pitch;
+	private boolean front;
+	private boolean toggleMode;
 
 	public FreelookModule() {
 		super("freelook", "Freelook", Category.UTILITY);
 		setKey(GLFW.GLFW_KEY_LEFT_ALT);
 	}
 
+	private static FreelookModule self() {
+		Module module = ModuleManager.get().byId("freelook");
+		return module instanceof FreelookModule freelook ? freelook : null;
+	}
+
 	public static boolean active() {
-		Module module = com.valkaw.client.module.ModuleManager.get().byId("freelook");
-		return module instanceof FreelookModule freelook && freelook.holding();
+		FreelookModule freelook = self();
+		return freelook != null && freelook.isEnabled() && (freelook.toggleMode || freelook.holding());
+	}
+
+	/** True for the mirrored third-person view (in front of the player, looking back). */
+	public static boolean front() {
+		FreelookModule freelook = self();
+		return freelook != null && freelook.front;
 	}
 
 	public static float yaw() {
@@ -44,8 +65,15 @@ public class FreelookModule extends Module {
 
 	private boolean holding() {
 		Minecraft mc = Minecraft.getInstance();
-		return isEnabled() && key() >= 0 && mc.screen == null
-				&& InputConstants.isKeyDown(mc.getWindow(), key());
+		return key() >= 0 && mc.screen == null && InputConstants.isKeyDown(mc.getWindow(), key());
+	}
+
+	@Override
+	public List<Setting> settings() {
+		return List.of(
+				Setting.choice("WHEN PRESSING", () -> front ? "THIRD-PERSON FRONT" : "THIRD-PERSON BACK",
+						() -> front = !front),
+				Setting.choice("MODE", () -> toggleMode ? "TOGGLE" : "PRESSING", () -> toggleMode = !toggleMode));
 	}
 
 	@Override
@@ -59,9 +87,25 @@ public class FreelookModule extends Module {
 
 	@Override
 	public void onTick() {
-		if (isEnabled() && !holding()) {
+		if (!toggleMode && isEnabled() && !holding()) {
 			setEnabled(false);
-			com.valkaw.client.module.ModuleManager.get().save();
+			ModuleManager.get().save();
+		}
+	}
+
+	@Override
+	public void writeExtra(JsonObject json) {
+		json.addProperty("front", front);
+		json.addProperty("toggleMode", toggleMode);
+	}
+
+	@Override
+	public void readExtra(JsonObject json) {
+		if (json.has("front")) {
+			front = json.get("front").getAsBoolean();
+		}
+		if (json.has("toggleMode")) {
+			toggleMode = json.get("toggleMode").getAsBoolean();
 		}
 	}
 }

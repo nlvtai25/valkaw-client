@@ -30,6 +30,10 @@ public class ModuleOptionsScreen extends Screen {
 	private static final int BG_TOP = 0xFF04060D;
 	private static final int BG_BOTTOM = 0xFF0A1020;
 	private static final int ROW_H = 18;
+	/** Modules whose output is not styled text, so the colour/prefix panel is pointless. */
+	private static final java.util.Set<String> NO_STYLE = java.util.Set.of("freelook", "copy-chat",
+			"chat-timestamps", "no-bobbing", "no-hurt-cam", "copy-coords", "no-fire", "clear-water-lava",
+			"no-pumpkin", "zoom", "toggle-sprint", "toggle-sneak");
 
 	private final Screen parent;
 	private final Module module;
@@ -63,11 +67,12 @@ public class ModuleOptionsScreen extends Screen {
 		panelH = Math.min(340, height - 16);
 		panelX = (width - panelW) / 2;
 		panelY = (height - panelH) / 2;
+		boolean styled = styled();
 		styleX = panelX + 14;
 		styleY = panelY + 54;
-		optionsX = panelX + 226;
+		optionsX = styled ? panelX + 226 : panelX + 14;
 		optionsY = panelY + 54;
-		optionsW = panelW - 240;
+		optionsW = panelW - (styled ? 240 : 28);
 		optionsH = panelH - 84;
 		footerY = panelY + panelH - 26;
 	}
@@ -93,7 +98,9 @@ public class ModuleOptionsScreen extends Screen {
 		graphics.drawString(font, module.category().name() + " // OPTIONS", panelX + 16, panelY + 23, CYAN, false);
 		graphics.fill(panelX + 16, panelY + 38, panelX + panelW - 16, panelY + 39, 0x337DF9FF);
 
-		drawStyle(graphics, mouseX, mouseY);
+		if (styled()) {
+			drawStyle(graphics, mouseX, mouseY);
+		}
 		drawOptions(graphics, mouseX, mouseY);
 
 		boolean backHover = over(mouseX, mouseY, panelX + 14, footerY, 74, 18);
@@ -279,6 +286,9 @@ public class ModuleOptionsScreen extends Screen {
 		if (editing != null) {
 			return true;
 		}
+		if (!styled()) {
+			return clickOption(mx, my) || super.mouseClicked(event, doubleClick);
+		}
 		TextStyle style = module.style();
 		TextStyle target = style.useGlobal() ? ModuleManager.get().globalStyle() : style;
 		if (over(mx, my, styleX, styleY, 198, 15)) {
@@ -348,6 +358,10 @@ public class ModuleOptionsScreen extends Screen {
 			return true;
 		}
 
+		return clickOption(mx, my) || super.mouseClicked(event, doubleClick);
+	}
+
+	private boolean clickOption(double mx, double my) {
 		if (my >= optionsY && my < optionsY + optionsH && mx >= optionsX && mx < optionsX + optionsW) {
 			List<Setting> settings = settings();
 			int index = (int) ((my - optionsY) / ROW_H) + scroll;
@@ -359,7 +373,6 @@ public class ModuleOptionsScreen extends Screen {
 				} else if (setting.type() == Setting.Type.SLIDER) {
 					slider = setting;
 					setSlider(setting, mx);
-					return true;
 				} else if (setting.type() == Setting.Type.BUTTON) {
 					setting.cycle();
 				} else {
@@ -373,7 +386,7 @@ public class ModuleOptionsScreen extends Screen {
 				return true;
 			}
 		}
-		return super.mouseClicked(event, doubleClick);
+		return false;
 	}
 
 	@Override
@@ -484,6 +497,10 @@ public class ModuleOptionsScreen extends Screen {
 
 	private boolean hasPrefix() {
 		return !module.id().equals("crosshair") && !module.id().equals("block-outline");
+	}
+
+	private boolean styled() {
+		return !NO_STYLE.contains(module.id());
 	}
 
 	private static boolean over(double mx, double my, int x, int y, int w, int h) {
