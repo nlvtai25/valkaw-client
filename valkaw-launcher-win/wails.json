@@ -1,0 +1,11 @@
+{
+  "$schema": "https://wails.io/schemas/config.v2.json",
+  "name": "valkaw-launcher-win",
+  "outputfilename": "valkaw-launcher-win",
+  "frontend:install": "echo using the frontend built in valkaw-launcher",
+  "frontend:build": "echo using the frontend built in valkaw-launcher",
+  "author": {
+    "name": "nlvtai25",
+    "email": ""
+  }
+}

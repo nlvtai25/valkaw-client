@@ -1,6 +1,6 @@
 import './style.css';
 
-import { GetConfig, SaveConfig, Launch, CheckUpdate, OpenReleases, InstallClient, CheckInstalled, DetectJava, InstallUpdate, GetVersions, ListGPUs, CheckRequirements, InstallJava } from '../wailsjs/go/main/App';
+import { GetConfig, SaveConfig, Launch, CheckUpdate, OpenReleases, InstallClient, CheckInstalled, DetectJava, InstallUpdate, GetVersions, ListGPUs, CheckRequirements, InstallJava, SetGpuPreference } from '../wailsjs/go/core/App';
 import { EventsOn, BrowserOpenURL } from '../wailsjs/runtime/runtime';
 
 const $ = (id) => document.getElementById(id);
@@ -25,6 +25,12 @@ let updateReady = false;
 
 async function loadConfig() {
     cfg = await GetConfig();
+    document.title = 'Valkaw Launcher ' + (cfg.launcherVersion || '');
+    $('launcherVer').textContent = 'Launcher ' + (cfg.launcherVersion || '');
+    const isWin = cfg.platform === 'windows';
+    $('gpuList').classList.toggle('hidden', isWin);
+    $('gpuWin').classList.toggle('hidden', !isWin);
+    $('gpuPref').value = String(cfg.gpuPref || 0);
     $('username').value = cfg.username || '';
     const profile = cfg.profile || 'gl';
     const radio = document.querySelector(`input[name="profile"][value="${profile}"]`);
@@ -61,6 +67,10 @@ function updateHeroMeta() {
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 async function loadGPUs() {
+    if (cfg.platform === 'windows') {
+        $('gpuStatus').textContent = 'The game follows the preference above from the next launch.';
+        return;
+    }
     const gpus = await ListGPUs();
     const items = [{ id: '', name: 'Auto (system default)', vendor: '' }, ...(gpus || [])];
     $('gpuList').innerHTML = items.map(g => `
@@ -81,6 +91,13 @@ $('gpuList').addEventListener('change', async (e) => {
     if (e.target.name !== 'gpu') return;
     cfg.gpu = e.target.value;
     const res = await SaveConfig(cfg);
+    $('gpuStatus').textContent = res === 'ok' ? 'Saved — applies on next launch.' : res;
+});
+
+$('gpuPref').addEventListener('change', async () => {
+    const pref = parseInt($('gpuPref').value) || 0;
+    const res = await SetGpuPreference(pref);
+    cfg.gpuPref = pref;
     $('gpuStatus').textContent = res === 'ok' ? 'Saved — applies on next launch.' : res;
 });
 
@@ -353,6 +370,7 @@ $('saveBtn').addEventListener('click', async () => {
     cfg.username = currentUsername();
     cfg.profile = document.querySelector('input[name="profile"]:checked').value;
     cfg.gpu = document.querySelector('input[name="gpu"]:checked')?.value || '';
+    cfg.gpuPref = parseInt($('gpuPref').value) || 0;
     const res = await SaveConfig(cfg);
     status.textContent = res;
     updateUserChip();

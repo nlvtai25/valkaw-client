@@ -6,7 +6,12 @@ Two profiles ship from the same source: **Sodium** for OpenGL and **VulkanMod** 
 
 ## Download
 
-Client jars come from [Releases](https://github.com/nlvtai25/valkaw-client/releases). The launcher binary lives in this repository at `assets/downloads/valkaw-launcher-v1.0.2-linux-amd64`.
+Client jars come from [Releases](https://github.com/nlvtai25/valkaw-client/releases). Launcher binaries live in this repository:
+
+| File | Platform |
+| --- | --- |
+| `assets/downloads/valkaw-launcher-v1.0.2-linux-amd64` | Linux |
+| `assets/downloads/valkaw-launcher-win-v1.0.2-windows-amd64.exe` | Windows |
 
 | File | What it is |
 | --- | --- |
@@ -33,6 +38,12 @@ Launcher (Linux):
 - x64 with GTK 3 and WebKitGTK 4.1: `libgtk-3-0 libwebkit2gtk-4.1-0`
 - About 150 MB for the Java 21 runtime the launcher downloads on first setup
 
+Launcher (Windows):
+
+- Windows 10 or 11, 64-bit. The window is drawn with the WebView2 runtime, which ships with Windows 11 and with updated Windows 10. On a machine without it, install the Evergreen runtime from Microsoft first.
+- About 150 MB for the Java 21 runtime the launcher downloads on first setup
+- The exe is not code-signed, so SmartScreen warns once. Pick *More info* then *Run anyway*.
+
 Client, once installed:
 
 - JDK 21 or newer
@@ -52,19 +63,25 @@ Output lands in `valkaw-client/build/libs/`. Both variants read the same `src/` 
 
 ## Build the launcher
 
-The launcher downloads the client jar from the latest release at install time, so it builds on its own.
+The launcher downloads the client jar from the latest release at install time, so it builds on its own. The Linux and Windows launchers share one Go core and one frontend.
 
 ```sh
 cd valkaw-launcher
-go build -o build/bin/valkaw-launcher .
-# or, with the Wails toolchain: ./build.sh
+./build.sh                  # Linux binary in build/bin/
+# or, without the Wails toolchain: go build -o build/bin/valkaw-launcher .
+
+cd ../valkaw-launcher-win
+./build.sh                  # Windows exe in build/bin/, built on any OS
 ```
+
+`valkaw-launcher-win/build.sh` rebuilds the frontend in `valkaw-launcher/frontend`, copies the bundle, then cross-compiles with `wails build -platform windows/amd64`. Nothing else is needed on the machine: no Windows, no mingw.
 
 ## Layout
 
 ```
-valkaw-client/     Fabric mod source, one tree, two build variants
-valkaw-launcher/   Go + Wails launcher
+valkaw-client/       Fabric mod source, one tree, two build variants
+valkaw-launcher/     Go + Wails launcher (Linux), shared core in core/
+valkaw-launcher-win/ Windows shell: window, icon, build script
 ```
 
 ## License

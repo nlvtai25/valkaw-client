@@ -1,4 +1,4 @@
-package main
+package core
 
 import (
 	"archive/tar"
@@ -179,20 +179,35 @@ func findJava(configured string) (string, int, error) {
 		}
 	}
 	if home := os.Getenv("JAVA_HOME"); home != "" {
-		add(filepath.Join(home, "bin", "java"))
+		add(filepath.Join(home, "bin", javaExe()))
 	}
 	if p, err := exec.LookPath("java"); err == nil {
 		add(p)
 	}
 	home, _ := os.UserHomeDir()
-	for _, pattern := range []string{
+	patterns := []string{
 		filepath.Join(home, ".local/share/jdk-*/bin", javaExe()),
 		filepath.Join(home, ".jdks/*/bin", javaExe()),
-		"/usr/lib/jvm/*/bin/" + javaExe(),
-		"/opt/*/bin/" + javaExe(),
 		filepath.Join(configDir(), "java", "*", "bin", javaExe()),
 		filepath.Join(configDir(), "java", "*", "Contents", "Home", "bin", javaExe()),
-	} {
+	}
+	if runtime.GOOS == "windows" {
+		for _, base := range []string{
+			os.Getenv("ProgramFiles"),
+			os.Getenv("ProgramFiles(x86)"),
+			filepath.Join(os.Getenv("LOCALAPPDATA"), "Programs"),
+		} {
+			if base == "" {
+				continue
+			}
+			for _, vendor := range []string{"Eclipse Adoptium", "Java", "Microsoft", "Zulu", "BellSoft", "Semeru"} {
+				patterns = append(patterns, filepath.Join(base, vendor, "*", "bin", javaExe()))
+			}
+		}
+	} else {
+		patterns = append(patterns, "/usr/lib/jvm/*/bin/"+javaExe(), "/opt/*/bin/"+javaExe())
+	}
+	for _, pattern := range patterns {
 		matches, _ := filepath.Glob(pattern)
 		for _, m := range matches {
 			add(m)
@@ -1000,6 +1015,17 @@ func (a *App) Launch() string {
 	if major < 21 {
 		return "error: Java 21+ required"
 	}
+	// java.exe is a console program: started from a GUI app on Windows it opens
+	// a black window next to the game. javaw.exe is the same JVM without one.
+	runJava := java
+	if runtime.GOOS == "windows" {
+		if w := filepath.Join(filepath.Dir(java), "javaw.exe"); fileExists(w) {
+			runJava = w
+		}
+	}
+	if runtime.GOOS == "windows" && a.config.GpuPref != 0 {
+		_ = applyGpuPreference(runJava, a.config.GpuPref)
+	}
 	profile := a.config.Profile
 	if profile != "gl" && profile != "vk" {
 		profile = "gl"
@@ -1104,13 +1130,17 @@ func (a *App) Launch() string {
 	}
 	jvmArgs = append(jvmArgs, gameArgs...)
 
-	cmd := exec.Command(java, jvmArgs...)
+	cmd := exec.Command(runJava, jvmArgs...)
 	cmd.Dir = gameDir
 	if env := gpuEnv(findGPU(a.config.GPU), profile); len(env) > 0 {
 		cmd.Env = append(os.Environ(), env...)
 	}
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+	if runtime.GOOS != "windows" {
+		// A GUI process has no console handles on Windows; only wire them up
+		// where they exist.
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+	}
 	if err := cmd.Start(); err != nil {
 		return "error: " + err.Error()
 	}

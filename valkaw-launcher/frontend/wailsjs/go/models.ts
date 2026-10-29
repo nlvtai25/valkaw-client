@@ -1,4 +1,4 @@
-export namespace main {
+export namespace core {
 	
 	export class Config {
 	    launcherVersion: string;
@@ -13,6 +13,8 @@ export namespace main {
 	    windowHeight: number;
 	    autoUpdate: boolean;
 	    afterRun: string;
+	    platform: string;
+	    gpuPref: number;
 	
 	    static createFrom(source: any = {}) {
 	        return new Config(source);
@@ -32,6 +34,8 @@ export namespace main {
 	        this.windowHeight = source["windowHeight"];
 	        this.autoUpdate = source["autoUpdate"];
 	        this.afterRun = source["afterRun"];
+	        this.platform = source["platform"];
+	        this.gpuPref = source["gpuPref"];
 	    }
 	}
 	export class GPU {

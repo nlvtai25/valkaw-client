@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>Valkaw Launcher v1.0.2</title>
+    <title>Valkaw Launcher</title>
 </head>
 <body>
 <div id="app">
@@ -12,7 +12,7 @@
             <img src="./src/assets/images/logo-universal.png" alt="" class="logo" />
             <div>
                 <h1>Valkaw</h1>
-                <span class="ver">Launcher v1.0.2</span>
+                <span class="ver" id="launcherVer">Launcher</span>
             </div>
         </div>
         <nav>
@@ -92,6 +92,15 @@
                 <div class="card">
                     <h3>Graphics</h3>
                     <div id="gpuList" class="gpu-list"></div>
+                    <div id="gpuWin" class="hidden">
+                        <label>GPU preference</label>
+                        <select id="gpuPref">
+                            <option value="0">Auto (system default)</option>
+                            <option value="1">Power saving</option>
+                            <option value="2">High performance</option>
+                        </select>
+                        <p class="muted small">Windows stores this per program, so it follows the Java runtime the game starts with.</p>
+                    </div>
                     <p id="gpuStatus" class="muted small"></p>
                 </div>
                 <div class="card">

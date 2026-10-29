@@ -9,6 +9,7 @@
 - The graphics row is a notice only. It names the API in use (OpenGL or Vulkan) and what was missing, and the launcher never installs drivers. Play works either way.
 - On start the popup opens only when Java or game files are missing.
 - Launcher version now comes from the binary, so a config saved by an older build cannot report the old version.
+- A Windows launcher ships alongside the Linux one: `assets/downloads/valkaw-launcher-win-v1.0.2-windows-amd64.exe`. Both share one Go core and one interface; the Windows build adds a GPU preference in Settings, starts the game with `javaw.exe` so no console window appears, and can replace its own exe when updating.
 - Version `v1.0.2`.
 
 ## v1.0.1 — 2026-10-28

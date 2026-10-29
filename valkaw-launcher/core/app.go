@@ -1,4 +1,4 @@
-package main
+package core
 
 import (
 	"context"
@@ -24,9 +24,27 @@ const (
 
 var (
 	releasesAPI  = "https://api.github.com/repos/nlvtai25/valkaw-client/releases/latest"
+	releasesList = "https://api.github.com/repos/nlvtai25/valkaw-client/releases?per_page=30"
 	releasesPage = "https://github.com/nlvtai25/valkaw-client/releases/latest"
 	releaseDL    = "https://github.com/nlvtai25/valkaw-client/releases/latest/download/"
 )
+
+// updatePrefix is the asset name marker used by this platform's build. Linux
+// ships from every release, Windows only from releases that carry a Windows file.
+func updatePrefix() string {
+	if runtime.GOOS == "windows" {
+		return "valkaw-launcher-win-"
+	}
+	return ""
+}
+
+// updateAssetName is the file published under assets/downloads for this platform.
+func updateAssetName(tag string) string {
+	if runtime.GOOS == "windows" {
+		return fmt.Sprintf("valkaw-launcher-win-%s-%s-%s.exe", tag, runtime.GOOS, runtime.GOARCH)
+	}
+	return fmt.Sprintf("valkaw-launcher-%s-%s-%s", tag, runtime.GOOS, runtime.GOARCH)
+}
 
 // Config holds launcher settings.
 type Config struct {
@@ -42,23 +60,23 @@ type Config struct {
 	WindowHeight    int    `json:"windowHeight"`
 	AutoUpdate      bool   `json:"autoUpdate"`
 	AfterRun        string `json:"afterRun"` // "hide" | "close" | "appear"
+	Platform        string `json:"platform"` // filled at startup: windows | linux | darwin
+	GpuPref         int    `json:"gpuPref"`  // windows only: 0 auto, 1 power saving, 2 high performance
 }
 
 type App struct {
 	ctx        context.Context
 	config     Config
 	cfgPath    string
+	version    string // identifies the running binary, not the saved config
 	installMu  sync.Mutex
 	installing bool
 }
 
-// launcherVersion identifies the running binary, not the saved config.
-const launcherVersion = "v1.0.2"
-
-func NewApp() *App {
-	a := &App{}
+func NewApp(version string) *App {
+	a := &App{version: version}
 	a.config = Config{
-		LauncherVersion: launcherVersion,
+		LauncherVersion: version,
 		JavaPath:        "java",
 		GameDir:         defaultGameDir(),
 		Version:         defaultMCVersion,
@@ -70,6 +88,11 @@ func NewApp() *App {
 		AutoUpdate:      true,
 		AfterRun:        "hide",
 	}
+	if runtime.GOOS == "windows" {
+		// A hidden Wails window has no taskbar entry on Windows, so the player
+		// would have no way back after closing the game.
+		a.config.AfterRun = "appear"
+	}
 	return a
 }
 
@@ -78,13 +101,14 @@ func defaultGameDir() string {
 	return filepath.Join(home, ".valkaw")
 }
 
-func (a *App) startup(ctx context.Context) {
+func (a *App) Startup(ctx context.Context) {
 	a.ctx = ctx
 	a.cfgPath = filepath.Join(configDir(), "config.json")
 	if data, err := os.ReadFile(a.cfgPath); err == nil {
 		_ = json.Unmarshal(data, &a.config)
 	}
-	a.config.LauncherVersion = launcherVersion
+	a.config.LauncherVersion = a.version
+	a.config.Platform = runtime.GOOS
 	if a.config.MemoryMB == 0 {
 		a.config.MemoryMB = 4096
 	}
@@ -136,6 +160,11 @@ func windowSize(w, h int) (int, int) {
 }
 
 func (a *App) SaveConfig(c Config) string {
+	c.LauncherVersion = a.version
+	c.Platform = runtime.GOOS
+	if c.GpuPref < 0 || c.GpuPref > 2 {
+		c.GpuPref = 0
+	}
 	if c.Profile != "gl" && c.Profile != "vk" {
 		c.Profile = "gl"
 	}
@@ -147,6 +176,30 @@ func (a *App) SaveConfig(c Config) string {
 	}
 	c.WindowWidth, c.WindowHeight = windowSize(c.WindowWidth, c.WindowHeight)
 	a.config = c
+	if err := a.saveConfig(); err != nil {
+		return "error: " + err.Error()
+	}
+	return "ok"
+}
+
+// SetGpuPreference stores the Windows per-program GPU choice for the Java runtime.
+// Windows keeps this in the registry, so it survives driver updates and applies
+// to the JVM the launcher starts rather than to the launcher window.
+func (a *App) SetGpuPreference(pref int) string {
+	if pref < 0 || pref > 2 {
+		return "error: invalid preference"
+	}
+	if runtime.GOOS != "windows" {
+		return "error: GPU preference is Windows only"
+	}
+	java, _, err := findJava(a.config.JavaPath)
+	if err != nil || !fileExists(java) {
+		return "error: install Java 21 first"
+	}
+	if err := applyGpuPreference(java, pref); err != nil {
+		return "error: " + err.Error()
+	}
+	a.config.GpuPref = pref
 	if err := a.saveConfig(); err != nil {
 		return "error: " + err.Error()
 	}
@@ -184,9 +237,16 @@ type ghRelease struct {
 	} `json:"assets"`
 }
 
-func fetchLatestRelease() (*ghRelease, error) {
+// fetchLatestRelease returns the newest release, or the newest release that
+// carries an asset starting with assetPrefix. A nil release means nothing to
+// compare against, which callers report as up to date.
+func fetchLatestRelease(assetPrefix string) (*ghRelease, error) {
 	client := &http.Client{Timeout: 10 * time.Second}
-	req, _ := http.NewRequest(http.MethodGet, releasesAPI, nil)
+	url := releasesAPI
+	if assetPrefix != "" {
+		url = releasesList
+	}
+	req, _ := http.NewRequest(http.MethodGet, url, nil)
 	req.Header.Set("User-Agent", "ValkawLauncher/1.0")
 	resp, err := client.Do(req)
 	if err != nil {
@@ -196,14 +256,28 @@ func fetchLatestRelease() (*ghRelease, error) {
 	if resp.StatusCode != 200 {
 		return nil, fmt.Errorf("HTTP %d", resp.StatusCode)
 	}
-	var r ghRelease
-	if err := json.NewDecoder(resp.Body).Decode(&r); err != nil {
+	if assetPrefix == "" {
+		var r ghRelease
+		if err := json.NewDecoder(resp.Body).Decode(&r); err != nil {
+			return nil, err
+		}
+		if r.TagName == "" {
+			return nil, errors.New("no release found")
+		}
+		return &r, nil
+	}
+	var all []ghRelease
+	if err := json.NewDecoder(resp.Body).Decode(&all); err != nil {
 		return nil, err
 	}
-	if r.TagName == "" {
-		return nil, errors.New("no release found")
+	for i := range all {
+		for _, asset := range all[i].Assets {
+			if strings.HasPrefix(asset.Name, assetPrefix) {
+				return &all[i], nil
+			}
+		}
 	}
-	return &r, nil
+	return nil, nil
 }
 
 func versionParts(v string) []int {
@@ -236,27 +310,26 @@ func newerVersion(latest, current string) bool {
 
 // CheckUpdate queries GitHub releases.
 func (a *App) CheckUpdate() string {
-	r, err := fetchLatestRelease()
+	r, err := fetchLatestRelease(updatePrefix())
 	if err != nil {
 		return "update check failed: " + err.Error()
 	}
-	if !newerVersion(r.TagName, a.config.LauncherVersion) {
+	if r == nil || !newerVersion(r.TagName, a.config.LauncherVersion) {
 		return "up to date (" + a.config.LauncherVersion + ")"
 	}
 	return "update available: " + r.TagName + " (current " + a.config.LauncherVersion + ")"
 }
 
 // InstallUpdate downloads the latest launcher binary and restarts it.
-// InstallUpdate downloads the latest launcher binary from the repository copy.
 func (a *App) InstallUpdate() string {
-	r, err := fetchLatestRelease()
+	r, err := fetchLatestRelease(updatePrefix())
 	if err != nil {
 		return "error: " + err.Error()
 	}
-	if !newerVersion(r.TagName, a.config.LauncherVersion) {
+	if r == nil || !newerVersion(r.TagName, a.config.LauncherVersion) {
 		return "already up to date"
 	}
-	name := fmt.Sprintf("valkaw-launcher-%s-%s-%s", r.TagName, runtime.GOOS, runtime.GOARCH)
+	name := updateAssetName(r.TagName)
 	assetURL := repoDownloads + name
 	exe, err := os.Executable()
 	if err != nil {
@@ -265,9 +338,6 @@ func (a *App) InstallUpdate() string {
 	if resolved, err := filepath.EvalSymlinks(exe); err == nil {
 		exe = resolved
 	}
-	if runtime.GOOS == "windows" {
-		return "error: update " + name + " manually on Windows"
-	}
 	tmp := exe + ".new"
 	_ = os.Remove(tmp)
 	if err := downloadFile(assetURL, tmp, 0, "", func(n int64) {
@@ -275,6 +345,9 @@ func (a *App) InstallUpdate() string {
 	}); err != nil {
 		_ = os.Remove(tmp)
 		return "error: " + err.Error()
+	}
+	if runtime.GOOS == "windows" {
+		return a.swapWindows(exe, tmp)
 	}
 	if err := os.Chmod(tmp, 0755); err != nil {
 		_ = os.Remove(tmp)
@@ -291,6 +364,34 @@ func (a *App) InstallUpdate() string {
 	}
 	wailsruntime.Quit(a.ctx)
 	return "updated to " + r.TagName
+}
+
+// swapWindows hands the file move to a detached script: Windows refuses to
+// replace an exe that is still running, so the script waits for this process to
+// exit, moves the new binary into place, and starts it again.
+func (a *App) swapWindows(exe, downloaded string) string {
+	newExe := exe + ".new.exe"
+	_ = os.Remove(newExe)
+	if err := os.Rename(downloaded, newExe); err != nil {
+		_ = os.Remove(downloaded)
+		return "error: " + err.Error()
+	}
+	bat := exe + ".update.bat"
+	script := "@echo off\r\n" +
+		"ping -n 4 127.0.0.1 >nul\r\n" +
+		"move /y \"" + newExe + "\" \"" + exe + "\" >nul\r\n" +
+		"start \"\" \"" + exe + "\"\r\n" +
+		"del \"%~f0\"\r\n"
+	if err := os.WriteFile(bat, []byte(script), 0644); err != nil {
+		return "error: " + err.Error()
+	}
+	cmd := exec.Command("cmd", "/c", bat)
+	hideWindow(cmd)
+	if err := cmd.Start(); err != nil {
+		return "updated, restart launcher manually"
+	}
+	wailsruntime.Quit(a.ctx)
+	return "updated, restarting"
 }
 
 // OpenReleases opens the releases page in the browser.

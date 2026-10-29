@@ -11,8 +11,8 @@ Ghi chú bàn giao: toàn bộ thay đổi đã làm cho client và launcher. D�
 | Tag / Release | `v1.0.1` — https://github.com/nlvtai25/valkaw-client/releases/tag/v1.0.1 (v1.0.2 không tạo Release, chỉ đẩy binary vào `assets/downloads/`) |
 | Version client | `1.0.1` |
 | Asset Release | `valkawclient-1.0.1-sodium.jar`, `valkawclient-1.0.1-vulkan.jar` |
-| Launcher binary | `assets/downloads/valkaw-launcher-v1.0.2-linux-amd64` |
-| Version launcher | `v1.0.2` |
+| Launcher binary | `assets/downloads/valkaw-launcher-v1.0.2-linux-amd64`, `assets/downloads/valkaw-launcher-win-v1.0.2-windows-amd64.exe` |
+| Version launcher | `v1.0.2` (Linux và Windows dùng chung số) |
 | Target game | Minecraft Java 1.21.11, Fabric loader 0.20.1 |
 
 ## Cấu trúc repo
@@ -22,9 +22,10 @@ Minecraft Client/
 ├── README.md                    # trang chính repo
 ├── LICENSE                      # Apache 2.0
 ├── .gitignore
-├── assets/downloads/            # binary launcher
+├── assets/downloads/            # binary launcher (Linux + Windows)
 ├── valkaw-client/               # mod Fabric (Java)
-└── valkaw-launcher/             # launcher (Go + Wails)
+├── valkaw-launcher/             # launcher Linux (Go + Wails), core/ dùng chung
+└── valkaw-launcher-win/         # vỏ Windows: main.go, icon, build.sh
 ```
 
 Không publish: `MCP-Reborn/` (chỉ để đọc code vanilla), `docs/`, `AGENTS.md`, `.directory`.
@@ -132,6 +133,17 @@ Flag `-XX:+UnlockExperimentalVMOptions` là **bắt buộc**, thiếu là JVM ch
 - `graphicsState(profile)` ở `gpu.go`: profile `gl` kiểm `libGL.so.1`, profile `vk` kiểm file `*.json` trong `/usr/share/vulkan/icd.d` hoặc `/etc/vulkan/icd.d` (Windows: `System32\vulkan-1.dll`; macOS: luôn false vì thiếu MoltenVK).
 - Popup (`#prereqModal`) chỉ tự mở khi thiếu Java hoặc game files. Thiếu driver thì chỉ hiện khi bấm Play lần đầu, nút đổi thành `Continue anyway`, và không hỏi lại trong phiên đó.
 
+**Bản Windows (v1.0.2):**
+- Kiến trúc: `valkaw-launcher/core/` là package `core` dùng chung toàn bộ logic (Config, App, tải/cài game, Java, GPU, update). `valkaw-launcher/main.go` và `valkaw-launcher-win/main.go` chỉ là vỏ Wails; số version truyền vào `core.NewApp(version)`.
+- Frontend chỉ có một bản: `valkaw-launcher/frontend`. `valkaw-launcher-win/build.sh` build ở đó, copy `dist` sang rồi mới `wails build -platform windows/amd64`. Không có bản sao HTML/CSS/JS. Giao diện tự đổi theo `cfg.platform`: Windows hiện ô GPU preference (Auto / Power saving / High performance), Linux hiện danh sách GPU như cũ.
+- `valkaw-launcher-win/go.mod` riêng: `require valkaw-launcher v0.0.0` + `replace valkaw-launcher => ../valkaw-launcher`. Wails bắt buộc có `go.mod` trong thư mục project (thiếu là `no go.mod file found`).
+- Chạy game bằng `javaw.exe` (cùng thư mục với `java.exe`): `java.exe` là console app, chạy từ app GUI sẽ bật cửa sổ đen bên cạnh game. Linux vẫn dùng `java` và nối stdout/stderr.
+- `SetGpuPreference(pref)`: 0 xoá, 1 `GpuPreference=1;`, 2 `GpuPreference=2;` ghi vào `HKCU\Software\Microsoft\DirectX\UserGpuPreferences`, key là đường dẫn `javaw.exe`. Áp lại mỗi lần `Launch` khi `gpuPref != 0` để không mất khi Java đổi đường dẫn. Dùng `reg.exe`, không thêm dependency.
+- Auto-update: `InstallUpdate` tải `assets/downloads/valkaw-launcher-win-<tag>-windows-amd64.exe` rồi giao cho `exe.update.bat` (`ping -n 4` chờ process thoát → `move /y` → `start`), vì Windows khoá file exe đang chạy. Script chạy ẩn (`SysProcAttr.HideWindow`).
+- `updatePrefix()`: Windows chỉ nhận release có asset bắt đầu bằng `valkaw-launcher-win-`; Linux giữ `releases/latest`. Release không có file Windows thì bản Windows báo "up to date" thay vì tải nhầm.
+- Build từ Linux, không cần Windows hay mingw: `wails build -platform windows/amd64` ra PE32+ GUI (subsystem 2). Icon sinh từ `build/appicon.png` thành `build/windows/icon.ico` + `.syso` lúc build.
+- **Chưa chạy thử trên Windows.** Đã kiểm: biên dịch, `GOOS=windows go vet`, PE header subsystem = GUI, chuỗi UI có trong exe. Còn phải thử trên máy thật: WebView2, cài Java, registry GPU, updater.
+
 ## Build & deploy
 
 Client:
@@ -149,6 +161,8 @@ Launcher:
 cd valkaw-launcher
 PATH=$HOME/go/bin:$PATH go test ./... && go vet ./...
 PATH=$HOME/go/bin:$PATH ./build.sh        # wails build -tags webkit2_41
+cd ../valkaw-launcher-win
+PATH=$HOME/go/bin:$PATH ./build.sh        # .exe, cross-compile từ Linux
 ```
 
 Git (identity chưa cấu hình, phải truyền inline):
