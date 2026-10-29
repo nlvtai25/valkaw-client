@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.0.2 — 2026-10-29
+
+### Launcher
+- New setup popup. It checks three things and says which are missing: Java 21, the game files, and the graphics driver for the selected profile.
+- Pressing Play without Java or game files now opens the popup instead of failing on the status line.
+- `Install missing` downloads Temurin JRE 21 into `~/.valkaw-launcher/java`, installs the selected profile, then starts the game. Progress is reported inside the popup.
+- The graphics row is a notice only. It names the API in use (OpenGL or Vulkan) and what was missing, and the launcher never installs drivers. Play works either way.
+- On start the popup opens only when Java or game files are missing.
+- Launcher version now comes from the binary, so a config saved by an older build cannot report the old version.
+- Version `v1.0.2`.
+
 ## v1.0.1 — 2026-10-28
 
 ### Freelook

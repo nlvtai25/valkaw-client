@@ -1,7 +1,9 @@
 package main
 
 import (
+	"archive/tar"
 	"archive/zip"
+	"compress/gzip"
 	"context"
 	"crypto/sha1"
 	"encoding/hex"
@@ -184,10 +186,12 @@ func findJava(configured string) (string, int, error) {
 	}
 	home, _ := os.UserHomeDir()
 	for _, pattern := range []string{
-		filepath.Join(home, ".local/share/jdk-*/bin/java"),
-		filepath.Join(home, ".jdks/*/bin/java"),
-		"/usr/lib/jvm/*/bin/java",
-		"/opt/*/bin/java",
+		filepath.Join(home, ".local/share/jdk-*/bin", javaExe()),
+		filepath.Join(home, ".jdks/*/bin", javaExe()),
+		"/usr/lib/jvm/*/bin/" + javaExe(),
+		"/opt/*/bin/" + javaExe(),
+		filepath.Join(configDir(), "java", "*", "bin", javaExe()),
+		filepath.Join(configDir(), "java", "*", "Contents", "Home", "bin", javaExe()),
 	} {
 		matches, _ := filepath.Glob(pattern)
 		for _, m := range matches {
@@ -225,6 +229,132 @@ func javaMajor(path string) int {
 		major, _ = strconv.Atoi(m[2])
 	}
 	return major
+}
+
+// Prereq reports what the launcher still needs before a launch can start.
+type Prereq struct {
+	Java         bool   `json:"java"`
+	JavaText     string `json:"javaText"`
+	Files        bool   `json:"files"`
+	FilesText    string `json:"filesText"`
+	Graphics     bool   `json:"graphics"`
+	GraphicsAPI  string `json:"graphicsApi"`
+	GraphicsText string `json:"graphicsText"`
+	Ready        bool   `json:"ready"`
+}
+
+// CheckRequirements inspects Java, the installed game files and the GPU driver.
+func (a *App) CheckRequirements() Prereq {
+	p := Prereq{Java: true, Files: true, Graphics: true}
+	if _, _, err := findJava(a.config.JavaPath); err != nil {
+		p.Java, p.JavaText = false, err.Error()
+	}
+	if err := a.checkInstalled(); err != nil {
+		p.Files, p.FilesText = false, err.Error()
+	}
+	profile := a.config.Profile
+	if profile != "gl" && profile != "vk" {
+		profile = "gl"
+	}
+	p.GraphicsAPI, p.Graphics, p.GraphicsText = graphicsState(profile)
+	p.Ready = p.Java && p.Files
+	return p
+}
+
+const javaBinaryURL = "https://api.adoptium.net/v3/binary/latest/21/ga/%s/%s/jre/hotspot/normal/eclipse"
+
+// InstallJava downloads a Java 21 runtime (Temurin JRE) and points the launcher at it.
+func (a *App) InstallJava() string {
+	plat, arch := javaPlatform()
+	if plat == "" || arch == "" {
+		return "error: no Java 21 build for " + runtime.GOOS + "/" + runtime.GOARCH
+	}
+	ext := ".tar.gz"
+	if plat == "windows" {
+		ext = ".zip"
+	}
+	a.emitInstall("Downloading Java 21...", 2)
+	archive := filepath.Join(configDir(), "java21"+ext)
+	_ = os.Remove(archive)
+	url := fmt.Sprintf(javaBinaryURL, plat, arch)
+	size := remoteSize(url)
+	pt := &progressTracker{}
+	if err := downloadFile(url, archive, size, "", func(n int64) {
+		a.progress(pt, "Downloading Java 21...", 2, 90, n, size)
+	}); err != nil {
+		return "error: " + err.Error()
+	}
+	defer os.Remove(archive)
+	a.emitInstall("Installing Java 21...", 92)
+	dest := filepath.Join(configDir(), "java")
+	_ = os.RemoveAll(dest)
+	if err := os.MkdirAll(dest, 0755); err != nil {
+		return "error: " + err.Error()
+	}
+	if err := extractArchive(archive, dest); err != nil {
+		return "error: " + err.Error()
+	}
+	for _, pattern := range []string{
+		filepath.Join(dest, "*", "bin", javaExe()),
+		filepath.Join(dest, "*", "Contents", "Home", "bin", javaExe()),
+	} {
+		matches, _ := filepath.Glob(pattern)
+		for _, m := range matches {
+			if major := javaMajor(m); major >= 21 {
+				a.config.JavaPath = m
+				_ = a.saveConfig()
+				a.emitInstall("Java 21 ready", 100)
+				return "ok"
+			}
+		}
+	}
+	return "error: Java 21 not found in the downloaded files"
+}
+
+// remoteSize returns the download size of a URL, or 0 when unknown.
+func remoteSize(rawURL string) int64 {
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodHead, rawURL, nil)
+	if err != nil {
+		return 0
+	}
+	req.Header.Set("User-Agent", "ValkawLauncher/1.0")
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return 0
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return 0
+	}
+	return resp.ContentLength
+}
+
+func javaPlatform() (string, string) {
+	plat, arch := "", ""
+	switch runtime.GOOS {
+	case "linux":
+		plat = "linux"
+	case "windows":
+		plat = "windows"
+	case "darwin":
+		plat = "mac"
+	}
+	switch runtime.GOARCH {
+	case "amd64":
+		arch = "x64"
+	case "arm64":
+		arch = "aarch64"
+	case "386":
+		arch = "x86"
+	}
+	return plat, arch
+}
+
+func javaExe() string {
+	if runtime.GOOS == "windows" {
+		return "java.exe"
+	}
+	return "java"
 }
 
 func (a *App) gameVersion() string {
@@ -694,6 +824,113 @@ func extractNativeJar(jarPath, destDir string) (int, error) {
 	return n, nil
 }
 
+// extractArchive unpacks a .zip or .tar.gz download into dest.
+func extractArchive(archive, dest string) error {
+	if strings.HasSuffix(archive, ".zip") {
+		return unzipTo(archive, dest)
+	}
+	return untarGz(archive, dest)
+}
+
+// safeJoin keeps archive entries inside dest.
+func safeJoin(dest, name string) (string, bool) {
+	target := filepath.Join(dest, filepath.FromSlash(name))
+	return target, strings.HasPrefix(target, filepath.Clean(dest)+string(os.PathSeparator))
+}
+
+func untarGz(archive, dest string) error {
+	f, err := os.Open(archive)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	gz, err := gzip.NewReader(f)
+	if err != nil {
+		return err
+	}
+	defer gz.Close()
+	tr := tar.NewReader(gz)
+	for {
+		h, err := tr.Next()
+		if err == io.EOF {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+		target, ok := safeJoin(dest, h.Name)
+		if !ok {
+			continue
+		}
+		switch h.Typeflag {
+		case tar.TypeDir:
+			if err := os.MkdirAll(target, 0755); err != nil {
+				return err
+			}
+		case tar.TypeReg:
+			if err := os.MkdirAll(filepath.Dir(target), 0755); err != nil {
+				return err
+			}
+			mode := h.FileInfo().Mode().Perm()
+			if mode == 0 {
+				mode = 0644
+			}
+			out, err := os.OpenFile(target, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, mode)
+			if err != nil {
+				return err
+			}
+			_, err = io.Copy(out, tr)
+			_ = out.Close()
+			if err != nil {
+				return err
+			}
+		}
+	}
+}
+
+func unzipTo(archive, dest string) error {
+	zr, err := zip.OpenReader(archive)
+	if err != nil {
+		return err
+	}
+	defer zr.Close()
+	for _, f := range zr.File {
+		target, ok := safeJoin(dest, f.Name)
+		if !ok {
+			continue
+		}
+		if f.FileInfo().IsDir() {
+			if err := os.MkdirAll(target, 0755); err != nil {
+				return err
+			}
+			continue
+		}
+		if err := os.MkdirAll(filepath.Dir(target), 0755); err != nil {
+			return err
+		}
+		rc, err := f.Open()
+		if err != nil {
+			return err
+		}
+		mode := f.Mode().Perm()
+		if mode == 0 {
+			mode = 0644
+		}
+		out, err := os.OpenFile(target, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, mode)
+		if err != nil {
+			_ = rc.Close()
+			return err
+		}
+		_, err = io.Copy(out, rc)
+		_ = out.Close()
+		_ = rc.Close()
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func loadVersion(gameDir, id string) (*versionJSON, error) {
 	return loadVersionDepth(gameDir, id, 0)
 }
@@ -768,7 +1005,7 @@ func (a *App) Launch() string {
 		profile = "gl"
 	}
 	if err := a.checkInstalled(); err != nil {
-		return "error: " + err.Error() + " — click Install"
+		return "error: " + err.Error() + " — finish the setup first"
 	}
 	versionID := a.gameVersion()
 	id := a.fabricID()

@@ -1,4 +1,4 @@
-# Valkaw Client v1.0.1 — Handoff
+# Valkaw Client v1.0.2 — Handoff
 
 Ghi chú bàn giao: toàn bộ thay đổi đã làm cho client và launcher. Dùng khi cần tiếp tục công việc mà không có lịch sử chat.
 
@@ -7,11 +7,12 @@ Ghi chú bàn giao: toàn bộ thay đổi đã làm cho client và launcher. D�
 | Mục | Giá trị |
 | --- | --- |
 | Repo | https://github.com/nlvtai25/valkaw-client (public, branch `main`) |
-| Commit mới nhất | `353ea91` — Fix the launcher build note in the README |
-| Tag / Release | `v1.0.1` — https://github.com/nlvtai25/valkaw-client/releases/tag/v1.0.1 |
+| Commit mới nhất | `Release v1.0.2` |
+| Tag / Release | `v1.0.1` — https://github.com/nlvtai25/valkaw-client/releases/tag/v1.0.1 (v1.0.2 không tạo Release, chỉ đẩy binary vào `assets/downloads/`) |
 | Version client | `1.0.1` |
 | Asset Release | `valkawclient-1.0.1-sodium.jar`, `valkawclient-1.0.1-vulkan.jar` |
-| Launcher binary | `assets/downloads/valkaw-launcher-v1.0.1-linux-amd64` (11 MB) |
+| Launcher binary | `assets/downloads/valkaw-launcher-v1.0.2-linux-amd64` |
+| Version launcher | `v1.0.2` |
 | Target game | Minecraft Java 1.21.11, Fabric loader 0.20.1 |
 
 ## Cấu trúc repo
@@ -123,6 +124,13 @@ Flag `-XX:+UnlockExperimentalVMOptions` là **bắt buộc**, thiếu là JVM ch
 - `InstallUpdate` lấy binary từ `assets/downloads/valkaw-launcher-<tag>-linux-amd64` trong repo, không tìm asset trong Release nữa (asset đó đã bị xoá).
 
 **Cấu hình:** `~/.valkaw-launcher/config.json`. `gameDir` mặc định `~/.valkaw`, mặc định `memoryMB 4096`, `profile gl`, `afterRun hide`, `autoUpdate true`.
+
+**Popup kiểm tra điều kiện (v1.0.2):**
+- `CheckRequirements()` trong `install.go` trả `Prereq{java, javaText, files, filesText, graphics, graphicsApi, graphicsText, ready}`. `ready = java && files` — thiếu driver **không** chặn chơi.
+- `InstallJava()` tải Temurin JRE 21 từ `api.adoptium.net/v3/binary/latest/21/ga/<os>/<arch>/jre/hotspot/normal/eclipse`, giải nén vào `~/.valkaw-launcher/java`, tìm `*/bin/java` (Linux/macOS) hoặc `*/bin/java.exe` (Windows), kiểm tra major ≥ 21 rồi ghi vào `javaPath`.
+- `findJava` quét thêm thư mục JRE do launcher tự cài, nên lần sau không tải lại.
+- `graphicsState(profile)` ở `gpu.go`: profile `gl` kiểm `libGL.so.1`, profile `vk` kiểm file `*.json` trong `/usr/share/vulkan/icd.d` hoặc `/etc/vulkan/icd.d` (Windows: `System32\vulkan-1.dll`; macOS: luôn false vì thiếu MoltenVK).
+- Popup (`#prereqModal`) chỉ tự mở khi thiếu Java hoặc game files. Thiếu driver thì chỉ hiện khi bấm Play lần đầu, nút đổi thành `Continue anyway`, và không hỏi lại trong phiên đó.
 
 ## Build & deploy
 

@@ -4,6 +4,8 @@ import {main} from '../models';
 
 export function CheckInstalled():Promise<string>;
 
+export function CheckRequirements():Promise<main.Prereq>;
+
 export function CheckUpdate():Promise<string>;
 
 export function DetectJava():Promise<string>;
@@ -15,6 +17,8 @@ export function GetInstances():Promise<Array<string>>;
 export function GetVersions():Promise<Array<string>>;
 
 export function InstallClient(arg1:string):Promise<string>;
+
+export function InstallJava():Promise<string>;
 
 export function InstallUpdate():Promise<string>;
 

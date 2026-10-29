@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>Valkaw Launcher v1.0.1</title>
+    <title>Valkaw Launcher v1.0.2</title>
 </head>
 <body>
 <div id="app">
@@ -12,7 +12,7 @@
             <img src="./src/assets/images/logo-universal.png" alt="" class="logo" />
             <div>
                 <h1>Valkaw</h1>
-                <span class="ver">Launcher v1.0.1</span>
+                <span class="ver">Launcher v1.0.2</span>
             </div>
         </div>
         <nav>
@@ -141,6 +141,22 @@
             </div>
         </section>
     </main>
+
+    <div id="prereqModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="prereqTitle">
+        <div class="modal-card">
+            <p class="eyebrow">// SETUP REQUIRED</p>
+            <h3 id="prereqTitle">Missing requirements</h3>
+            <p class="muted small">Valkaw needs these before the first launch. The launcher downloads Java and the game files; the graphics driver is yours to install.</p>
+            <ul id="prereqList" class="req-list"></ul>
+            <div class="progress"><div id="prereqBar"></div></div>
+            <p id="prereqStage" class="muted small"></p>
+            <div class="modal-actions">
+                <button id="prereqInstall" class="btn primary">Install missing</button>
+                <button id="prereqJava" class="btn ghost hidden">Get Java manually</button>
+                <button id="prereqClose" class="btn ghost">Not now</button>
+            </div>
+        </div>
+    </div>
 </div>
 <script type="module" src="./src/main.js"></script>
 </body>

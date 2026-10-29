@@ -52,10 +52,13 @@ type App struct {
 	installing bool
 }
 
+// launcherVersion identifies the running binary, not the saved config.
+const launcherVersion = "v1.0.2"
+
 func NewApp() *App {
 	a := &App{}
 	a.config = Config{
-		LauncherVersion: "v1.0.1",
+		LauncherVersion: launcherVersion,
 		JavaPath:        "java",
 		GameDir:         defaultGameDir(),
 		Version:         defaultMCVersion,
@@ -81,9 +84,7 @@ func (a *App) startup(ctx context.Context) {
 	if data, err := os.ReadFile(a.cfgPath); err == nil {
 		_ = json.Unmarshal(data, &a.config)
 	}
-	if a.config.LauncherVersion == "" {
-		a.config.LauncherVersion = "v1.0.1"
-	}
+	a.config.LauncherVersion = launcherVersion
 	if a.config.MemoryMB == 0 {
 		a.config.MemoryMB = 4096
 	}

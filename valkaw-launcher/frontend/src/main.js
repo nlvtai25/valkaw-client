@@ -1,7 +1,7 @@
 import './style.css';
 
-import { GetConfig, SaveConfig, Launch, CheckUpdate, OpenReleases, InstallClient, CheckInstalled, DetectJava, InstallUpdate, GetVersions, ListGPUs } from '../wailsjs/go/main/App';
-import { EventsOn } from '../wailsjs/runtime/runtime';
+import { GetConfig, SaveConfig, Launch, CheckUpdate, OpenReleases, InstallClient, CheckInstalled, DetectJava, InstallUpdate, GetVersions, ListGPUs, CheckRequirements, InstallJava } from '../wailsjs/go/main/App';
+import { EventsOn, BrowserOpenURL } from '../wailsjs/runtime/runtime';
 
 const $ = (id) => document.getElementById(id);
 
@@ -101,6 +101,10 @@ async function refreshInstallStatus() {
 function setInstallProgress(stage, pct) {
     $('installStage').textContent = `${stage} ${pct || 0}%`;
     $('installBar').style.width = Math.max(0, Math.min(100, pct || 0)) + '%';
+    if (!$('prereqModal').classList.contains('hidden')) {
+        $('prereqStage').textContent = `${stage} ${pct || 0}%`;
+        $('prereqBar').style.width = Math.max(0, Math.min(100, pct || 0)) + '%';
+    }
 }
 
 EventsOn('install:progress', (stage, pct) => setInstallProgress(stage, pct));
@@ -190,6 +194,8 @@ $('installBtn').addEventListener('click', async () => {
 });
 
 loadConfig().then(async () => {
+    const reqs = await CheckRequirements();
+    if (!reqs.ready) openPrereq(reqs);
     const ready = await refreshUpdateStatus();
     if (cfg.autoUpdate && ready) {
         $('updateStatus').textContent = 'Auto-updating...';
@@ -199,28 +205,118 @@ loadConfig().then(async () => {
     $('status').textContent = 'config error: ' + err;
 });
 
-$('playBtn').addEventListener('click', async () => {
-    const status = $('status');
-    const btn = $('playBtn');
-    const profile = document.querySelector('input[name="profile"]:checked').value;
-    cfg.profile = profile;
+const JAVA_URL = 'https://adoptium.net/temurin/releases/?version=21&package=jre';
+
+let graphicsWarned = false;
+
+async function syncConfig() {
+    cfg.profile = document.querySelector('input[name="profile"]:checked').value;
     cfg.version = $('version').value;
     cfg.username = currentUsername();
     cfg.windowWidth = parseInt($('windowWidth').value) || 1600;
     cfg.windowHeight = parseInt($('windowHeight').value) || 900;
     await SaveConfig(cfg);
+}
+
+function reqRow(state, title, text) {
+    const cls = state === 'ok' ? ' ok' : state === 'warn' ? ' warn' : '';
+    return `<li class="req${cls}"><span class="dot"></span><div><strong>${esc(title)}</strong><span>${esc(text)}</span></div></li>`;
+}
+
+function renderPrereq(reqs) {
+    $('prereqList').innerHTML =
+        reqRow(reqs.java ? 'ok' : 'bad', 'Java 21 runtime', reqs.java ? 'Found on this system' : reqs.javaText) +
+        reqRow(reqs.files ? 'ok' : 'bad', 'Game files', reqs.files ? 'Minecraft, Fabric and Valkaw mods installed' : reqs.filesText) +
+        reqRow(reqs.graphics ? 'ok' : 'warn', reqs.graphicsApi || 'Graphics', reqs.graphics ? reqs.graphicsText : reqs.graphicsText + ' This is a notice only — install it yourself, the launcher cannot.');
+    $('prereqJava').classList.toggle('hidden', !!reqs.java);
+}
+
+function openPrereq(reqs) {
+    renderPrereq(reqs);
+    $('prereqBar').style.width = '0%';
+    $('prereqStage').textContent = '';
+    $('prereqInstall').disabled = false;
+    $('prereqInstall').textContent = reqs.ready ? 'Continue anyway' : 'Install missing';
+    $('prereqModal').classList.remove('hidden');
+}
+
+function closePrereq() {
+    $('prereqModal').classList.add('hidden');
+}
+
+function setupFailed(msg) {
+    $('prereqStage').textContent = msg;
+    $('prereqBar').style.width = '0%';
+}
+
+async function installMissing() {
+    const btn = $('prereqInstall');
+    const stage = $('prereqStage');
+    btn.disabled = true;
+    btn.textContent = 'Installing...';
+    graphicsWarned = true;
+    try {
+        const reqs = await CheckRequirements();
+        if (!reqs.java) {
+            stage.textContent = 'Downloading Java 21...';
+            const java = await InstallJava();
+            if (java.startsWith('error')) return setupFailed(java);
+            const c = await GetConfig();
+            cfg.javaPath = c.javaPath;
+            $('javaPath').value = c.javaPath;
+            $('javaStatus').textContent = 'Java 21 installed at ' + c.javaPath;
+        }
+        if (!reqs.files) {
+            stage.textContent = 'Installing game files...';
+            const res = await InstallClient(cfg.profile || 'gl');
+            if (res.startsWith('error')) return setupFailed(res);
+        }
+        const now = await CheckRequirements();
+        renderPrereq(now);
+        if (!now.ready) return setupFailed('Setup incomplete: ' + (now.java ? now.filesText : now.javaText));
+        stage.textContent = 'Ready';
+        refreshInstallStatus();
+        closePrereq();
+        launchGame();
+    } catch (e) {
+        setupFailed('Setup error: ' + e);
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Install missing';
+    }
+}
+
+async function launchGame() {
+    const status = $('status');
+    const btn = $('playBtn');
     btn.disabled = true;
     btn.textContent = 'Launching...';
     status.textContent = 'Launching Valkaw Client...';
     try {
-        const res = await Launch();
-        status.textContent = res;
+        status.textContent = await Launch();
     } catch (e) {
         status.textContent = 'Error: ' + e;
     } finally {
         btn.disabled = false;
         btn.textContent = '▶ Play';
     }
+}
+
+$('playBtn').addEventListener('click', async () => {
+    await syncConfig();
+    const reqs = await CheckRequirements();
+    if (!reqs.ready || (!reqs.graphics && !graphicsWarned)) {
+        openPrereq(reqs);
+        return;
+    }
+    launchGame();
+});
+
+$('prereqInstall').addEventListener('click', installMissing);
+$('prereqClose').addEventListener('click', closePrereq);
+$('prereqJava').addEventListener('click', () => BrowserOpenURL(JAVA_URL));
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closePrereq();
 });
 
 function presetValue(w, h) {

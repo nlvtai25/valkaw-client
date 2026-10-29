@@ -6,7 +6,7 @@ Two profiles ship from the same source: **Sodium** for OpenGL and **VulkanMod** 
 
 ## Download
 
-Client jars come from [Releases](https://github.com/nlvtai25/valkaw-client/releases). The launcher binary lives in this repository at `assets/downloads/valkaw-launcher-v1.0.1-linux-amd64`.
+Client jars come from [Releases](https://github.com/nlvtai25/valkaw-client/releases). The launcher binary lives in this repository at `assets/downloads/valkaw-launcher-v1.0.2-linux-amd64`.
 
 | File | What it is |
 | --- | --- |
@@ -28,9 +28,16 @@ Two extras sit outside the module lists. The **Custom Symbols** tab beside the c
 
 ## Requirements
 
-- Linux x64
+Launcher (Linux):
+
+- x64 with GTK 3 and WebKitGTK 4.1: `libgtk-3-0 libwebkit2gtk-4.1-0`
+- About 150 MB for the Java 21 runtime the launcher downloads on first setup
+
+Client, once installed:
+
 - JDK 21 or newer
 - Fabric 1.21.11 (`loader 0.20.1`)
+- An OpenGL 3.2 driver for the Sodium profile, a Vulkan 1.2 driver for the Vulkan profile
 - An account as offline username. Realms is not supported.
 
 ## Build the client

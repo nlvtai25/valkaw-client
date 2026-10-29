@@ -6,6 +6,10 @@ export function CheckInstalled() {
   return window['go']['main']['App']['CheckInstalled']();
 }
 
+export function CheckRequirements() {
+  return window['go']['main']['App']['CheckRequirements']();
+}
+
 export function CheckUpdate() {
   return window['go']['main']['App']['CheckUpdate']();
 }
@@ -28,6 +32,10 @@ export function GetVersions() {
 
 export function InstallClient(arg1) {
   return window['go']['main']['App']['InstallClient'](arg1);
+}
+
+export function InstallJava() {
+  return window['go']['main']['App']['InstallJava']();
 }
 
 export function InstallUpdate() {

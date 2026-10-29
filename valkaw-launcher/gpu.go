@@ -108,6 +108,57 @@ func nvidiaICD() string {
 	return ""
 }
 
+// graphicsState reports whether the driver for the selected profile exists.
+// Windows and macOS ship the runtime with the GPU driver, so only Linux is probed.
+func graphicsState(profile string) (string, bool, string) {
+	if profile == "vk" {
+		if vulkanReady() {
+			return "Vulkan", true, "Driver found"
+		}
+		return "Vulkan", false, "No Vulkan driver found. Install your GPU's Vulkan driver or switch to the Sodium profile."
+	}
+	if openglReady() {
+		return "OpenGL", true, "Driver found"
+	}
+	return "OpenGL", false, "OpenGL libraries not found. Install your GPU driver (Mesa or the vendor driver)."
+}
+
+func vulkanReady() bool {
+	if runtime.GOOS == "windows" {
+		root := os.Getenv("SystemRoot")
+		if root == "" {
+			return true
+		}
+		return fileExists(filepath.Join(root, "System32", "vulkan-1.dll"))
+	}
+	if runtime.GOOS != "linux" {
+		return false // VulkanMod needs MoltenVK on macOS, which is not bundled
+	}
+	for _, dir := range []string{"/usr/share/vulkan/icd.d", "/etc/vulkan/icd.d"} {
+		if matches, _ := filepath.Glob(filepath.Join(dir, "*.json")); len(matches) > 0 {
+			return true
+		}
+	}
+	return false
+}
+
+func openglReady() bool {
+	if runtime.GOOS != "linux" {
+		return true
+	}
+	for _, p := range []string{
+		"/usr/lib/x86_64-linux-gnu/libGL.so.1",
+		"/usr/lib/aarch64-linux-gnu/libGL.so.1",
+		"/usr/lib/libGL.so.1",
+		"/usr/lib64/libGL.so.1",
+	} {
+		if fileExists(p) {
+			return true
+		}
+	}
+	return false
+}
+
 // gpuEnv returns env vars that pin a Java process to gpu. Zero GPU = system default.
 func gpuEnv(gpu GPU, profile string) []string {
 	if gpu.ID == "" || runtime.GOOS != "linux" {

@@ -52,6 +52,32 @@ export namespace main {
 	        this.address = source["address"];
 	    }
 	}
+	export class Prereq {
+	    java: boolean;
+	    javaText: string;
+	    files: boolean;
+	    filesText: string;
+	    graphics: boolean;
+	    graphicsApi: string;
+	    graphicsText: string;
+	    ready: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new Prereq(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.java = source["java"];
+	        this.javaText = source["javaText"];
+	        this.files = source["files"];
+	        this.filesText = source["filesText"];
+	        this.graphics = source["graphics"];
+	        this.graphicsApi = source["graphicsApi"];
+	        this.graphicsText = source["graphicsText"];
+	        this.ready = source["ready"];
+	    }
+	}
 
 }
 
