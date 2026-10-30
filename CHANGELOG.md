@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.0.4 — 2026-10-30
+
+### Launcher
+- Auto-update reads the published builds in `assets/downloads` instead of release tags, so a newer launcher is found on both Linux and Windows.
+- A failed resource download no longer leaves a broken jar or zip in the profile folder.
+- File names coming from Modrinth are sanitized against path traversal, including Windows-style separators.
+- The Modrinth HTTP client is reused between requests and version queries are JSON-encoded instead of hand-built.
+- The resources modal keeps its header and tabs fixed and scrolls the body on its own layer, so long category and result lists move smoothly.
+- Added tests for file name sanitizing, folder mapping, version comparison and the update listing.
+
 ## v1.0.3 — 2026-10-30
 
 ### Launcher

@@ -17,7 +17,7 @@ var assets embed.FS
 
 // windowsVersion follows the repository release tags, so the Linux and Windows
 // launchers update from the same numbers.
-const windowsVersion = "v1.0.3"
+const windowsVersion = "v1.0.4"
 
 func main() {
 	app := core.NewApp(windowsVersion)
