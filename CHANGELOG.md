@@ -1,6 +1,6 @@
 # Changelog
 
-## v1.0.4.2 — 2026-10-31
+## v1.0.5 — 2026-10-31
 
 ### Launcher
 - The client jar is written to a temporary file and renamed into place, so a game that is already running keeps its open jar instead of reading a half-written one.
