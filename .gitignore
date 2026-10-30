@@ -9,6 +9,7 @@ valkaw-launcher/frontend/dist/
 
 # local notes and read-only vanilla reference
 AGENTS.md
+HANDOFF.md
 docs/
 .directory
 MCP-Reborn/
@@ -20,7 +21,7 @@ MCP-Reborn/
 .DS_Store
 Thumbs.db
 
-# local OpenCode harness (do not commit)
+# local workspace settings (do not commit)
 .opencode/
 
 # stray go build output
