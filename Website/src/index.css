@@ -82,20 +82,20 @@
   --z-modal: 400;
 
   /* Console, graphite colourway */
-  --color-paper: oklch(17% 0.008 250);
-  --color-paper-2: oklch(21% 0.009 250);
-  --color-paper-3: oklch(13.5% 0.007 250);
-  --color-ink: oklch(95% 0.005 250);
-  --color-ink-2: oklch(83% 0.008 250);
-  --color-muted: oklch(71% 0.01 250);
-  --color-rule: oklch(31% 0.01 250);
-  --color-rule-2: oklch(42% 0.012 250);
-  --color-accent: oklch(82% 0.15 80);
-  --color-accent-ink: oklch(18% 0.04 75);
-  --color-accent-soft: oklch(29% 0.05 80);
-  --color-focus: oklch(82% 0.15 80);
-  --color-cool: oklch(77% 0.12 245);
-  --color-cool-soft: oklch(29% 0.05 245);
+  --color-paper: oklch(14% 0.006 70);
+  --color-paper-2: oklch(19.5% 0.011 70);
+  --color-paper-3: oklch(11% 0.005 70);
+  --color-ink: oklch(95% 0.012 85);
+  --color-ink-2: oklch(84% 0.014 82);
+  --color-muted: oklch(68% 0.016 78);
+  --color-rule: oklch(30% 0.013 70);
+  --color-rule-2: oklch(41% 0.016 72);
+  --color-accent: oklch(78% 0.11 78);
+  --color-accent-ink: oklch(18% 0.02 70);
+  --color-accent-soft: oklch(27% 0.04 76);
+  --color-focus: oklch(78% 0.11 78);
+  --color-cool: oklch(70% 0.08 55);
+  --color-cool-soft: oklch(27% 0.035 55);
   --color-ok: oklch(76% 0.15 150);
   --color-ok-soft: oklch(24.5% 0.03 150);
   --color-bad: oklch(70% 0.17 25);
