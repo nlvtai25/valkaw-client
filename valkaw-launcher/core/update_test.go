@@ -3,6 +3,7 @@ package core
 import (
 	"net/http"
 	"net/http/httptest"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"testing"
@@ -16,9 +17,15 @@ func TestFetchDownloadDir(t *testing.T) {
 		w.Write([]byte(`[{"name":"valkaw-launcher-v1.0.3-linux-amd64"},{"name":"README.md"}]`))
 	}))
 	defer srv.Close()
-	old := repoDownloadsAPI
-	repoDownloadsAPI = srv.URL
-	defer func() { repoDownloadsAPI = old }()
+	noManifest := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.NotFound(w, r)
+	}))
+	defer noManifest.Close()
+
+	oldAPI, oldManifest, oldCache := repoDownloadsAPI, repoManifest, updateCachePath
+	repoDownloadsAPI, repoManifest = srv.URL, noManifest.URL
+	updateCachePath = func() string { return filepath.Join(t.TempDir(), "update-cache.json") }
+	defer func() { repoDownloadsAPI, repoManifest, updateCachePath = oldAPI, oldManifest, oldCache }()
 
 	names, err := (&App{}).fetchDownloadDir()
 	if err != nil {
@@ -26,6 +33,74 @@ func TestFetchDownloadDir(t *testing.T) {
 	}
 	if len(names) != 2 || names[0] != "valkaw-launcher-v1.0.3-linux-amd64" {
 		t.Fatalf("names = %v", names)
+	}
+}
+
+func TestFetchDownloadDirPrefersManifest(t *testing.T) {
+	manifest := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(`{"files":["valkaw-launcher-v1.0.5-linux-amd64","valkaw-launcher-win-v1.0.5-windows-amd64.exe"]}`))
+	}))
+	defer manifest.Close()
+	apiCalls := 0
+	api := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		apiCalls++
+		w.Write([]byte(`[]`))
+	}))
+	defer api.Close()
+
+	oldAPI, oldManifest, oldCache := repoDownloadsAPI, repoManifest, updateCachePath
+	repoDownloadsAPI, repoManifest = api.URL, manifest.URL
+	updateCachePath = func() string { return filepath.Join(t.TempDir(), "update-cache.json") }
+	defer func() { repoDownloadsAPI, repoManifest, updateCachePath = oldAPI, oldManifest, oldCache }()
+
+	names, err := (&App{}).fetchDownloadDir()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(names) != 2 {
+		t.Fatalf("names = %v", names)
+	}
+	if apiCalls != 0 {
+		t.Fatalf("API was called %d times, want 0", apiCalls)
+	}
+}
+
+func TestFetchDownloadDirFallsBackToCache(t *testing.T) {
+	down := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "rate limited", http.StatusForbidden)
+	}))
+	defer down.Close()
+
+	oldAPI, oldManifest, oldCache := repoDownloadsAPI, repoManifest, updateCachePath
+	repoDownloadsAPI, repoManifest = down.URL, down.URL
+	updateCachePath = func() string { return filepath.Join(t.TempDir(), "update-cache.json") }
+	defer func() { repoDownloadsAPI, repoManifest, updateCachePath = oldAPI, oldManifest, oldCache }()
+
+	cache := filepath.Join(t.TempDir(), "update-cache.json")
+	updateCachePath = func() string { return cache }
+	saveUpdateCache([]string{"valkaw-launcher-v1.0.5-linux-amd64"})
+	names, err := (&App{}).fetchDownloadDir()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(names) != 1 || names[0] != "valkaw-launcher-v1.0.5-linux-amd64" {
+		t.Fatalf("names = %v", names)
+	}
+}
+
+func TestContentsDirReportsRateLimit(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "forbidden", http.StatusForbidden)
+	}))
+	defer srv.Close()
+
+	old := repoDownloadsAPI
+	repoDownloadsAPI = srv.URL
+	defer func() { repoDownloadsAPI = old }()
+
+	_, err := fetchContentsDir()
+	if err == nil || !strings.Contains(err.Error(), "rate limit") {
+		t.Fatalf("err = %v, want rate limit message", err)
 	}
 }
 

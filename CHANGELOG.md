@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.0.6 — 2026-10-31
+
+### Launcher
+- The update check reads a small `assets/downloads/latest.json` index over plain HTTPS instead of the GitHub Contents API, so a busy IP no longer sees `HTTP 403`.
+- When that index is unreachable the launcher falls back to the API and then to the last listing it downloaded successfully.
+- A rate limited API now says "GitHub rate limit reached" instead of a bare status code.
+- Update checks are covered by tests for the index, the fallback and the cached listing.
+
 ## v1.0.5 — 2026-10-31
 
 ### Launcher

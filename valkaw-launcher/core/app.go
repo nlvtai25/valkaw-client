@@ -22,8 +22,12 @@ const (
 )
 
 var (
-	// repoDownloadsAPI lists the published launcher builds. assets/downloads is
-	// the only source of truth for them, not GitHub release tags.
+	// repoManifest lists the published launcher builds as plain JSON. It is read
+	// from raw.githubusercontent.com, which has no request quota, so a normal
+	// update check never touches the rate-limited GitHub API.
+	repoManifest = "https://raw.githubusercontent.com/nlvtai25/valkaw-client/main/assets/downloads/latest.json"
+	// repoDownloadsAPI is the fallback listing used when the manifest is missing.
+	// assets/downloads is the only source of truth for builds, not release tags.
 	repoDownloadsAPI = "https://api.github.com/repos/nlvtai25/valkaw-client/contents/assets/downloads"
 	releasesPage     = "https://github.com/nlvtai25/valkaw-client/releases/latest"
 	releaseDL        = "https://github.com/nlvtai25/valkaw-client/releases/latest/download/"
@@ -328,10 +332,89 @@ type downloadEntry struct {
 	Name string `json:"name"`
 }
 
-// fetchDownloadDir lists the builds published under assets/downloads. That
-// directory is the single source of truth for launcher builds, so the update
-// check never depends on GitHub release tags.
+// fetchDownloadDir lists the builds published under assets/downloads.
 func (a *App) fetchDownloadDir() ([]string, error) {
+	names, manifestErr := fetchManifest()
+	if manifestErr == nil && len(names) > 0 {
+		saveUpdateCache(names)
+		return names, nil
+	}
+	names, apiErr := fetchContentsDir()
+	if apiErr == nil && len(names) > 0 {
+		saveUpdateCache(names)
+		return names, nil
+	}
+	// Both sources are unreachable (offline or rate limited). A recent listing is
+	// better than telling the player the check failed for no useful reason.
+	if cached := loadUpdateCache(); len(cached) > 0 {
+		return cached, nil
+	}
+	if apiErr != nil {
+		return nil, apiErr
+	}
+	return nil, manifestErr
+}
+
+// fetchManifest reads the small JSON index that lists the published builds.
+func fetchManifest() ([]string, error) {
+	client := &http.Client{Timeout: 10 * time.Second}
+	req, _ := http.NewRequest(http.MethodGet, repoManifest, nil)
+	req.Header.Set("User-Agent", "ValkawLauncher/1.0")
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != 200 {
+		return nil, fmt.Errorf("HTTP %d", resp.StatusCode)
+	}
+	var manifest struct {
+		Files []string `json:"files"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&manifest); err != nil {
+		return nil, err
+	}
+	return manifest.Files, nil
+}
+
+// updateCacheFile remembers the last good listing so a rate limited API does not
+// turn into a visible error.
+type updateCacheFile struct {
+	Checked int64    `json:"checked"`
+	Files   []string `json:"files"`
+}
+
+// updateCachePath is a variable so tests can point it at a temp file.
+var updateCachePath = func() string {
+	return filepath.Join(configDir(), "update-cache.json")
+}
+
+func saveUpdateCache(names []string) {
+	data, err := json.Marshal(updateCacheFile{Checked: time.Now().Unix(), Files: names})
+	if err != nil {
+		return
+	}
+	_ = os.WriteFile(updateCachePath(), data, 0644)
+}
+
+func loadUpdateCache() []string {
+	data, err := os.ReadFile(updateCachePath())
+	if err != nil {
+		return nil
+	}
+	var cache updateCacheFile
+	if json.Unmarshal(data, &cache) != nil {
+		return nil
+	}
+	// Older than a week means the list is likely wrong; prefer a real error.
+	if time.Since(time.Unix(cache.Checked, 0)) > 7*24*time.Hour {
+		return nil
+	}
+	return cache.Files
+}
+
+// fetchContentsDir lists assets/downloads through the GitHub Contents API.
+func fetchContentsDir() ([]string, error) {
 	client := &http.Client{Timeout: 10 * time.Second}
 	req, _ := http.NewRequest(http.MethodGet, repoDownloadsAPI, nil)
 	req.Header.Set("User-Agent", "ValkawLauncher/1.0")
@@ -342,6 +425,9 @@ func (a *App) fetchDownloadDir() ([]string, error) {
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
+		if resp.StatusCode == http.StatusForbidden || resp.StatusCode == http.StatusTooManyRequests {
+			return nil, fmt.Errorf("GitHub rate limit reached, try again later")
+		}
 		return nil, fmt.Errorf("HTTP %d", resp.StatusCode)
 	}
 	var entries []downloadEntry
