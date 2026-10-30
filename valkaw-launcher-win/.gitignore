@@ -3,3 +3,4 @@ build/windows/
 *.syso
 frontend/dist/
 frontend/wailsjs/
+webview2/

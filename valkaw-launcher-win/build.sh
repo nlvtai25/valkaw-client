@@ -14,4 +14,11 @@ rm -rf frontend/dist
 mkdir -p frontend
 cp -r ../valkaw-launcher/frontend/dist frontend/dist
 
+# Evergreen WebView2 bootstrapper, embedded in the exe and run silently on first
+# start when the runtime is missing. Gitignored: it is a download, not source.
+mkdir -p webview2
+if [ ! -s webview2/MicrosoftEdgeWebView2Setup.exe ]; then
+  curl -fsSL "https://go.microsoft.com/fwlink/p/?LinkId=2124703" -o webview2/MicrosoftEdgeWebView2Setup.exe
+fi
+
 wails build -platform windows/amd64 -o valkaw-launcher-win.exe "$@"

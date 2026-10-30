@@ -8,6 +8,8 @@ export function CheckRequirements():Promise<core.Prereq>;
 
 export function CheckUpdate():Promise<string>;
 
+export function CheckVulkan():Promise<core.VulkanCheck>;
+
 export function DetectJava():Promise<string>;
 
 export function GetConfig():Promise<core.Config>;

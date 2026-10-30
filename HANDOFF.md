@@ -119,19 +119,31 @@ Flag `-XX:+UnlockExperimentalVMOptions` là **bắt buộc**, thiếu là JVM ch
 **Không còn nhúng jar client** (62 MB → 11 MB):
 - Xoá `//go:embed assets/clients/*/*.jar` và `embed.FS`.
 - Khi cài, launcher đọc tag mới nhất từ redirect của `https://github.com/nlvtai25/valkaw-client/releases/latest` (302 → `/releases/tag/v1.0.1`, bỏ tiền tố `v`), rồi tải `.../releases/latest/download/valkawclient-<client-version>-<profile>.jar`. Không còn `clientVersion` hard-code trong Go.
-- Cache ở `~/.valkaw-launcher/clients/<mc-version>/<profile>.jar`; tải lỗi thì dùng cache cũ (chạy offline được).
+- Cache ở `~/.valkaw/launcher/clients/<mc-version>/<profile>.jar`; tải lỗi thì dùng cache cũ (chạy offline được).
 - Cố tình **không dùng GitHub REST API** cho bước này: API không auth bị `HTTP 403` rate limit 60 req/giờ/IP. Cả redirect `releases/latest` và URL tĩnh `releases/latest/download/...` đều không bị giới hạn.
 - `CheckUpdate` / `InstallUpdate` vẫn dùng API (hành động tự nguyện, tần suất thấp) — vẫn có thể 403 nếu IP chung.
 - `InstallUpdate` lấy binary từ `assets/downloads/valkaw-launcher-<tag>-linux-amd64` trong repo, không tìm asset trong Release nữa (asset đó đã bị xoá).
 
-**Cấu hình:** `~/.valkaw-launcher/config.json`. `gameDir` mặc định `~/.valkaw`, mặc định `memoryMB 4096`, `profile gl`, `afterRun hide`, `autoUpdate true`.
+**Cấu hình:** mọi thứ launcher tạo ra nằm trong `~/.valkaw` (`%USERPROFILE%\.valkaw` trên Windows), áp dụng cho cả Linux:
+- `~/.valkaw/launcher/config.json` — cấu hình; cache jar client ở `~/.valkaw/launcher/clients/<mc-version>/<profile>.jar`.
+- `~/.valkaw/jre/<jdk-…>` — Java do launcher tự tải.
+- `~/.valkaw/minecraft` — `gameDir` mặc định (assets, libraries, versions, `gl/`, `vk/`).
+
+`migrateLayout()` chuyển dữ liệu cũ `~/.valkaw-launcher` sang `~/.valkaw/launcher` (và `java/` sang `~/.valkaw/jre`) một lần lúc `Startup`; `adoptGameDir()` dời game files từ `~/.valkaw` sang `~/.valkaw/minecraft` nếu config còn trỏ vào thư mục gốc cũ. `javaPath` trỏ tới file không còn tồn tại thì reset về `java`. Mặc định `memoryMB 4096`, `profile gl`, `afterRun hide` (`appear` trên Windows), `autoUpdate true`.
 
 **Popup kiểm tra điều kiện (v1.0.2):**
 - `CheckRequirements()` trong `install.go` trả `Prereq{java, javaText, files, filesText, graphics, graphicsApi, graphicsText, ready}`. `ready = java && files` — thiếu driver **không** chặn chơi.
-- `InstallJava()` tải Temurin JRE 21 từ `api.adoptium.net/v3/binary/latest/21/ga/<os>/<arch>/jre/hotspot/normal/eclipse`, giải nén vào `~/.valkaw-launcher/java`, tìm `*/bin/java` (Linux/macOS) hoặc `*/bin/java.exe` (Windows), kiểm tra major ≥ 21 rồi ghi vào `javaPath`.
+- `InstallJava()` tải Temurin JRE 21 từ `api.adoptium.net/v3/binary/latest/21/ga/<os>/<arch>/jre/hotspot/normal/eclipse`, giải nén vào `~/.valkaw/jre`, tìm `*/bin/java` (Linux/macOS) hoặc `*/bin/java.exe` (Windows), kiểm tra major ≥ 21 rồi ghi vào `javaPath`.
 - `findJava` quét thêm thư mục JRE do launcher tự cài, nên lần sau không tải lại.
-- `graphicsState(profile)` ở `gpu.go`: profile `gl` kiểm `libGL.so.1`, profile `vk` kiểm file `*.json` trong `/usr/share/vulkan/icd.d` hoặc `/etc/vulkan/icd.d` (Windows: `System32\vulkan-1.dll`; macOS: luôn false vì thiếu MoltenVK).
+- `graphicsState(profile)` ở `gpu.go`: profile `gl` kiểm `libGL.so.1`; profile `vk` gọi `checkVulkan()` (xem mục Vulkan bên dưới) nên thông báo có cả tên GPU, phiên bản Vulkan và cách xử lý.
 - Popup (`#prereqModal`) chỉ tự mở khi thiếu Java hoặc game files. Thiếu driver thì chỉ hiện khi bấm Play lần đầu, nút đổi thành `Continue anyway`, và không hỏi lại trong phiên đó.
+
+**Vulkan gate (profile `vk`):**
+- `checkVulkan()` (`core/vulkan.go`) trả `VulkanCheck{supported, loader, verified, device, apiVersion, driverVersion, reason, fix, fixText, driverUrl, summary}` và yêu cầu **Vulkan 1.3**.
+- Windows: `core/vulkan_windows.go` nạp `vulkan-1.dll` bằng `syscall.NewLazyDLL` rồi gọi `vkCreateInstance` / `vkEnumeratePhysicalDevices` / `vkGetPhysicalDeviceProperties` qua buffer byte với offset cố định — không cgo, không phụ thuộc padding struct của Go.
+- Linux/macOS: `core/vulkan_other.go` kiểm ICD; có `vulkaninfo` thì đọc `--summary`, không có thì coi như đạt (`verified=false`) và không chặn.
+- Phân loại `fix`: `install-driver` (không thấy loader) → cài driver; `update-driver` (GPU thuộc dòng lên được 1.3 nhưng driver báo thấp hơn) → cập nhật driver; `upgrade-gpu` (dòng GPU không lên được 1.3) → không chơi được bằng Vulkan, gợi ý Sodium hoặc card hỗ trợ Vulkan 1.3.
+- Chặn 2 lớp: `Launch()` trả lỗi khi `profile == vk` mà `!supported`; frontend gọi `CheckVulkan()` ngay khi bấm card Vulkan, không đạt thì trả radio về profile cũ và mở `#vkModal` (lý do, GPU/Vulkan/driver, nút tải driver theo hãng, nút chuyển sang Sodium). Bấm Play với profile `vk` cũng kiểm lại.
 
 **Bản Windows (v1.0.2):**
 - Kiến trúc: `valkaw-launcher/core/` là package `core` dùng chung toàn bộ logic (Config, App, tải/cài game, Java, GPU, update). `valkaw-launcher/main.go` và `valkaw-launcher-win/main.go` chỉ là vỏ Wails; số version truyền vào `core.NewApp(version)`.
@@ -142,7 +154,8 @@ Flag `-XX:+UnlockExperimentalVMOptions` là **bắt buộc**, thiếu là JVM ch
 - Auto-update: `InstallUpdate` tải `assets/downloads/valkaw-launcher-win-<tag>-windows-amd64.exe` rồi giao cho `exe.update.bat` (`ping -n 4` chờ process thoát → `move /y` → `start`), vì Windows khoá file exe đang chạy. Script chạy ẩn (`SysProcAttr.HideWindow`).
 - `updatePrefix()`: Windows chỉ nhận release có asset bắt đầu bằng `valkaw-launcher-win-`; Linux giữ `releases/latest`. Release không có file Windows thì bản Windows báo "up to date" thay vì tải nhầm.
 - Build từ Linux, không cần Windows hay mingw: `wails build -platform windows/amd64` ra PE32+ GUI (subsystem 2). Icon sinh từ `build/appicon.png` thành `build/windows/icon.ico` + `.syso` lúc build.
-- **Chưa chạy thử trên Windows.** Đã kiểm: biên dịch, `GOOS=windows go vet`, PE header subsystem = GUI, chuỗi UI có trong exe. Còn phải thử trên máy thật: WebView2, cài Java, registry GPU, updater.
+- WebView2: `valkaw-launcher-win/webview2.go` nhúng `MicrosoftEdgeWebView2Setup.exe` (~1.9 MB, `build.sh` tải về `webview2/`, đã gitignore) rồi chạy `/silent /install` khi máy chưa có runtime (kiểm registry `EdgeUpdate\Clients\{F3017226-…}` + thư mục `EdgeWebView2\Application`). Cài per-user, không cần admin; lỗi thì hiện `MessageBoxW` kèm link tải.
+- **Chưa chạy thử trên Windows.** Đã kiểm: biên dịch, `GOOS=windows go vet`, PE header subsystem = GUI, chuỗi UI có trong exe. Còn phải thử trên máy thật: WebView2 (cả nhánh tự cài), `CheckVulkan` với driver thật, cài Java, registry GPU, updater.
 
 ## Build & deploy
 

@@ -17,10 +17,18 @@ var assets embed.FS
 
 // windowsVersion follows the repository release tags, so the Linux and Windows
 // launchers update from the same numbers.
-const windowsVersion = "v1.0.2"
+const windowsVersion = "v1.0.3"
 
 func main() {
 	app := core.NewApp(windowsVersion)
+
+	if err := ensureWebView2(); err != nil {
+		messageBox(
+			"Valkaw Launcher needs the Microsoft Edge WebView2 runtime and could not install it.\n\n"+
+				"Install it from https://developer.microsoft.com/microsoft-edge/webview2 and start the launcher again.",
+			"Valkaw Launcher")
+		return
+	}
 
 	err := wails.Run(&options.App{
 		Title:            "Valkaw Launcher Windows " + windowsVersion,

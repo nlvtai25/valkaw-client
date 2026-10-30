@@ -459,6 +459,16 @@ pre {
 
 .modal-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
 .modal-actions .btn.primary { padding: 10px 18px; font-size: 14px; }
+.modal-card .reason { margin: 12px 0 0; font-size: 13px; line-height: 1.55; color: var(--text); }
+.modal-card .device {
+    margin: 10px 0 0;
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--muted);
+    word-break: break-word;
+}
+.modal-card .device:empty { display: none; }
 
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(6px); }

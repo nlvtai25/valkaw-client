@@ -14,6 +14,10 @@ export function CheckUpdate() {
   return window['go']['core']['App']['CheckUpdate']();
 }
 
+export function CheckVulkan() {
+  return window['go']['core']['App']['CheckVulkan']();
+}
+
 export function DetectJava() {
   return window['go']['core']['App']['DetectJava']();
 }

@@ -1,5 +1,18 @@
 # Changelog
 
+## v1.0.3 — 2026-10-30
+
+### Launcher
+- Everything the launcher writes now lives under one folder: `~/.valkaw` on Linux, `%USERPROFILE%\.valkaw` on Windows. `launcher/` holds the config and the cached client jars, `jre/` holds the Java runtime, `minecraft/` holds the game files.
+- Existing installs are moved into the new layout on first start, including the downloaded Java runtime, so nothing has to be downloaded again.
+- The Vulkan profile is checked before it can be picked. The launcher reads the GPU name, driver version and Vulkan version from the driver and, when the profile cannot work, refuses it and opens a dialog that says why.
+- Three cases get their own answer: no Vulkan driver (install the GPU driver), driver too old (update it, the GPU can do Vulkan 1.3), and a GPU that cannot reach Vulkan 1.3 with any driver (play with Sodium, or use a GPU that supports Vulkan 1.3).
+- The dialog shows the detected GPU, Vulkan and driver versions, links to the vendor's driver page, and can switch to the Sodium profile in one click.
+- Play checks the same thing, so the Vulkan profile cannot start from an old config either.
+- The setup popup reports the real Vulkan version and GPU instead of only saying the driver was found.
+- The Windows launcher now carries the WebView2 bootstrapper inside the exe. If the runtime is missing it installs silently on first start, per user and without admin rights.
+- Version `v1.0.3`.
+
 ## v1.0.2 — 2026-10-29
 
 ### Launcher

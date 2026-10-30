@@ -20,6 +20,9 @@ MCP-Reborn/
 .DS_Store
 Thumbs.db
 
+# local OpenCode harness (do not commit)
+.opencode/
+
 # stray go build output
 valkaw-launcher/valkaw-launcher
 valkaw-launcher/frontend/package.json.md5

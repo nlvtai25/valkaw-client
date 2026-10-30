@@ -166,6 +166,21 @@
             </div>
         </div>
     </div>
+
+    <div id="vkModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="vkTitle">
+        <div class="modal-card">
+            <p class="eyebrow" id="vkEyebrow">// VULKAN MOD</p>
+            <h3 id="vkTitle">Vulkan unavailable</h3>
+            <p id="vkReason" class="reason"></p>
+            <p id="vkDevice" class="device"></p>
+            <ul id="vkFix" class="req-list"></ul>
+            <div class="modal-actions">
+                <button id="vkDriver" class="btn primary">Get driver</button>
+                <button id="vkSodium" class="btn ghost">Use Sodium instead</button>
+                <button id="vkClose" class="btn ghost">Close</button>
+            </div>
+        </div>
+    </div>
 </div>
 <script type="module" src="./src/main.js"></script>
 </body>

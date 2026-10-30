@@ -10,7 +10,7 @@ Client jars come from [Releases](https://github.com/nlvtai25/valkaw-client/relea
 
 | File | Platform |
 | --- | --- |
-| `assets/downloads/valkaw-launcher-v1.0.2-linux-amd64` | Linux |
+| `assets/downloads/valkaw-launcher-v1.0.3-linux-amd64` | Linux |
 | `assets/downloads/valkaw-launcher-win-v1.0.2-windows-amd64.exe` | Windows |
 
 | File | What it is |
@@ -18,7 +18,7 @@ Client jars come from [Releases](https://github.com/nlvtai25/valkaw-client/relea
 | `valkawclient-1.0.1-sodium.jar` | Sodium profile client |
 | `valkawclient-1.0.1-vulkan.jar` | Vulkan profile client |
 
-The launcher installs the selected profile into `~/.valkaw/<profile>/` and starts the game with tuned JVM flags.
+The launcher installs the selected profile into `~/.valkaw/minecraft/<profile>/` and starts the game with tuned JVM flags.
 
 ## Modules
 

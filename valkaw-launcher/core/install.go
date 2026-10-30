@@ -188,8 +188,8 @@ func findJava(configured string) (string, int, error) {
 	patterns := []string{
 		filepath.Join(home, ".local/share/jdk-*/bin", javaExe()),
 		filepath.Join(home, ".jdks/*/bin", javaExe()),
-		filepath.Join(configDir(), "java", "*", "bin", javaExe()),
-		filepath.Join(configDir(), "java", "*", "Contents", "Home", "bin", javaExe()),
+		filepath.Join(javaDir(), "*", "bin", javaExe()),
+		filepath.Join(javaDir(), "*", "Contents", "Home", "bin", javaExe()),
 	}
 	if runtime.GOOS == "windows" {
 		for _, base := range []string{
@@ -289,7 +289,7 @@ func (a *App) InstallJava() string {
 		ext = ".zip"
 	}
 	a.emitInstall("Downloading Java 21...", 2)
-	archive := filepath.Join(configDir(), "java21"+ext)
+	archive := filepath.Join(launcherDir(), "java21"+ext)
 	_ = os.Remove(archive)
 	url := fmt.Sprintf(javaBinaryURL, plat, arch)
 	size := remoteSize(url)
@@ -301,7 +301,7 @@ func (a *App) InstallJava() string {
 	}
 	defer os.Remove(archive)
 	a.emitInstall("Installing Java 21...", 92)
-	dest := filepath.Join(configDir(), "java")
+	dest := javaDir()
 	_ = os.RemoveAll(dest)
 	if err := os.MkdirAll(dest, 0755); err != nil {
 		return "error: " + err.Error()
@@ -406,7 +406,7 @@ func (a *App) gamePath(profile string, parts ...string) string {
 }
 
 func clientCacheDir() string {
-	return filepath.Join(configDir(), "clients")
+	return filepath.Join(launcherDir(), "clients")
 }
 
 func clientJarPath(version, profile string) string {
@@ -1029,6 +1029,11 @@ func (a *App) Launch() string {
 	profile := a.config.Profile
 	if profile != "gl" && profile != "vk" {
 		profile = "gl"
+	}
+	if profile == "vk" {
+		if c := checkVulkan(); !c.Supported {
+			return "error: " + c.Reason
+		}
 	}
 	if err := a.checkInstalled(); err != nil {
 		return "error: " + err.Error() + " — finish the setup first"

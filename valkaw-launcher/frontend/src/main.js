@@ -1,6 +1,6 @@
 import './style.css';
 
-import { GetConfig, SaveConfig, Launch, CheckUpdate, OpenReleases, InstallClient, CheckInstalled, DetectJava, InstallUpdate, GetVersions, ListGPUs, CheckRequirements, InstallJava, SetGpuPreference } from '../wailsjs/go/core/App';
+import { GetConfig, SaveConfig, Launch, CheckUpdate, OpenReleases, InstallClient, CheckInstalled, DetectJava, InstallUpdate, GetVersions, ListGPUs, CheckRequirements, InstallJava, SetGpuPreference, CheckVulkan } from '../wailsjs/go/core/App';
 import { EventsOn, BrowserOpenURL } from '../wailsjs/runtime/runtime';
 
 const $ = (id) => document.getElementById(id);
@@ -22,6 +22,7 @@ document.querySelectorAll('.nav').forEach(b => b.addEventListener('click', () =>
 
 let cfg = {};
 let updateReady = false;
+let lastProfile = 'gl';
 
 async function loadConfig() {
     cfg = await GetConfig();
@@ -35,6 +36,7 @@ async function loadConfig() {
     const profile = cfg.profile || 'gl';
     const radio = document.querySelector(`input[name="profile"][value="${profile}"]`);
     if (radio) radio.checked = true;
+    lastProfile = profile;
     $('javaPath').value = cfg.javaPath || 'java';
     $('gameDir').value = cfg.gameDir || '';
     await loadVersions();
@@ -101,8 +103,64 @@ $('gpuPref').addEventListener('change', async () => {
     $('gpuStatus').textContent = res === 'ok' ? 'Saved — applies on next launch.' : res;
 });
 
-$('version').addEventListener('change', async () => {
-    cfg.version = $('version').value;
+// ------------------------------------------------------------- Vulkan profile
+// The Vulkan profile is only accepted when the driver reports Vulkan 1.3.
+const VK_TITLES = {
+    'install-driver': ['// VULKAN MOD', 'Vulkan driver missing'],
+    'update-driver': ['// DRIVER OUTDATED', 'Update your GPU driver'],
+    'upgrade-gpu': ['// GPU NOT SUPPORTED', 'This GPU cannot run Vulkan 1.3'],
+};
+
+let vkDriverURL = '';
+
+function showVulkanModal(c) {
+    const [eyebrow, title] = VK_TITLES[c.fix] || ['// VULKAN MOD', 'Vulkan unavailable'];
+    $('vkEyebrow').textContent = eyebrow;
+    $('vkTitle').textContent = title;
+    $('vkReason').textContent = c.reason || '';
+    $('vkDevice').textContent = [
+        c.device,
+        c.apiVersion && 'Vulkan ' + c.apiVersion,
+        c.driverVersion && 'driver ' + c.driverVersion,
+    ].filter(Boolean).join('  //  ');
+    $('vkFix').innerHTML = c.fixText ? reqRow('warn', 'How to fix', c.fixText) : '';
+    vkDriverURL = c.driverUrl || '';
+    $('vkDriver').classList.toggle('hidden', !vkDriverURL);
+    $('vkModal').classList.remove('hidden');
+}
+
+function closeVulkan() { $('vkModal').classList.add('hidden'); }
+
+async function vulkanReady(quiet) {
+    const c = await CheckVulkan();
+    if (c.supported) return true;
+    if (!quiet) showVulkanModal(c);
+    return false;
+}
+
+document.querySelectorAll('input[name="profile"]').forEach(r => r.addEventListener('change', async (e) => {
+    if (e.target.value === 'vk' && !(await vulkanReady())) {
+        const back = document.querySelector(`input[name="profile"][value="${lastProfile}"]`);
+        if (back) back.checked = true;
+        return;
+    }
+    lastProfile = e.target.value;
+    cfg.profile = e.target.value;
+    await SaveConfig(cfg);
+}));
+
+$('vkDriver').addEventListener('click', () => { if (vkDriverURL) BrowserOpenURL(vkDriverURL); });
+$('vkSodium').addEventListener('click', async () => {
+    const gl = document.querySelector('input[name="profile"][value="gl"]');
+    if (gl) gl.checked = true;
+    lastProfile = 'gl';
+    cfg.profile = 'gl';
+    await SaveConfig(cfg);
+    closeVulkan();
+});
+$('vkClose').addEventListener('click', closeVulkan);
+
+$('version').addEventListener('change', async () => {    cfg.version = $('version').value;
     updateHeroMeta();
     await SaveConfig(cfg);
     refreshInstallStatus();
@@ -321,6 +379,7 @@ async function launchGame() {
 
 $('playBtn').addEventListener('click', async () => {
     await syncConfig();
+    if (cfg.profile === 'vk' && !(await vulkanReady())) return;
     const reqs = await CheckRequirements();
     if (!reqs.ready || (!reqs.graphics && !graphicsWarned)) {
         openPrereq(reqs);
@@ -333,7 +392,10 @@ $('prereqInstall').addEventListener('click', installMissing);
 $('prereqClose').addEventListener('click', closePrereq);
 $('prereqJava').addEventListener('click', () => BrowserOpenURL(JAVA_URL));
 document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') closePrereq();
+    if (e.key === 'Escape') {
+        closePrereq();
+        closeVulkan();
+    }
 });
 
 function presetValue(w, h) {

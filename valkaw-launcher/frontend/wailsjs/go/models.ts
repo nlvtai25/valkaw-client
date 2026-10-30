@@ -82,6 +82,38 @@ export namespace core {
 	        this.ready = source["ready"];
 	    }
 	}
+	export class VulkanCheck {
+	    supported: boolean;
+	    loader: boolean;
+	    verified: boolean;
+	    device: string;
+	    apiVersion: string;
+	    driverVersion: string;
+	    reason: string;
+	    fix: string;
+	    fixText: string;
+	    driverUrl: string;
+	    summary: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new VulkanCheck(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.supported = source["supported"];
+	        this.loader = source["loader"];
+	        this.verified = source["verified"];
+	        this.device = source["device"];
+	        this.apiVersion = source["apiVersion"];
+	        this.driverVersion = source["driverVersion"];
+	        this.reason = source["reason"];
+	        this.fix = source["fix"];
+	        this.fixText = source["fixText"];
+	        this.driverUrl = source["driverUrl"];
+	        this.summary = source["summary"];
+	    }
+	}
 
 }
 

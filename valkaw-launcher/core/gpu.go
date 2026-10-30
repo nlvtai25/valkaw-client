@@ -112,10 +112,11 @@ func nvidiaICD() string {
 // Windows and macOS ship the runtime with the GPU driver, so only Linux is probed.
 func graphicsState(profile string) (string, bool, string) {
 	if profile == "vk" {
-		if vulkanReady() {
-			return "Vulkan", true, "Driver found"
+		c := checkVulkan()
+		if c.Supported {
+			return "Vulkan", true, c.Summary
 		}
-		return "Vulkan", false, "No Vulkan driver found. Install your GPU's Vulkan driver or switch to the Sodium profile."
+		return "Vulkan", false, c.Reason
 	}
 	if openglReady() {
 		return "OpenGL", true, "Driver found"

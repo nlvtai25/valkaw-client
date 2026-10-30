@@ -50,7 +50,7 @@ func updateAssetName(tag string) string {
 type Config struct {
 	LauncherVersion string `json:"launcherVersion"`
 	JavaPath        string `json:"javaPath"`
-	GameDir         string `json:"gameDir"` // shared root, default ~/.valkaw
+	GameDir         string `json:"gameDir"` // shared root, default ~/.valkaw/minecraft
 	Version         string `json:"version"` // Minecraft version with a bundled client build
 	Profile         string `json:"profile"` // "gl" | "vk"
 	GPU             string `json:"gpu"`     // selected GPU pci id, "" = system default
@@ -96,14 +96,64 @@ func NewApp(version string) *App {
 	return a
 }
 
-func defaultGameDir() string {
-	home, _ := os.UserHomeDir()
-	return filepath.Join(home, ".valkaw")
+// Everything the launcher owns sits under ~/.valkaw:
+//
+//	launcher/   config.json and the cached client jars
+//	jre/        the Java runtime the launcher downloads
+//	minecraft/  game files, default GameDir, one folder per profile inside
+func dataDir() string { return filepath.Join(mustHome(), ".valkaw") }
+
+func defaultGameDir() string { return filepath.Join(dataDir(), "minecraft") }
+
+func launcherDir() string {
+	d := filepath.Join(dataDir(), "launcher")
+	_ = os.MkdirAll(d, 0755)
+	return d
+}
+
+func javaDir() string { return filepath.Join(dataDir(), "jre") }
+
+// migrateLayout moves state from the older ~/.valkaw-launcher folder into the
+// current tree, so an existing install keeps its config and Java runtime.
+func migrateLayout() {
+	_ = os.MkdirAll(dataDir(), 0755)
+	old := filepath.Join(mustHome(), ".valkaw-launcher")
+	launcher := filepath.Join(dataDir(), "launcher")
+	if dirExists(old) && !dirExists(launcher) {
+		if err := os.Rename(old, launcher); err == nil {
+			if !dirExists(javaDir()) {
+				_ = os.Rename(filepath.Join(launcher, "java"), javaDir())
+			}
+		}
+	}
+	if dirExists(filepath.Join(launcher, "java")) && !dirExists(javaDir()) {
+		_ = os.Rename(filepath.Join(launcher, "java"), javaDir())
+	}
+}
+
+// adoptGameDir moves game files out of ~/.valkaw into ~/.valkaw/minecraft.
+// Launcher data and the Java runtime stay where they are.
+func (a *App) adoptGameDir() {
+	dest := defaultGameDir()
+	_ = os.MkdirAll(dest, 0755)
+	for _, name := range []string{
+		"assets", "libraries", "versions", "valkaw", "launcher_profiles.json",
+		"gl", "vk", "mods", "logs", "crash-reports", "options.txt",
+		"resourcepacks", "shaderpacks", "screenshots",
+	} {
+		src := filepath.Join(dataDir(), name)
+		if !fileExists(src) || fileExists(filepath.Join(dest, name)) {
+			continue
+		}
+		_ = os.Rename(src, filepath.Join(dest, name))
+	}
+	a.config.GameDir = dest
 }
 
 func (a *App) Startup(ctx context.Context) {
 	a.ctx = ctx
-	a.cfgPath = filepath.Join(configDir(), "config.json")
+	migrateLayout()
+	a.cfgPath = filepath.Join(launcherDir(), "config.json")
 	if data, err := os.ReadFile(a.cfgPath); err == nil {
 		_ = json.Unmarshal(data, &a.config)
 	}
@@ -116,8 +166,14 @@ func (a *App) Startup(ctx context.Context) {
 	if a.config.Profile == "" {
 		a.config.Profile = "gl"
 	}
+	if filepath.Clean(a.config.GameDir) == filepath.Clean(dataDir()) {
+		a.adoptGameDir()
+	}
 	if a.config.GameDir == "" || a.config.GameDir == filepath.Join(mustHome(), ".minecraft") {
 		a.config.GameDir = defaultGameDir()
+	}
+	if a.config.JavaPath != "" && a.config.JavaPath != "java" && !fileExists(a.config.JavaPath) {
+		a.config.JavaPath = "java" // the JRE may have moved or been removed
 	}
 	if _, err := clientJar(a.config.Version, a.config.Profile); err != nil {
 		a.config.Version = defaultMCVersion
@@ -135,10 +191,12 @@ func mustHome() string {
 }
 
 func configDir() string {
-	home, _ := os.UserHomeDir()
-	d := filepath.Join(home, ".valkaw-launcher")
-	_ = os.MkdirAll(d, 0755)
-	return d
+	return launcherDir()
+}
+
+func dirExists(path string) bool {
+	fi, err := os.Stat(path)
+	return err == nil && fi.IsDir()
 }
 
 func (a *App) GetConfig() Config { return a.config }
