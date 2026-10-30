@@ -8,6 +8,7 @@ import (
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
+	"github.com/wailsapp/wails/v2/pkg/options/linux"
 )
 
 //go:embed all:frontend/dist
@@ -26,8 +27,13 @@ func main() {
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},
-		BackgroundColour: &options.RGBA{R: 27, G: 38, B: 54, A: 1},
-		OnStartup:        app.Startup,
+		BackgroundColour: &options.RGBA{R: 10, G: 9, B: 7, A: 1},
+		Linux: &linux.Options{
+			Icon:        core.AppIcon(),
+			ProgramName: "valkaw-launcher",
+			Messages:    linux.DefaultMessages(),
+		},
+		OnStartup: app.Startup,
 		Bind: []interface{}{
 			app,
 		},

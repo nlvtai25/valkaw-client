@@ -10,6 +10,7 @@
 		"GameRendererMixin",
 		"ScreenEffectRendererMixin",
 		"ScreenBackdropMixin",
+		"IconSetMixin",
 		"FramerateLimitTrackerMixin",
 		"ChatComponentMixin",
 		"ChatSymbolMixin",

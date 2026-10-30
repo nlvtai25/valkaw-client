@@ -7,6 +7,8 @@
 - The username field is gone. The launcher reads the name you set in the game and shows it in the top bar.
 - Windows carries the same core as Linux: resources browser, updates from `assets/downloads` and the username sync.
 - Windows gets the Valkaw icon and the warm launcher colours instead of the old navy background.
+- The game window now carries the Valkaw icon instead of the default grass block.
+- On Linux the launcher registers desktop entries for itself and for the game window, so docks and taskbars show the Valkaw icon instead of a generic placeholder.
 
 ## v1.0.2 — 2026-10-31
 

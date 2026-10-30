@@ -145,6 +145,7 @@ func (a *App) adoptGameDir() {
 func (a *App) Startup(ctx context.Context) {
 	a.ctx = ctx
 	migrateLayout()
+	installDesktopShortcut()
 	a.cfgPath = filepath.Join(launcherDir(), "config.json")
 	if data, err := os.ReadFile(a.cfgPath); err == nil {
 		_ = json.Unmarshal(data, &a.config)
