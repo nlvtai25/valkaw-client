@@ -407,9 +407,10 @@ pre {
     display: grid;
     place-items: center;
     padding: 24px;
-    background: rgba(4, 6, 16, 0.62);
-    backdrop-filter: blur(6px);
-    animation: fadeIn 0.2s ease;
+    /* No backdrop-filter here: blurring the page behind a scroll container
+       forces a full repaint of the overlay on every scroll frame. */
+    background: rgba(5, 7, 18, 0.80);
+    animation: modalFade 0.16s ease-out;
 }
 .modal.hidden { display: none; }
 .modal-card {
@@ -419,6 +420,7 @@ pre {
     background: var(--panel-2);
     border: 1px solid var(--border-strong);
     box-shadow: var(--shadow);
+    animation: modalPop 0.18s ease-out;
 }
 .modal-card h3 { margin: 0 0 6px; font-size: 20px; }
 .modal-card .eyebrow { margin: 0 0 4px; }
@@ -486,4 +488,320 @@ pre {
     .profile-grid { grid-template-columns: 1fr; }
     .sidebar { width: 72px; }
     .brand div, .nav span:not(.icon), .sidebar-foot p { display: none; }
+}
+
+.resource-card {
+    width: min(980px, 94vw);
+    height: 88vh;
+    max-height: 88vh;
+    padding: 20px 22px 12px;
+    display: flex;
+    flex-direction: column;
+    /* Only .resource-body scrolls. The card itself never moves, so its
+       border radius and shadow are painted once instead of every frame. */
+    overflow: hidden;
+    background: #0e1226;
+}
+
+.resource-header,
+.resource-toolbar,
+#resourceStatus,
+.resource-card .progress {
+    flex: 0 0 auto;
+}
+
+.resource-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.resource-header-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.resource-toolbar {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin: 12px 0 16px;
+}
+
+.resource-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.resource-tab {
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    border-radius: 999px;
+    padding: 6px 14px;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.resource-tab.active {
+    color: var(--text);
+    border-color: rgba(94, 234, 212, 0.8);
+    box-shadow: 0 0 0 1px rgba(94, 234, 212, 0.25);
+}
+
+.resource-search {
+    display: flex;
+    gap: 8px;
+}
+
+.resource-search input {
+    flex: 1;
+    border-radius: 999px;
+    padding: 8px 14px;
+}
+
+.resource-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 12px;
+}
+
+.resource-card-item {
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 12px;
+    display: flex;
+    gap: 12px;
+    text-align: left;
+    background: linear-gradient(180deg, rgba(255,255,255,0.01) 0%, rgba(15,23,42,0.4) 100%);
+    cursor: pointer;
+    align-items: flex-start;
+}
+
+.resource-card-item:hover {
+    border-color: rgba(94, 234, 212, 0.6);
+}
+
+.resource-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 12px;
+    object-fit: cover;
+    background: rgba(148, 163, 184, 0.2);
+    flex-shrink: 0;
+}
+
+.resource-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.resource-card-body strong {
+    font-size: 14px;
+}
+
+.resource-card-body .muted {
+    margin: 0;
+}
+
+.resource-pager {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin: 16px 0 10px;
+}
+
+.resource-detail-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.resource-detail-body h4 {
+    margin: 0 0 6px;
+}
+
+.resource-detail-body .muted {
+    margin: 0 0 10px;
+}
+
+.resource-versions-title {
+    margin: 16px 0 10px;
+}
+
+.resource-versions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.resource-version {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.resource-version-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.resource-version-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    color: var(--muted);
+    font-size: 12px;
+}
+
+@keyframes modalFade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes modalPop {
+    from { opacity: 0; transform: translateY(10px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.resource-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: 210px minmax(0, 1fr);
+    gap: 16px;
+    align-items: start;
+    /* This is the only scroll container in the modal. */
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+    padding-right: 6px;
+    /* Dedicated layer so scrolling moves a texture instead of repainting
+       the header, toolbar and card chrome. */
+    transform: translateZ(0);
+}
+
+.resource-filters {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    /* The modal card scrolls as a whole, so the list is never cut off. */
+    padding-right: 4px;
+}
+
+.resource-filter-group {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.resource-filter-head {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 9px 12px;
+    background: transparent;
+    border: 0;
+    color: var(--text);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+}
+
+.resource-filter-head .chev {
+    color: var(--muted);
+    font-size: 11px;
+    transition: transform 0.16s ease;
+}
+
+.resource-filter-group.collapsed .chev {
+    transform: rotate(-90deg);
+}
+
+.resource-filter-items {
+    display: flex;
+    flex-direction: column;
+    padding: 0 6px 6px;
+}
+
+.resource-filter-group.collapsed .resource-filter-items {
+    display: none;
+}
+
+.resource-filter-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 7px;
+    border-radius: 8px;
+    font-size: 12px;
+    line-height: 1.35;
+    color: var(--muted);
+    cursor: pointer;
+    transition: background 0.14s ease, color 0.14s ease;
+}
+
+.resource-filter-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text);
+}
+
+.resource-filter-item input {
+    display: none;
+}
+
+.resource-filter-item .box {
+    width: 12px;
+    height: 12px;
+    border-radius: 4px;
+    border: 1px solid var(--border-strong);
+    flex-shrink: 0;
+    position: relative;
+}
+
+.resource-filter-item:hover .box {
+    border-color: var(--accent);
+}
+
+.resource-filter-item input:checked + .box {
+    background: var(--accent);
+    border-color: var(--accent);
+}
+
+.resource-filter-item input:checked + .box::after {
+    content: '';
+    position: absolute;
+    inset: 2px;
+    border-radius: 2px;
+    background: #06121f;
+}
+
+.resource-filter-item:has(input:checked) {
+    color: var(--text);
+}
+
+.resource-main {
+    min-width: 0;
+}
+
+@media (max-width: 820px) {
+    .resource-body { grid-template-columns: 1fr; }
+    .resource-filters { max-height: none; }
 }

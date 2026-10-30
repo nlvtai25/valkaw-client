@@ -3,7 +3,6 @@ package core
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -23,27 +22,20 @@ const (
 )
 
 var (
-	releasesAPI  = "https://api.github.com/repos/nlvtai25/valkaw-client/releases/latest"
-	releasesList = "https://api.github.com/repos/nlvtai25/valkaw-client/releases?per_page=30"
-	releasesPage = "https://github.com/nlvtai25/valkaw-client/releases/latest"
-	releaseDL    = "https://github.com/nlvtai25/valkaw-client/releases/latest/download/"
+	// repoDownloadsAPI lists the published launcher builds. assets/downloads is
+	// the only source of truth for them, not GitHub release tags.
+	repoDownloadsAPI = "https://api.github.com/repos/nlvtai25/valkaw-client/contents/assets/downloads"
+	releasesPage     = "https://github.com/nlvtai25/valkaw-client/releases/latest"
+	releaseDL        = "https://github.com/nlvtai25/valkaw-client/releases/latest/download/"
 )
 
-// updatePrefix is the asset name marker used by this platform's build. Linux
-// ships from every release, Windows only from releases that carry a Windows file.
+// updatePrefix is the file name marker used by this platform's build inside
+// assets/downloads.
 func updatePrefix() string {
 	if runtime.GOOS == "windows" {
 		return "valkaw-launcher-win-"
 	}
-	return ""
-}
-
-// updateAssetName is the file published under assets/downloads for this platform.
-func updateAssetName(tag string) string {
-	if runtime.GOOS == "windows" {
-		return fmt.Sprintf("valkaw-launcher-win-%s-%s-%s.exe", tag, runtime.GOOS, runtime.GOARCH)
-	}
-	return fmt.Sprintf("valkaw-launcher-%s-%s-%s", tag, runtime.GOOS, runtime.GOARCH)
+	return "valkaw-launcher-"
 }
 
 // Config holds launcher settings.
@@ -185,6 +177,23 @@ func (a *App) Startup(ctx context.Context) {
 	_ = a.saveConfig()
 }
 
+// GetResourceBrowserContext tells the resources browser which Minecraft build
+// is active and where each resource kind is installed for that profile.
+func (a *App) GetResourceBrowserContext() map[string]any {
+	profile := a.activeProfile()
+	return map[string]any{
+		"gameVersion":  a.config.Version,
+		"profile":      profile,
+		"loader":       "fabric",
+		"gameDir":      a.gamePath(profile),
+		"platform":     a.config.Platform,
+		"modsDir":      a.gamePath(profile, "mods"),
+		"rpDir":        a.gamePath(profile, "resourcepacks"),
+		"shaderDir":    a.gamePath(profile, "shaderpacks"),
+		"profileLabel": map[string]string{"gl": "Sodium", "vk": "VulkanMod"}[profile],
+	}
+}
+
 func mustHome() string {
 	home, _ := os.UserHomeDir()
 	return home
@@ -286,26 +295,19 @@ func (a *App) GetInstances() []string {
 	return out
 }
 
-type ghRelease struct {
-	TagName string `json:"tag_name"`
-	HTMLURL string `json:"html_url"`
-	Assets  []struct {
-		Name string `json:"name"`
-		URL  string `json:"browser_download_url"`
-	} `json:"assets"`
+// downloadEntry is one file published under assets/downloads.
+type downloadEntry struct {
+	Name string `json:"name"`
 }
 
-// fetchLatestRelease returns the newest release, or the newest release that
-// carries an asset starting with assetPrefix. A nil release means nothing to
-// compare against, which callers report as up to date.
-func fetchLatestRelease(assetPrefix string) (*ghRelease, error) {
+// fetchDownloadDir lists the builds published under assets/downloads. That
+// directory is the single source of truth for launcher builds, so the update
+// check never depends on GitHub release tags.
+func (a *App) fetchDownloadDir() ([]string, error) {
 	client := &http.Client{Timeout: 10 * time.Second}
-	url := releasesAPI
-	if assetPrefix != "" {
-		url = releasesList
-	}
-	req, _ := http.NewRequest(http.MethodGet, url, nil)
+	req, _ := http.NewRequest(http.MethodGet, repoDownloadsAPI, nil)
 	req.Header.Set("User-Agent", "ValkawLauncher/1.0")
+	req.Header.Set("Accept", "application/vnd.github+json")
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
@@ -314,28 +316,36 @@ func fetchLatestRelease(assetPrefix string) (*ghRelease, error) {
 	if resp.StatusCode != 200 {
 		return nil, fmt.Errorf("HTTP %d", resp.StatusCode)
 	}
-	if assetPrefix == "" {
-		var r ghRelease
-		if err := json.NewDecoder(resp.Body).Decode(&r); err != nil {
-			return nil, err
-		}
-		if r.TagName == "" {
-			return nil, errors.New("no release found")
-		}
-		return &r, nil
-	}
-	var all []ghRelease
-	if err := json.NewDecoder(resp.Body).Decode(&all); err != nil {
+	var entries []downloadEntry
+	if err := json.NewDecoder(resp.Body).Decode(&entries); err != nil {
 		return nil, err
 	}
-	for i := range all {
-		for _, asset := range all[i].Assets {
-			if strings.HasPrefix(asset.Name, assetPrefix) {
-				return &all[i], nil
-			}
+	names := make([]string, 0, len(entries))
+	for _, e := range entries {
+		names = append(names, e.Name)
+	}
+	return names, nil
+}
+
+// latestUpdate picks the newest build for this platform from a file listing and
+// returns its version and file name.
+func latestUpdate(names []string) (string, string) {
+	prefix := updatePrefix()
+	suffix := fmt.Sprintf("-%s-%s", runtime.GOOS, runtime.GOARCH)
+	if runtime.GOOS == "windows" {
+		suffix += ".exe"
+	}
+	version, file := "", ""
+	for _, name := range names {
+		if !strings.HasPrefix(name, prefix) || !strings.HasSuffix(name, suffix) {
+			continue
+		}
+		v := strings.TrimSuffix(strings.TrimPrefix(name, prefix), suffix)
+		if version == "" || newerVersion(v, version) {
+			version, file = v, name
 		}
 	}
-	return nil, nil
+	return version, file
 }
 
 func versionParts(v string) []int {
@@ -366,28 +376,29 @@ func newerVersion(latest, current string) bool {
 	return false
 }
 
-// CheckUpdate queries GitHub releases.
+// CheckUpdate compares the running version with the newest published build.
 func (a *App) CheckUpdate() string {
-	r, err := fetchLatestRelease(updatePrefix())
+	names, err := a.fetchDownloadDir()
 	if err != nil {
 		return "update check failed: " + err.Error()
 	}
-	if r == nil || !newerVersion(r.TagName, a.config.LauncherVersion) {
+	latest, _ := latestUpdate(names)
+	if latest == "" || !newerVersion(latest, a.config.LauncherVersion) {
 		return "up to date (" + a.config.LauncherVersion + ")"
 	}
-	return "update available: " + r.TagName + " (current " + a.config.LauncherVersion + ")"
+	return "update available: " + latest + " (current " + a.config.LauncherVersion + ")"
 }
 
 // InstallUpdate downloads the latest launcher binary and restarts it.
 func (a *App) InstallUpdate() string {
-	r, err := fetchLatestRelease(updatePrefix())
+	names, err := a.fetchDownloadDir()
 	if err != nil {
 		return "error: " + err.Error()
 	}
-	if r == nil || !newerVersion(r.TagName, a.config.LauncherVersion) {
+	latest, name := latestUpdate(names)
+	if name == "" || !newerVersion(latest, a.config.LauncherVersion) {
 		return "already up to date"
 	}
-	name := updateAssetName(r.TagName)
 	assetURL := repoDownloads + name
 	exe, err := os.Executable()
 	if err != nil {
@@ -418,10 +429,10 @@ func (a *App) InstallUpdate() string {
 	cmd := exec.Command(exe)
 	cmd.Dir = filepath.Dir(exe)
 	if err := cmd.Start(); err != nil {
-		return "updated, restart launcher manually (" + r.TagName + ")"
+		return "updated, restart launcher manually (" + latest + ")"
 	}
 	wailsruntime.Quit(a.ctx)
-	return "updated to " + r.TagName
+	return "updated to " + latest
 }
 
 // swapWindows hands the file move to a detached script: Windows refuses to

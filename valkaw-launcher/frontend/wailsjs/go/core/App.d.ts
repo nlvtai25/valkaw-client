@@ -12,9 +12,17 @@ export function CheckVulkan():Promise<core.VulkanCheck>;
 
 export function DetectJava():Promise<string>;
 
+export function DownloadResource(arg1:string,arg2:string,arg3:string):Promise<void>;
+
 export function GetConfig():Promise<core.Config>;
 
 export function GetInstances():Promise<Array<string>>;
+
+export function GetModrinthProject(arg1:string):Promise<string>;
+
+export function GetModrinthProjectVersions(arg1:string,arg2:string,arg3:string):Promise<string>;
+
+export function GetResourceBrowserContext():Promise<Record<string, any>>;
 
 export function GetVersions():Promise<Array<string>>;
 
@@ -30,6 +38,10 @@ export function ListGPUs():Promise<Array<core.GPU>>;
 
 export function OpenReleases():Promise<void>;
 
+export function OpenResourceDir(arg1:string):Promise<void>;
+
 export function SaveConfig(arg1:core.Config):Promise<string>;
+
+export function SearchModrinth(arg1:string,arg2:string,arg3:string,arg4:string,arg5:string,arg6:number,arg7:number,arg8:string):Promise<string>;
 
 export function SetGpuPreference(arg1:number):Promise<string>;

@@ -18,6 +18,7 @@
         <nav>
             <button class="nav active" data-page="play"><span class="icon">▶</span> Play</button>
             <button class="nav" data-page="settings"><span class="icon">⚙</span> Settings</button>
+            <button class="nav" data-page="resources"><span class="icon">⬇</span> Resources</button>
         </nav>
         <div class="sidebar-foot">
             <button id="updateBtn" class="btn ghost small">Check updates</button>
@@ -149,6 +150,14 @@
                 <pre id="saveStatus"></pre>
             </div>
         </section>
+
+        <section id="page-resources" class="page hidden">
+            <div class="card">
+                <h3>Resources</h3>
+                <p class="muted small">Browse and download mods, resource packs, and shader packs from Modrinth.</p>
+                <button id="openResourceBrowser" class="btn primary">Browse Modrinth</button>
+            </div>
+        </section>
     </main>
 
     <div id="prereqModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="prereqTitle">
@@ -179,6 +188,61 @@
                 <button id="vkSodium" class="btn ghost">Use Sodium instead</button>
                 <button id="vkClose" class="btn ghost">Close</button>
             </div>
+        </div>
+    </div>
+
+    <div id="resourceModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="resourceTitle">
+        <div class="modal-card resource-card">
+            <div class="resource-header">
+                <div>
+                    <p class="eyebrow">// RESOURCES</p>
+                    <h3 id="resourceTitle">Browse Modrinth</h3>
+                    <p id="resourceContext" class="muted small"></p>
+                </div>
+                <div class="resource-header-actions">
+                    <button id="resourceOpenDir" class="btn ghost small">Open folder</button>
+                    <button id="resourceClose" class="btn ghost small">Close</button>
+                </div>
+            </div>
+            <div class="resource-toolbar">
+                <div class="resource-tabs">
+                    <button class="resource-tab active" data-tab="mod">Mods</button>
+                    <button class="resource-tab" data-tab="resourcepack">Resource Packs</button>
+                    <button class="resource-tab" data-tab="shader">Shader Packs</button>
+                </div>
+                <div class="resource-search">
+                    <input id="resourceQuery" type="text" placeholder="Search on Modrinth..." autocomplete="off" spellcheck="false" />
+                    <button id="resourceSearchBtn" class="btn ghost small">Search</button>
+                </div>
+            </div>
+            <div id="resourceBody" class="resource-body">
+                <aside id="resourceFilters" class="resource-filters"></aside>
+                <div class="resource-main">
+                    <div id="resourceListView">
+                        <div id="resourceResults" class="resource-grid"></div>
+                        <div class="resource-pager">
+                            <button id="resourcePrev" class="btn ghost small">Previous</button>
+                            <span id="resourcePageInfo" class="muted small"></span>
+                            <button id="resourceNext" class="btn ghost small">Next</button>
+                        </div>
+                    </div>
+                    <div id="resourceDetailView" class="hidden">
+                        <div class="resource-detail-header">
+                            <button id="resourceBack" class="btn ghost small">← Back to results</button>
+                            <div id="resourceDetailMeta" class="muted small"></div>
+                        </div>
+                        <div class="resource-detail-body">
+                            <h4 id="resourceDetailTitle"></h4>
+                            <p id="resourceDetailDesc" class="muted small"></p>
+                            <p id="resourceDetailDeps" class="muted small"></p>
+                        </div>
+                        <h4 class="resource-versions-title">Versions</h4>
+                        <div id="resourceVersions" class="resource-versions"></div>
+                    </div>
+                </div>
+            </div>
+            <p id="resourceStatus" class="muted small"></p>
+            <div class="progress"><div id="resourceProgress"></div></div>
         </div>
     </div>
 </div>

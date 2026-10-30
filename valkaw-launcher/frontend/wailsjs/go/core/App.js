@@ -22,12 +22,28 @@ export function DetectJava() {
   return window['go']['core']['App']['DetectJava']();
 }
 
+export function DownloadResource(arg1, arg2, arg3) {
+  return window['go']['core']['App']['DownloadResource'](arg1, arg2, arg3);
+}
+
 export function GetConfig() {
   return window['go']['core']['App']['GetConfig']();
 }
 
 export function GetInstances() {
   return window['go']['core']['App']['GetInstances']();
+}
+
+export function GetModrinthProject(arg1) {
+  return window['go']['core']['App']['GetModrinthProject'](arg1);
+}
+
+export function GetModrinthProjectVersions(arg1, arg2, arg3) {
+  return window['go']['core']['App']['GetModrinthProjectVersions'](arg1, arg2, arg3);
+}
+
+export function GetResourceBrowserContext() {
+  return window['go']['core']['App']['GetResourceBrowserContext']();
 }
 
 export function GetVersions() {
@@ -58,8 +74,16 @@ export function OpenReleases() {
   return window['go']['core']['App']['OpenReleases']();
 }
 
+export function OpenResourceDir(arg1) {
+  return window['go']['core']['App']['OpenResourceDir'](arg1);
+}
+
 export function SaveConfig(arg1) {
   return window['go']['core']['App']['SaveConfig'](arg1);
+}
+
+export function SearchModrinth(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8) {
+  return window['go']['core']['App']['SearchModrinth'](arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
 }
 
 export function SetGpuPreference(arg1) {

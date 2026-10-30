@@ -11,6 +11,10 @@
 - Play checks the same thing, so the Vulkan profile cannot start from an old config either.
 - The setup popup reports the real Vulkan version and GPU instead of only saying the driver was found.
 - The Windows launcher now carries the WebView2 bootstrapper inside the exe. If the runtime is missing it installs silently on first start, per user and without admin rights.
+- New Resources page. It opens a Modrinth browser inside the launcher for mods, resource packs and shader packs, filtered by the selected Minecraft version and, for mods, by the Fabric loader.
+- A filter column on the left narrows results by category. Resource packs add features and resolution, shader packs add features and performance impact.
+- Downloads go into the selected profile, so Sodium and VulkanMod each keep their own `mods`, `resourcepacks` and `shaderpacks` folders. A progress bar follows the file and a button opens the folder.
+- Launcher updates now read `assets/downloads` instead of GitHub releases, so both builds are found as soon as the files are published.
 - Version `v1.0.3`.
 
 ## v1.0.2 — 2026-10-29
