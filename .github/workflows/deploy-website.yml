@@ -1,0 +1,66 @@
+name: Deploy website
+
+# Builds Website/ and publishes it to GitHub Pages. The repository root is a
+# Minecraft mod, so the site lives in its own folder and Pages needs the built
+# output rather than the source tree.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'Website/**'
+      - '.github/workflows/deploy-website.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Website
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: Website/package-lock.json
+
+      - run: npm ci
+
+      - name: Build
+        # Pages serves a project site under /valkaw-client/, so the asset paths
+        # and the router basename have to carry that prefix.
+        env:
+          VITE_BASE: /valkaw-client/
+        run: npm run build
+
+      - name: Add SPA fallback
+        # Pages has no rewrite rules. Serving the shell as 404.html lets the
+        # router take over deep links such as /features instead of a dead page.
+        run: cp dist/index.html dist/404.html
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: Website/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

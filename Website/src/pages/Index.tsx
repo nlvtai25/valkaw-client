@@ -1,4 +1,5 @@
 import type { CSSProperties } from 'react';
+import { asset } from '@/lib/asset';
 import { Link } from 'react-router-dom';
 import { BuildBench } from '@/components/BuildBench';
 import { ViewportDeck } from '@/components/ViewportDeck';
@@ -80,7 +81,7 @@ function Hero() {
           <div className="hero__bench" style={{ '--i': 4 } as CSSProperties}>
             <div className="hero-shot">
               <img
-                src="/shots/menu.webp"
+                src={asset('/shots/menu.webp')}
                 alt="Valkaw Client main menu: numbered navigation on the left, a session panel on the right"
                 width={1600}
                 height={900}

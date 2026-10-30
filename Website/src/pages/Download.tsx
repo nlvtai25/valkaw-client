@@ -1,3 +1,4 @@
+import { asset } from '@/lib/asset';
 import { Link } from 'react-router-dom';
 import { BuildBench } from '@/components/BuildBench';
 import { Seo } from '@/components/Seo';
@@ -120,7 +121,7 @@ export default function Download() {
               </div>
               <figure className="split-figure">
                 <img
-                  src="/shots/launcher.webp"
+                  src={asset('/shots/launcher.webp')}
                   alt="Valkaw Launcher with a Sodium profile and a VulkanMod profile"
                   width={1600}
                   height={900}

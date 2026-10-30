@@ -44,8 +44,12 @@ function Screen() {
 }
 
 export default function App() {
+  // Vite exposes the deploy prefix (e.g. /valkaw-client/ on GitHub Pages), and
+  // the router has to strip it before matching routes.
+  const basename = import.meta.env.BASE_URL.replace(/\/$/, '') || '/';
+
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={basename}>
       <ScrollManager />
       <div className="page-sky" aria-hidden="true" />
       <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', minHeight: '100svh' }}>

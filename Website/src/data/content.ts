@@ -1,3 +1,4 @@
+import { asset } from '@/lib/asset';
 import {
   Activity,
   ArrowDownUp,
@@ -630,49 +631,49 @@ export const ECOSYSTEM_STATS = [
 
 export const SCREENSHOTS: Screenshot[] = [
   {
-    src: '/shots/menu.webp',
+    src: asset('/shots/menu.webp'),
     title: 'Main menu',
     caption: 'Starfield, cyan panels and a live session readout. Built in, not a menu replacement mod.',
     tag: 'MENU',
   },
   {
-    src: '/shots/settings.webp',
+    src: asset('/shots/settings.webp'),
     title: 'Client settings',
     caption: 'Every module has a switch and its own options page. No config file editing.',
     tag: 'SETTINGS',
   },
   {
-    src: '/shots/hud_editor.webp',
+    src: asset('/shots/hud_editor.webp'),
     title: 'HUD editor',
     caption: 'Hold F6, drag a module, drop it near an edge to link it left or right.',
     tag: 'EDITOR',
   },
   {
-    src: '/shots/chat_color.webp',
+    src: asset('/shots/chat_color.webp'),
     title: 'Chat colours',
     caption: 'Sixteen colour codes and six text formats, each with a live sample.',
     tag: 'CHAT',
   },
   {
-    src: '/shots/crosshair_editor.webp',
+    src: asset('/shots/crosshair_editor.webp'),
     title: 'Crosshair editor',
     caption: 'Draw the crosshair pixel by pixel on a 15 x 15 grid, then preview it.',
     tag: 'CROSSHAIR',
   },
   {
-    src: '/shots/launcher.webp',
+    src: asset('/shots/launcher.webp'),
     title: 'Valkaw Launcher',
     caption: 'Pick a renderer, install the profile and press Play. Auto-update is on by default.',
     tag: 'LAUNCHER',
   },
   {
-    src: '/shots/ingame_day.webp',
+    src: asset('/shots/ingame_day.webp'),
     title: 'HUD in game',
     caption: 'Coordinates, TPS, ping, armour and PC stats move with one drag in the HUD editor.',
     tag: 'INGAME',
   },
   {
-    src: '/shots/ingame_beach.webp',
+    src: asset('/shots/ingame_beach.webp'),
     title: 'Third-person view',
     caption: 'Freelook without changing where the player is facing. HUD stays readable.',
     tag: 'FREELOOK',

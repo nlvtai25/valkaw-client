@@ -5,6 +5,9 @@ import {defineConfig} from "vite"
 
 // https://vite.dev/config/
 export default defineConfig({
+  // GitHub Pages serves the site from /valkaw-client/, so the workflow passes
+  // that prefix in. A custom domain or local build keeps the root path.
+  base: process.env.VITE_BASE || '/',
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {

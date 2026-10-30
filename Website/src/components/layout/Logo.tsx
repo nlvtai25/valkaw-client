@@ -1,3 +1,5 @@
+import { asset } from '@/lib/asset';
+
 interface LogoProps {
   showText?: boolean;
 }
@@ -6,7 +8,7 @@ interface LogoProps {
 export function Logo({ showText = true }: LogoProps) {
   return (
     <>
-      <img src="/valkaw-logo.png" alt="" width={512} height={272} aria-hidden="true" />
+      <img src={asset('/valkaw-logo.png')} alt="" width={512} height={272} aria-hidden="true" />
       {showText && (
         <span>
           Valkaw<em>Client</em>

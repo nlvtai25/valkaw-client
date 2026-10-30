@@ -37,13 +37,9 @@ Images in `public/shots/` were captured from the running client, not mocked up. 
 
 ## Deploy
 
-Upload `dist/` to any static host. The app uses client-side routing, so rewrite unknown paths to `index.html`:
+GitHub Pages builds this folder from `.github/workflows/deploy-website.yml`: any push that touches `Website/` runs `npm ci` and `npm run build`, then publishes `dist/`. The workflow sets `VITE_BASE=/valkaw-client/` so asset paths and the router prefix match the project URL, and copies `index.html` to `404.html`, because Pages has no rewrite rules and a deep link such as `/features` has to boot the app.
 
-```text
-/*  /index.html  200
-```
-
-A `_redirects` file for Netlify/Cloudflare Pages and a `404.html` fallback are included in `public/`.
+For any other static host, upload `dist/` and rewrite unknown paths to `index.html`. `public/_redirects` covers Netlify and Cloudflare Pages.
 
 ## License
 
