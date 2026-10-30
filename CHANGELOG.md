@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.0.4.1 — 2026-10-30
+
+### Launcher
+- The resources browser no longer lists mods that already ship inside the client, so a second copy cannot break the game with a duplicate mod id.
+- Renderer mods for the other profile are hidden too: Sodium and Iris addons on VulkanMod, VulkanMod and Beryl on Sodium.
+- A downloaded jar is checked before it is installed. If another jar already provides the same mod id, the download is dropped and the reason names the file to remove.
+- Downloads are written to a temporary file first, so an interrupted transfer cannot leave a half-written jar in the mods folder.
+- Search results now report how many mods were hidden because they are part of the client.
+
 ## v1.0.4 — 2026-10-30
 
 ### Launcher

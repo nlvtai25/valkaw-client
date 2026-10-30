@@ -744,7 +744,14 @@ async function searchResources(offset) {
         resourceResults = data.hits || [];
         resourceOffset = offset;
         renderResourceResults();
-        $('resourceStatus').textContent = resourceResults.length ? '' : 'No results found.';
+        const hidden = data.hidden_bundled || 0;
+        if (resourceResults.length) {
+            $('resourceStatus').textContent = hidden
+                ? `${hidden} result(s) hidden: already included in the client.`
+                : '';
+        } else {
+            $('resourceStatus').textContent = 'No results found.';
+        }
     } catch (e) {
         $('resourceStatus').textContent = 'Search failed: ' + e;
     }
@@ -825,7 +832,11 @@ function renderResourceVersions() {
                     ? `Downloaded ${name} to ${dest}`
                     : `Downloaded ${name}`;
             } catch (e) {
-                $('resourceStatus').textContent = 'Download failed: ' + e;
+                const msg = String(e);
+                // A duplicate mod id is not a network failure; show it as-is.
+                $('resourceStatus').textContent = msg.includes('already installed')
+                    ? msg
+                    : 'Download failed: ' + msg;
             } finally {
                 resourceDownloading = false;
                 btn.disabled = false;

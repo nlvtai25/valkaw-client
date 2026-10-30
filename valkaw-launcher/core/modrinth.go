@@ -22,6 +22,8 @@ type modrinthSearchResult struct {
 	TotalHits int              `json:"total_hits"`
 	Offset    int              `json:"offset"`
 	Limit     int              `json:"limit"`
+	// HiddenBundled counts mods removed because they ship inside the client.
+	HiddenBundled int `json:"hidden_bundled,omitempty"`
 }
 
 // modrinthHTTP is shared so downloads and searches reuse connections.
@@ -112,7 +114,14 @@ func (a *App) SearchModrinth(query string, projectType string, gameVersion strin
 	if err != nil {
 		return "", err
 	}
-	return string(body), nil
+	// Mods already inside valkawclient.jar, and renderer mods for the other
+	// profile, are hidden: installing them duplicates a mod id or drags the
+	// wrong renderer into the game, and Minecraft refuses to start.
+	filtered, _, ferr := filterSearchHits(body, projectType, hiddenModSlugs(a.activeProfile()))
+	if ferr != nil {
+		return string(body), nil
+	}
+	return string(filtered), nil
 }
 
 func (a *App) GetModrinthProject(projectId string) (string, error) {
@@ -256,15 +265,19 @@ func (a *App) DownloadResource(downloadUrl string, fileName string, resourceType
 	}
 
 	total := resp.ContentLength
-	out, err := os.Create(dest)
+	// Stream into a temporary file first: an interrupted download must never
+	// leave a broken jar in the mods folder, and a mod can only be identified
+	// once its fabric.mod.json is on disk.
+	tmp, err := os.CreateTemp(dir, safe+".*.part")
 	if err != nil {
 		return err
 	}
+	tmpPath := tmp.Name()
 	keep := false
 	defer func() {
-		out.Close()
+		tmp.Close()
 		if !keep {
-			os.Remove(dest)
+			os.Remove(tmpPath)
 		}
 	}()
 
@@ -274,7 +287,7 @@ func (a *App) DownloadResource(downloadUrl string, fileName string, resourceType
 	for {
 		n, readErr := resp.Body.Read(buf)
 		if n > 0 {
-			written, werr := out.Write(buf[:n])
+			written, werr := tmp.Write(buf[:n])
 			downloaded += int64(written)
 			if werr != nil {
 				return werr
@@ -291,7 +304,25 @@ func (a *App) DownloadResource(downloadUrl string, fileName string, resourceType
 			return readErr
 		}
 	}
-	if err := out.Close(); err != nil {
+	if err := tmp.Close(); err != nil {
+		return err
+	}
+
+	// Second safety net: refuse a jar whose mod id is already provided by
+	// another jar in the same mods folder.
+	if sub, serr := resourceSubdir(resourceType); serr == nil && sub == "mods" {
+		if id, ierr := modFileID(tmpPath); ierr == nil && id != "" {
+			existing, ferr := findModJar(dir, id, dest)
+			if ferr == nil && existing != "" {
+				return fmt.Errorf("%s is already installed as %s; remove it first to change version", safe, existing)
+			}
+		}
+	}
+
+	if err := os.Remove(dest); err != nil && !os.IsNotExist(err) {
+		return err
+	}
+	if err := os.Rename(tmpPath, dest); err != nil {
 		return err
 	}
 	keep = true
