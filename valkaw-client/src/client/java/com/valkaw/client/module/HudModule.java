@@ -13,6 +13,8 @@ public abstract class HudModule extends Module {
 	protected int h = 11;
 	private Anchor anchor = Anchor.LEFT;
 	private int rightOffset = 4;
+	private String linkId;
+	private Link linkSide = Link.NONE;
 	private int lastW;
 	private int lastH;
 
@@ -80,13 +82,20 @@ public abstract class HudModule extends Module {
 
 	/** Right-anchored modules follow the right edge after a resize. */
 	public void applyAnchor(int screenWidth) {
-		if (anchor == Anchor.RIGHT) {
+		if (linked())
+		{
+			// The position comes from the element this one is attached to.
+			return;
+		}
+		if (anchor == Anchor.RIGHT)
+		{
 			x = Math.max(0, screenWidth - rightOffset - anchorWidth());
 		}
 	}
 
 	public void setAnchor(Anchor side, int screenWidth) {
-		if (side == Anchor.RIGHT) {
+		if (side == Anchor.RIGHT)
+		{
 			rightOffset = Math.max(0, screenWidth - (x + anchorWidth()));
 		}
 		anchor = side;
@@ -94,8 +103,10 @@ public abstract class HudModule extends Module {
 
 	/** Explicitly links this HUD to the left or right screen edge. */
 	public void linkTo(Anchor side, int screenWidth) {
+		unlink();
 		anchor = side;
-		if (side == Anchor.RIGHT) {
+		if (side == Anchor.RIGHT)
+		{
 			rightOffset = 4;
 			x = Math.max(0, screenWidth - anchorWidth() - rightOffset);
 		} else {
@@ -103,8 +114,90 @@ public abstract class HudModule extends Module {
 		}
 	}
 
+	/** Attaches this element to one side of another HUD element. */
+	public void linkTo(String id, Link side) {
+		linkId = id;
+		linkSide = side == null ? Link.NONE : side;
+	}
+
+	public void unlink() {
+		linkId = null;
+		linkSide = Link.NONE;
+	}
+
+	public boolean linked() {
+		return linkId != null && linkSide != Link.NONE;
+	}
+
+	public String linkId() {
+		return linkId;
+	}
+
+	public Link linkSide() {
+		return linkSide;
+	}
+
+	/**
+	 * Snaps this element against the side of the element it is attached to.
+	 * Returns false when the chain is broken, so callers fall back to the anchor.
+	 */
+	public boolean applyLink() {
+		if (!linked())
+		{
+			return false;
+		}
+		HudModule parent = parent();
+		if (parent == null)
+		{
+			return false;
+		}
+		if (linkSide == Link.RIGHT)
+		{
+			x = parent.x() + parent.anchorWidth();
+			y = parent.y();
+		} else if (linkSide == Link.LEFT) {
+			x = parent.x() - anchorWidth();
+			y = parent.y();
+		} else if (linkSide == Link.BELOW) {
+			x = parent.x();
+			y = parent.y() + parent.anchorHeight();
+		} else {
+			x = parent.x();
+			y = parent.y() - anchorHeight();
+		}
+		return true;
+	}
+
+	/** The element this one is attached to, or null when the chain is broken. */
+	public HudModule parent() {
+		if (!linked())
+		{
+			return null;
+		}
+		Object target = ModuleManager.get().byId(linkId);
+		if (!(target instanceof HudModule parent) || parent == this || !parent.isEnabled())
+		{
+			return null;
+		}
+		// A mutual link would make both elements chase each other every frame.
+		HudModule walk = parent;
+		for (int depth = 0; walk != null && depth < 8; depth++)
+		{
+			if (walk == this)
+			{
+				return null;
+			}
+			walk = walk.parent();
+		}
+		return parent;
+	}
+
 	private int anchorWidth() {
 		return width() > 0 ? width() : editorWidth();
+	}
+
+	private int anchorHeight() {
+		return height() > 0 ? height() : editorHeight();
 	}
 
 	public Anchor anchor() {
@@ -117,6 +210,7 @@ public abstract class HudModule extends Module {
 	}
 
 	public void resetPosition() {
+		unlink();
 		anchor = Anchor.LEFT;
 		x = defaultX;
 		y = defaultY;
@@ -130,6 +224,10 @@ public abstract class HudModule extends Module {
 		json.addProperty("rightOffset", rightOffset);
 		json.addProperty("lastW", lastW);
 		json.addProperty("lastH", lastH);
+		if (linked()) {
+			json.addProperty("link", linkId);
+			json.addProperty("linkSide", linkSide.name());
+		}
 	}
 
 	@Override
@@ -151,6 +249,10 @@ public abstract class HudModule extends Module {
 		}
 		if (json.has("lastH")) {
 			lastH = json.get("lastH").getAsInt();
+		}
+		if (json.has("link")) {
+			linkId = json.get("link").getAsString();
+			linkSide = json.has("linkSide") ? Link.parse(json.get("linkSide").getAsString()) : Link.NONE;
 		}
 	}
 }

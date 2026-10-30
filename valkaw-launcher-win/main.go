@@ -17,7 +17,7 @@ var assets embed.FS
 
 // windowsVersion follows the repository release tags, so the Linux and Windows
 // launchers update from the same numbers.
-const windowsVersion = "v1.0.4.1"
+const windowsVersion = "v1.0.4.2"
 
 func main() {
 	app := core.NewApp(windowsVersion)
@@ -35,7 +35,7 @@ func main() {
 		Width:            1024,
 		Height:           768,
 		AssetServer:      &assetserver.Options{Assets: assets},
-		BackgroundColour: &options.RGBA{R: 11, G: 15, B: 31, A: 1},
+		BackgroundColour: &options.RGBA{R: 10, G: 9, B: 7, A: 1},
 		OnStartup:        app.Startup,
 		Bind:             []interface{}{app},
 		Windows: &windows.Options{

@@ -55,6 +55,14 @@ public abstract class Module {
 		return action;
 	}
 
+	/**
+	 * Key-held modules (zoom, freelook) have no useful on/off state: they work
+	 * only while the key is down, so the settings UI hides their switch.
+	 */
+	public boolean keyOnly() {
+		return false;
+	}
+
 	public boolean isEnabled() {
 		return enabled;
 	}

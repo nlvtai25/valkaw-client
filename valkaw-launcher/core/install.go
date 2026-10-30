@@ -776,7 +776,31 @@ func (a *App) installMods(profile string) error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(filepath.Join(modsDir, "valkawclient.jar"), jar, 0644)
+	// Write beside the target and rename, so a game already running keeps its
+	// open (old) jar instead of reading a half-written file.
+	dest := filepath.Join(modsDir, "valkawclient.jar")
+	tmp, err := os.CreateTemp(modsDir, "valkawclient.jar.*.part")
+	if err != nil {
+		return err
+	}
+	if _, err := tmp.Write(jar); err != nil {
+		tmp.Close()
+		os.Remove(tmp.Name())
+		return err
+	}
+	if err := tmp.Close(); err != nil {
+		os.Remove(tmp.Name())
+		return err
+	}
+	if err := os.Chmod(tmp.Name(), 0644); err != nil {
+		os.Remove(tmp.Name())
+		return err
+	}
+	if err := os.Rename(tmp.Name(), dest); err != nil {
+		os.Remove(tmp.Name())
+		return err
+	}
+	return nil
 }
 
 func (a *App) extractNatives() error {
@@ -1149,8 +1173,17 @@ func (a *App) Launch() string {
 	if err := cmd.Start(); err != nil {
 		return "error: " + err.Error()
 	}
-	go func() { _ = cmd.Wait() }()
-	switch a.config.AfterRun {
+	afterRun := a.config.AfterRun
+	go func() {
+		_ = cmd.Wait()
+		// A hidden launcher has no way back on its own: bring it back as soon
+		// as the game exits, otherwise the player is left with nothing.
+		if afterRun == "hide" {
+			wailsruntime.WindowShow(a.ctx)
+			wailsruntime.WindowUnminimise(a.ctx)
+		}
+	}()
+	switch afterRun {
 	case "hide":
 		wailsruntime.WindowHide(a.ctx)
 	case "close":

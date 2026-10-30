@@ -14,6 +14,12 @@ def valkawVariant = (project.findProperty("valkaw_variant") ?: "sodium").toStrin
 
 loom {
 	splitEnvironmentSourceSets()
+
+	runs {
+		client {
+			programArgs '--width', '1280', '--height', '720'
+		}
+	}
 	enableTransitiveAccessWideners = false
 
 	mods {
@@ -51,14 +57,12 @@ dependencies {
 		[
 			"maven.modrinth:vulkanmod:0.6.8+1.21.11",
 			"maven.modrinth:not-enough-vulkan:1.6.2+1.21.11",
-			"maven.modrinth:beryl:0.2.1-alpha",
 		].each { include it }
 	} else {
 		[
 			"maven.modrinth:sodium:mc1.21.11-0.8.15-beta.1-fabric",
 			"maven.modrinth:sodium-extra:mc1.21.11-0.9.6-beta.1+fabric",
 			"maven.modrinth:reeses-sodium-options:mc1.21.11-2.2.6-beta.1+fabric",
-			"maven.modrinth:iris:1.10.8+1.21.11-fabric",
 			"maven.modrinth:immediatelyfast:1.14.3+1.21.11-fabric",
 			"maven.modrinth:moreculling:1.6.2",
 			"maven.modrinth:cloth-config:21.11.153+fabric",

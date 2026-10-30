@@ -1,418 +1,482 @@
 package com.valkaw.client.gui;
 
+import java.util.ArrayList;
+import java.util.List;
+import com.valkaw.client.module.ModuleManager;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
-import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.multiplayer.JoinMultiplayerScreen;
 import net.minecraft.client.gui.screens.options.OptionsScreen;
 import net.minecraft.client.gui.screens.worldselection.SelectWorldScreen;
+import net.minecraft.client.input.CharacterEvent;
+import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.FontDescription;
 import net.minecraft.network.chat.Style;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.lwjgl.glfw.GLFW;
 
-import java.util.Random;
-
-public class ValkawMainMenu extends Screen {
-	private static final Logger LOGGER = LoggerFactory.getLogger("valkawclient");
-	private static final boolean BERYL = FabricLoader.getInstance().isModLoaded("beryl");
-	private static final Style MONO = Style.EMPTY.withFont(new FontDescription.Resource(Minecraft.UNIFORM_FONT));
+/**
+ * Main menu: a vertical button column on the left and the Valkaw wordmark
+ * with the ringed planet filling the space beside it.
+ */
+public class ValkawMainMenu extends Screen
+{
 	private static final String VERSION = FabricLoader.getInstance().getModContainer("valkawclient")
 			.map(container -> "v" + container.getMetadata().getVersion().getFriendlyString()).orElse("v1.0.1");
-	private static final Component BRAND = Component.literal("VALKAW").withStyle(MONO);
-	private static final Component BRAND_TAIL = Component.literal("CLIENT").withStyle(MONO);
-	private static final Component SUBTITLE = Component.literal("1.21.11  //  FABRIC").withStyle(MONO);
-	private static final Component BUILD = Component.literal("BUILD " + VERSION).withStyle(MONO);
-	private static final Component NAV_LABEL = Component.literal("// NAVIGATION").withStyle(MONO);
-	private static final Component SESSION_LABEL = Component.literal("// SESSION").withStyle(MONO);
-	private static final Component READY = Component.literal("READY TO PLAY").withStyle(MONO);
-	private static final Component FABRIC_LABEL = Component.literal("FABRIC LOADER").withStyle(MONO);
-	private static final Component FABRIC_VALUE = Component.literal("0.20.1").withStyle(MONO);
-	private static final Component RENDER_LABEL = Component.literal("RENDERER").withStyle(MONO);
-	private static final Component CLIENT_LABEL = Component.literal("CLIENT BUILD").withStyle(MONO);
-	private static final Component CLIENT_VALUE = Component.literal(VERSION).withStyle(MONO);
-	private static final Component USER_LABEL = Component.literal("USER").withStyle(MONO);
-	private static final Component MEMORY_LABEL = Component.literal("MEMORY").withStyle(MONO);
-	private static final Component WINDOW_LABEL = Component.literal("WINDOW").withStyle(MONO);
-	private static final Component JAVA_LABEL = Component.literal("JAVA").withStyle(MONO);
-	private static final Component NOMINAL = Component.literal("SYSTEM NOMINAL").withStyle(MONO);
-	private static final Component FOOTER_LEFT = Component.literal("VALKAW CLIENT  " + VERSION).withStyle(MONO);
-	private static final Component FOOTER_RIGHT = Component.literal("FABRIC 0.20.1").withStyle(MONO);
 
-	private static final int CYAN = 0xFF7DF9FF;
-	private static final int PURPLE = 0xFFB18CFF;
-	private static final int TEXT = 0xFFD7E3FF;
-	private static final int MUTED = 0xFF7183A8;
-	private static final int DANGER = 0xFFFF7A9A;
-	private static final int GREEN = 0xFF63F5B0;
+	private final List<Nav> navs = new ArrayList<>(5);
+	private static final int ACCOUNT_ROW = 18;
 
-	private final Star[] stars = new Star[90];
-	private String status = "";
-	private long statusUntil;
-	private long openedAt;
+	private float clock;
+	private float open;
+	private boolean accountOpen;
+	private boolean accountTyping;
+	private String accountInput = "";
+	private int accountX;
+	private int accountY;
+	private int accountW;
+	private int accountH;
+	private int panelX;
+	private int panelY;
+	private int panelW;
 
-	public ValkawMainMenu() {
+	public ValkawMainMenu()
+	{
 		super(Component.literal("Valkaw Client"));
-		Random random = new Random(0x5EED);
-		for (int i = 0; i < stars.length; i++) {
-			stars[i] = new Star(random.nextFloat(), random.nextFloat(), 1 + random.nextInt(2),
-					random.nextFloat() * 6.2832F, 0.35F + random.nextFloat());
-		}
-		openedAt = System.nanoTime();
-		LOGGER.info("Valkaw main menu opened");
 	}
 
 	@Override
-	protected void init() {
+	protected void init()
+	{
 		clearWidgets();
-
-		int navX = contentX();
-		int navY = contentY() + 2;
-		int navW = navWidth();
-		int navH = navHeight();
-		int navGap = navGap();
-		String playLabel = navW >= 126 ? "00  SINGLEPLAYER" : "00  PLAY";
-		addRenderableWidget(new ValkawButton(navX, navY, navW, navH, label(playLabel), CYAN, true, true,
+		navs.clear();
+		navs.add(new Nav("arrow", "Play", Ui.ACCENT, true,
 				() -> minecraft.setScreen(new SelectWorldScreen(this))));
-
-		int row = navY + navH + navGap;
-		addRenderableWidget(new ValkawButton(navX, row, navW, navH, label("01  MULTIPLAYER"), PURPLE, false, true,
+		navs.add(new Nav("users", "Servers", Ui.COPPER, false,
 				() -> minecraft.setScreen(new JoinMultiplayerScreen(this))));
-		addRenderableWidget(new ValkawButton(navX, row + navH + navGap, navW, navH, label("02  SETTINGS"), PURPLE,
-				false, true, () -> minecraft.setScreen(new OptionsScreen(this, minecraft.options))));
-		String clientLabel = navW >= 126 ? "03  CLIENT SETTINGS" : "03  CLIENT";
-		addRenderableWidget(new ValkawButton(navX, row + (navH + navGap) * 2, navW, navH, label(clientLabel), PURPLE,
-				false, true, () -> minecraft.setScreen(new ClientSettingsScreen(this))));
-		addRenderableWidget(new ValkawButton(navX, row + (navH + navGap) * 3, navW, navH, label("04  QUIT"), DANGER,
-				false, true, () -> minecraft.stop()));
+		navs.add(new Nav("wrench", "Options", Ui.TEXT_2, false,
+				() -> minecraft.setScreen(new OptionsScreen(this, minecraft.options))));
+		navs.add(new Nav("layers", "Client", Ui.ACCENT, false,
+				() -> minecraft.setScreen(new ClientSettingsScreen(this))));
+		navs.add(new Nav("power", "Quit", Ui.RED, false, () -> minecraft.stop()));
 	}
 
-	private static Component label(String text) {
-		return Component.literal(text).withStyle(MONO);
+	// ------------------------------------------------------------- geometry
+
+	private int sideX()
+	{
+		return width < 560 ? 16 : 32;
 	}
 
-	private String rendererName() {
-		if (FabricLoader.getInstance().isModLoaded("vulkanmod")) {
-			return "VULKAN";
-		}
-		if (FabricLoader.getInstance().isModLoaded("sodium")) {
-			return "SODIUM";
-		}
-		return "CUSTOM";
+	private int sideW()
+	{
+		return width < 620 ? 54 : 172;
 	}
+
+	private int itemH()
+	{
+		return height < 330 ? 30 : 36;
+	}
+
+	private int gap()
+	{
+		return height < 330 ? 6 : 8;
+	}
+
+	private int sideTop()
+	{
+		int block = navs.size() * itemH() + (navs.size() - 1) * gap();
+		return Math.max(66, (height - block) / 2);
+	}
+
+	private int panelY()
+	{
+		return sideTop() - 14;
+	}
+
+	private int panelH()
+	{
+		return navs.size() * itemH() + (navs.size() - 1) * gap() + 28;
+	}
+
+	private int rightX()
+	{
+		return sideX() + sideW() + 26;
+	}
+
+	private int rightW()
+	{
+		return Math.max(120, width - rightX() - (width < 560 ? 16 : 32));
+	}
+
+	// --------------------------------------------------------------- render
 
 	@Override
-	public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-		int hx = heroX();
-		int hy = contentY();
-		int hw = heroWidth();
-		int hh = heroHeight();
+	public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick)
+	{
+		float dt = Ui.dt();
+		open = Math.min(1.0F, open + dt * 5.0F);
+		int lift = Math.round((1.0F - Ui.ease(open)) * 12.0F);
 
-		drawHeader(graphics);
-		drawHero(graphics, hx, hy, hw, hh);
-		drawFooter(graphics);
+		drawBackdrop(graphics, dt);
+		drawWordmark(graphics);
+		drawSidebar(graphics, mouseX, mouseY + lift);
+		drawAccount(graphics);
+		drawFoot(graphics);
 
 		super.render(graphics, mouseX, mouseY, partialTick);
+	}
 
-		String message = System.currentTimeMillis() < statusUntil ? status : "";
-		if (!message.isEmpty()) {
-			graphics.drawCenteredString(font, Component.literal(message).withStyle(MONO),
-					width / 2, height - 34, DANGER);
+	private void drawBackdrop(GuiGraphics graphics, float dt)
+	{
+		clock += dt;
+		graphics.fillGradient(0, 0, width, height, Ui.BG_TOP, Ui.BG_BOTTOM);
+
+		int cx = rightX() + rightW() / 2;
+		int cy = Math.round(height * 0.68F);
+		int radius = Math.max(28, Math.min(Math.round(rightW() * 0.22F), Math.round(height * 0.19F)));
+		Ui.planet(graphics, cx, cy, radius, clock);
+
+		graphics.fillGradient(0, 0, width, 72, 0x66000000, 0x00000000);
+		graphics.fillGradient(0, height - 96, width, height, 0x00000000, 0x77000000);
+	}
+
+	private void drawWordmark(GuiGraphics graphics)
+	{
+		int cx = rightX() + rightW() / 2;
+		int markW = Math.round(rightW() * 0.78F);
+		int markH = Ui.wordmarkHeight(markW);
+		int markY = Math.max(24, Math.round(height * 0.14F));
+
+		int logo = Math.min(84, Math.round(markH * 1.15F));
+		int gap = Math.max(10, logo / 3);
+		if (logo >= 24 && cx - markW / 2 - gap - logo > rightX())
+		{
+			Ui.logo(graphics, cx - markW / 2 - gap - logo / 2, markY + markH / 2, logo);
+		}
+
+		Ui.wordmark(graphics, cx, markY, markW);
+
+		Ui.textCenter(graphics, font, "CLIENT  ·  " + VERSION + "  ·  " + renderer(),
+				cx, markY + markH + 10, Ui.MUTED);
+	}
+
+	private void drawSidebar(GuiGraphics graphics, int mouseX, int mouseY)
+	{
+		int x = sideX();
+		int y = panelY();
+		int w = sideW();
+		int h = panelH();
+		boolean narrow = w < 100;
+
+		Ui.round(graphics, x, y, w, h, Ui.R_PANEL, 0x99000000);
+		graphics.renderOutline(x, y, w, h, Ui.LINE_SOFT);
+
+		for (int i = 0; i < navs.size(); i++)
+		{
+			Nav nav = navs.get(i);
+			int iy = sideTop() + i * (itemH() + gap());
+			boolean hot = mouseX >= x && mouseX < x + w && mouseY >= iy && mouseY < iy + itemH();
+			int fill;
+			if (nav.primary)
+			{
+				fill = hot ? Ui.lighten(Ui.ACCENT, 0.12F) : Ui.ACCENT;
+			}
+			else
+			{
+				fill = hot ? 0x1FFFFFFF : 0x0FFFFFFF;
+			}
+
+			Ui.round(graphics, x + 8, iy, w - 16, itemH(), Ui.R_CARD, fill);
+			if (hot && !nav.primary)
+			{
+				graphics.renderOutline(x + 8, iy, w - 16, itemH(), 0x33FFFFFF);
+			}
+
+			int iconColor = nav.primary ? Ui.INK : (hot ? Ui.TEXT : nav.accent);
+			int iconX = narrow ? x + w / 2 : x + 26;
+			Ui.icon(graphics, nav.icon, iconX, iy + itemH() / 2, iconColor);
+
+			if (!narrow)
+			{
+				graphics.drawString(font, nav.label, x + 44, iy + itemH() / 2 - 4,
+						nav.primary ? Ui.INK : (hot ? Ui.TEXT : Ui.TEXT_2), false);
+			}
 		}
 	}
 
-	private void drawHeader(GuiGraphics graphics) {
-		int x = contentX();
-		int right = x + contentWidth();
-		int y = 17;
+	private void drawAccount(GuiGraphics graphics)
+	{
+		String name = minecraft.getUser().getName();
+		boolean online = minecraft.getConnection() != null;
+		String status = online ? "Online" : "Offline";
+		int statusColor = online ? Ui.GREEN : Ui.MUTED;
+		int x = sideX();
+		int y = 14;
+		boolean full = minecraft.getWindow().isFullscreen() || (width >= 560 && height >= 400);
 
-		graphics.fill(x, y, x + 4, y + 19, CYAN);
-		drawScaled(graphics, font, BRAND, x + 10, y - 2, 1.7F, 0xFFFFFFFF);
-		int tailX = x + 12 + (int) (font.width(BRAND) * 1.7F) + 7;
-		graphics.drawString(font, BRAND_TAIL, tailX, y + 7, CYAN, false);
-		graphics.drawString(font, SUBTITLE, x + 10, y + 22, MUTED, false);
-
-		int buildX = right - font.width(BUILD);
-		graphics.drawString(font, BUILD, buildX, y + 14, MUTED, false);
-
-		graphics.fill(x, 49, right, 50, BERYL ? 0xFF1A2A3E : 0x337DF9FF);
-	}
-
-	private void drawHero(GuiGraphics graphics, int x, int y, int w, int h) {
-		if (BERYL) {
-			graphics.fill(x, y, x + w, y + h, 0xFF0A1120);
-			for (int gx = x + 12; gx < x + w; gx += 24) {
-				graphics.fill(gx, y + 1, gx + 1, y + h - 1, 0xFF101A2C);
-			}
-			for (int gy = y + 12; gy < y + h; gy += 24) {
-				graphics.fill(x + 1, gy, x + w - 1, gy + 1, 0xFF101A2C);
-			}
-			drawV(graphics, x + w / 2, y + 92, 54, 0xFF0B1A2C);
-			graphics.renderOutline(x, y, w, h, 0xFF2A3F5C);
-			graphics.fill(x, y, x + w, y + 1, CYAN);
-			graphics.fill(x, y, x + 2, y + h, 0xFF1E4A5A);
-			corner(graphics, x, y, w, h);
-		} else {
-			graphics.fill(x, y, x + w, y + h, 0xCC0A1120);
-			graphics.fillGradient(x, y, x + w, y + h, 0x331A2A55, 0xCC080C18);
-			for (int gx = x + 12; gx < x + w; gx += 24) {
-				graphics.fill(gx, y + 1, gx + 1, y + h - 1, 0x067DF9FF);
-			}
-			for (int gy = y + 12; gy < y + h; gy += 24) {
-				graphics.fill(x + 1, gy, x + w - 1, gy + 1, 0x067DF9FF);
-			}
-			drawV(graphics, x + w / 2, y + 92, 54, 0x147DF9FF);
-			graphics.renderOutline(x, y, w, h, 0x667DF9FF);
-			graphics.fill(x, y, x + w, y + 1, CYAN);
-			graphics.fill(x, y, x + 2, y + h, 0x557DF9FF);
-			corner(graphics, x, y, w, h);
-		}
-
-		int pad = 16;
-		graphics.drawString(font, SESSION_LABEL, x + pad, y + 12, MUTED, false);
-		graphics.fill(x + pad, y + 26, x + pad + 4, y + 30, GREEN);
-		graphics.drawString(font, READY, x + pad + 10, y + 24, GREEN, false);
-		graphics.fill(x + pad, y + 40, x + w - pad, y + 41, BERYL ? 0xFF162438 : 0x227DF9FF);
-
-		if (h >= 180) {
-			int rowY = y + 54;
-			int gap = h >= 222 ? 19 : 22;
-			stat(graphics, x + pad, rowY, FABRIC_LABEL, FABRIC_VALUE);
-			stat(graphics, x + pad, rowY + gap, RENDER_LABEL, label(rendererName()));
-			stat(graphics, x + pad, rowY + gap * 2, CLIENT_LABEL, CLIENT_VALUE);
-			if (h >= 200) {
-				stat(graphics, x + pad, rowY + gap * 3, USER_LABEL,
-						Component.literal(minecraft.getUser().getName()).withStyle(MONO));
-			}
-			if (h >= 222) {
-				long mb = Runtime.getRuntime().maxMemory() / (1024L * 1024L);
-				stat(graphics, x + pad, rowY + gap * 4, MEMORY_LABEL,
-						Component.literal(mb + " MB").withStyle(MONO));
-				stat(graphics, x + pad, rowY + gap * 5, WINDOW_LABEL,
-						Component.literal(minecraft.getWindow().getWidth() + " x "
-								+ minecraft.getWindow().getHeight()).withStyle(MONO));
-				stat(graphics, x + pad, rowY + gap * 6, JAVA_LABEL,
-						Component.literal(javaVersion()).withStyle(MONO));
-			}
-			drawStringShadow(graphics, "SYSTEM NOMINAL", x + pad, y + h - 18, GREEN);
-			for (int i = 0; i < 3; i++) {
-				graphics.fill(x + pad + 96 + i * 7, y + h - 18, x + pad + 100 + i * 7, y + h - 14,
-						i == 0 ? GREEN : (BERYL ? 0xFF2A3A55 : 0x667DF9FF));
-			}
-		}
-
-		int navX = contentX();
-		graphics.drawString(font, NAV_LABEL, navX, contentY() - 12, MUTED, false);
-	}
-
-	private static String javaVersion() {
-		String v = System.getProperty("java.version", "?");
-		int dot = v.indexOf('.');
-		return dot > 0 ? v.substring(0, dot) : v;
-	}
-
-	private void stat(GuiGraphics graphics, int x, int y, Component name, Component value) {
-		graphics.drawString(font, name, x, y, MUTED, false);
-		int valueX = heroX() + heroWidth() - 16 - font.width(value);
-		graphics.drawString(font, value, valueX, y, TEXT, false);
-	}
-
-	private void drawFooter(GuiGraphics graphics) {
-		int x = contentX();
-		int right = x + contentWidth();
-		int y = height - 16;
-
-		graphics.fill(x, y - 8, right, y - 7, 0xFF162438);
-		graphics.drawString(font, FOOTER_LEFT, x, y, MUTED, false);
-		graphics.drawString(font, FOOTER_RIGHT, right - font.width(FOOTER_RIGHT), y, MUTED, false);
-	}
-
-	private static void drawScaled(GuiGraphics graphics, Font font, Component text, float x, float y, float scale,
-			int color) {
-		graphics.pose().pushMatrix();
-		graphics.pose().translate(x, y);
-		graphics.pose().scale(scale, scale);
-		graphics.drawString(font, text, 0, 0, color, false);
-		graphics.pose().popMatrix();
-	}
-
-	private static void drawStringShadow(GuiGraphics graphics, String text, int x, int y, int color) {
-		graphics.drawString(Minecraft.getInstance().font, Component.literal(text).withStyle(MONO), x, y, color, false);
-	}
-
-	private static void drawV(GuiGraphics graphics, int cx, int cy, int size, int color) {
-		for (int i = 0; i < size; i++) {
-			int half = size / 2;
-			int x = cx - half + i / 2;
-			int y = cy - size / 2 + i;
-			graphics.fill(x, y, x + 2, y + 1, color);
-			graphics.fill(cx + half - i / 2, y, cx + half - i / 2 + 2, y + 1, color);
-		}
-	}
-
-	private static void corner(GuiGraphics graphics, int x, int y, int w, int h) {
-		int c = 14;
-		graphics.fill(x, y, x + c, y + 2, PURPLE);
-		graphics.fill(x, y, x + 2, y + c, PURPLE);
-		graphics.fill(x + w - c, y, x + w, y + 2, PURPLE);
-		graphics.fill(x + w - 2, y, x + w, y + c, PURPLE);
-		graphics.fill(x, y + h - 2, x + c, y + h, PURPLE);
-		graphics.fill(x, y + h - c, x + 2, y + h, PURPLE);
-		graphics.fill(x + w - c, y + h - 2, x + w, y + h, PURPLE);
-		graphics.fill(x + w - 2, y + h - c, x + w, y + h, PURPLE);
-	}
-
-	@Override
-	public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-		if (BERYL) {
-			renderBerylBackground(graphics, mouseX, mouseY);
+		if (!full)
+		{
+			// Small window: keep it to one avatar tile so nothing crowds the sidebar.
+			accountX = x;
+			accountY = y;
+			accountW = accountH = 26;
+			Ui.round(graphics, x, y, 26, 26, 8, accountOpen ? 0x2AFFFFFF : 0x14FFFFFF);
+			Ui.round(graphics, x + 5, y + 5, 16, 16, 6, Ui.alpha(Ui.COPPER, 0.5F));
+			Ui.textCenter(graphics, font, name.substring(0, 1).toUpperCase(), x + 13, y + 9, Ui.INK);
+			Ui.circle(graphics, x + 21, y + 21, 2, statusColor);
+			drawAccountPanel(graphics);
 			return;
 		}
-		graphics.fillGradient(0, 0, width, height, 0xFF03050B, 0xFF0A1020);
-		graphics.fillGradient(width / 2, 0, width, height / 2, 0x001E1B4A, 0x182A1B5A);
-		graphics.fillGradient(0, height * 2 / 3, width, height, 0x00000000, 0x0C1E7FFF);
-		graphics.fillGradient(0, 0, width, 42, 0x99000000, 0x00000000);
-		graphics.fillGradient(0, height - 30, width, height, 0x00000000, 0x99000000);
 
-		long now = System.nanoTime();
-		float elapsed = (now - openedAt) / 1_000_000_000.0F;
-		float mx = (mouseX - width / 2.0F) * 0.012F;
-		float my = (mouseY - height / 2.0F) * 0.012F;
+		int w = Math.max(sideW(), 168);
+		accountX = x;
+		accountY = y;
+		accountW = w;
+		accountH = 30;
+		Ui.round(graphics, x, y, w, 30, Ui.R_CARD, accountOpen ? 0x2AFFFFFF : 0x12FFFFFF);
+		Ui.round(graphics, x + 5, y + 5, 20, 20, 7, Ui.alpha(Ui.COPPER, 0.42F));
+		Ui.textCenter(graphics, font, name.substring(0, 1).toUpperCase(), x + 15, y + 11, Ui.INK);
+		graphics.drawString(font, Ui.fit(font, name, w - 44), x + 30, y + 5, Ui.TEXT, false);
+		Ui.circle(graphics, x + 33, y + 21, 2, statusColor);
+		graphics.drawString(font, status, x + 39, y + 17, statusColor, false);
+		Ui.chevron(graphics, x + w - 12, y + 15, Ui.MUTED, !accountOpen);
+		drawAccountPanel(graphics);
+	}
 
-		for (Star star : stars) {
-			float twinkle = 0.40F + 0.60F * (float) Math.sin(elapsed * star.depth + star.phase);
-			int alpha = (int) (twinkle * 170.0F);
-			int x = (int) (star.x * width + mx * star.depth);
-			int y = (int) (star.y * height + my * star.depth);
-			int color = (alpha << 24) | 0xDDEEFF;
-			graphics.fill(x, y, x + star.size, y + star.size, color);
+	/** Saved names plus a field for a new one, anchored under the pill. */
+	private void drawAccountPanel(GuiGraphics graphics)
+	{
+		if (!accountOpen)
+		{
+			return;
 		}
-	}
-
-	/** Beryl's shader pass mis-blends animated/translucent GUI quads on Vulkan. */
-	private void renderBerylBackground(GuiGraphics graphics, int mouseX, int mouseY) {
-		graphics.fillGradient(0, 0, width, height, 0xFF03050B, 0xFF0A1020);
-		graphics.fill(0, 0, width, 42, 0xFF02040A);
-		graphics.fill(0, height - 30, width, height, 0xFF02040A);
-		float mx = (mouseX - width / 2.0F) * 0.012F;
-		float my = (mouseY - height / 2.0F) * 0.012F;
-		for (Star star : stars) {
-			int x = (int) (star.x * width + mx * star.depth);
-			int y = (int) (star.y * height + my * star.depth);
-			graphics.fill(x, y, x + star.size, y + star.size, 0xFFB8C8E0);
+		List<String> names = ModuleManager.get().accounts();
+		panelX = accountX;
+		panelY = accountY + accountH + 4;
+		panelW = Math.max(accountW, 176);
+		int panelH = (names.size() + 1) * ACCOUNT_ROW + 10;
+		if (panelY + panelH > height - 8)
+		{
+			panelY = Math.max(8, height - 8 - panelH);
 		}
-	}
+		Ui.round(graphics, panelX, panelY, panelW, panelH, Ui.R_CARD, 0xE60C0F16);
+		graphics.renderOutline(panelX, panelY, panelW, panelH, Ui.LINE_SOFT);
 
-	private int margin() {
-		return width < 520 ? 16 : 24;
-	}
-
-	private int contentWidth() {
-		return Math.min(680, width - margin() * 2);
-	}
-
-	private int contentX() {
-		return (width - contentWidth()) / 2;
-	}
-
-	private int contentY() {
-		return 68;
-	}
-
-	private int navWidth() {
-		return contentWidth() >= 430 ? 132 : 112;
-	}
-
-	private int navHeight() {
-		return height < 260 ? 22 : 26;
-	}
-
-	private int navGap() {
-		return height < 260 ? 5 : 8;
-	}
-
-	private int heroX() {
-		return contentX() + navWidth() + 14;
-	}
-
-	private int heroWidth() {
-		return contentWidth() - navWidth() - 14;
-	}
-
-	private int heroHeight() {
-		return Math.max(120, Math.min(258, height - contentY() - 52));
-	}
-
-	@Override
-	public boolean isPauseScreen() {
-		return false;
-	}
-
-	@Override
-	public boolean shouldCloseOnEsc() {
-		return false;
-	}
-
-	private record Star(float x, float y, int size, float phase, float depth) {
-	}
-
-	private static final class ValkawButton extends AbstractWidget {
-		private final Runnable action;
-		private final int accent;
-		private final boolean primary;
-		private final boolean nav;
-
-		private ValkawButton(int x, int y, int width, int height, Component message, int accent, boolean primary,
-				boolean nav, Runnable action) {
-			super(x, y, width, height, message);
-			this.accent = accent;
-			this.primary = primary;
-			this.nav = nav;
-			this.action = action;
-		}
-
-		@Override
-		protected void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-			boolean hot = isHoveredOrFocused();
-			int x = getX();
-			int y = getY();
-			int w = getWidth();
-			int h = getHeight();
-
-			if (hot && !BERYL) {
-				graphics.fill(x - 2, y - 2, x + w + 2, y + h + 2, primary ? 0x337DF9FF : 0x1FB18CFF);
+		String active = minecraft.getUser().getName();
+		int rowY = panelY + 5;
+		for (String entry : names)
+		{
+			boolean current = entry.equalsIgnoreCase(active);
+			if (current)
+			{
+				Ui.round(graphics, panelX + 4, rowY - 1, panelW - 8, ACCOUNT_ROW, 5, 0x1FFFFFFF);
 			}
-			graphics.fill(x, y, x + w, y + h, BERYL ? (hot ? 0xFF182740 : 0xFF0E1626)
-					: (hot ? 0xD0182740 : 0xA00E1626));
-			graphics.renderOutline(x, y, w, h, hot ? accent : (BERYL ? 0xFF2A3A55 : 0x446A7EA8));
-			graphics.fill(x, y, x + (primary ? 3 : 2), y + h, accent);
+			Ui.circle(graphics, panelX + 11, rowY + 6, 2, current ? Ui.ACCENT : Ui.MUTED);
+			graphics.drawString(font, Ui.fit(font, entry, panelW - 42), panelX + 18, rowY + 2,
+					current ? Ui.TEXT : Ui.TEXT_2, false);
+			rowY += ACCOUNT_ROW;
+		}
 
-			if (nav) {
-				graphics.drawString(Minecraft.getInstance().font, getMessage(), x + 10, y + (h - 8) / 2,
-						hot ? 0xFFFFFFFF : 0xFFB9C8E6, false);
-				if (hot) {
-					graphics.drawString(Minecraft.getInstance().font, ">", x + w - 11, y + (h - 8) / 2, accent, false);
+		graphics.drawString(font, "+", panelX + 10, rowY + 2, Ui.MUTED, false);
+		if (accountTyping)
+		{
+			String caret = System.currentTimeMillis() / 500 % 2 == 0 ? "_" : "";
+			graphics.drawString(font, Ui.fit(font, accountInput + caret, panelW - 42), panelX + 18, rowY + 2,
+					Ui.TEXT, false);
+		}
+		else
+		{
+			graphics.drawString(font, "New name...", panelX + 18, rowY + 2, Ui.MUTED, false);
+		}
+	}
+
+	/** Row index under the cursor: 0..n-1 saved names, n the new-name field, -1 outside. */
+	private int accountRowAt(double mx, double my)
+	{
+		if (!accountOpen || mx < panelX || mx >= panelX + panelW)
+		{
+			return -1;
+		}
+		int top = panelY + 5;
+		int rows = ModuleManager.get().accounts().size() + 1;
+		if (my < top || my >= top + rows * ACCOUNT_ROW)
+		{
+			return -1;
+		}
+		return (int) ((my - top) / ACCOUNT_ROW);
+	}
+
+	private void drawFoot(GuiGraphics graphics)
+	{
+		String left = width < 620 ? "Valkaw Client " + VERSION
+				: "Valkaw Client " + VERSION + "   ·   Minecraft 1.21.11   ·   Fabric";
+		graphics.drawString(font, left, rightX(), height - 22, Ui.MUTED, false);
+		if (width >= 760)
+		{
+			String hint = "Right Shift  ·  client settings";
+			graphics.drawString(font, hint, width - sideX() - Ui.width(font, hint), height - 22, Ui.MUTED, false);
+		}
+	}
+
+	// ---------------------------------------------------------------- input
+
+	@Override
+	public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick)
+	{
+		List<String> names = ModuleManager.get().accounts();
+		int row = accountRowAt(event.x(), event.y());
+		if (row >= 0)
+		{
+			if (row < names.size())
+			{
+				ModuleManager.get().setUsername(names.get(row));
+				accountOpen = false;
+			}
+			accountTyping = row >= names.size();
+			accountInput = "";
+			return true;
+		}
+		if (event.x() >= accountX && event.x() < accountX + accountW
+				&& event.y() >= accountY && event.y() < accountY + accountH)
+		{
+			accountOpen = !accountOpen;
+			accountTyping = false;
+			accountInput = "";
+			return true;
+		}
+		if (accountOpen)
+		{
+			accountOpen = false;
+			accountTyping = false;
+			accountInput = "";
+		}
+		int nav = navAt(event.x(), event.y());
+		if (nav >= 0)
+		{
+			AbstractWidget.playButtonClickSound(minecraft.getSoundManager());
+			navs.get(nav).action.run();
+			return true;
+		}
+		return super.mouseClicked(event, doubleClick);
+	}
+
+	@Override
+	public boolean charTyped(CharacterEvent event)
+	{
+		if (!accountTyping)
+		{
+			return super.charTyped(event);
+		}
+		String typed = event.codepointAsString();
+		if (!typed.isEmpty() && accountInput.length() < 16 && typed.matches("[A-Za-z0-9_]"))
+		{
+			accountInput += typed;
+		}
+		return true;
+	}
+
+	@Override
+	public boolean shouldCloseOnEsc()
+	{
+		// Esc must never close the main menu: closing it hands the player to the
+		// vanilla title screen, which is not what this client shows.
+		return false;
+	}
+
+	@Override
+	public void onClose()
+	{
+		// Swallow the close request for the same reason.
+	}
+
+	@Override
+	public boolean keyPressed(KeyEvent event)
+	{
+		int key = event.key();
+		if (accountTyping)
+		{
+			if (key == GLFW.GLFW_KEY_ENTER || key == GLFW.GLFW_KEY_KP_ENTER)
+			{
+				if (!accountInput.isBlank())
+				{
+					ModuleManager.get().setUsername(accountInput);
+					accountOpen = false;
 				}
-			} else {
-				graphics.drawCenteredString(Minecraft.getInstance().font, getMessage(), x + w / 2 + 2,
-						y + (h - 8) / 2, hot ? 0xFFFFFFFF : TEXT);
+				accountTyping = false;
+				accountInput = "";
+			}
+			else if (key == GLFW.GLFW_KEY_ESCAPE)
+			{
+				accountTyping = false;
+				accountInput = "";
+			}
+			else if (key == GLFW.GLFW_KEY_BACKSPACE && !accountInput.isEmpty())
+			{
+				accountInput = accountInput.substring(0, accountInput.length() - 1);
+			}
+			return true;
+		}
+		if (accountOpen)
+		{
+			if (key == GLFW.GLFW_KEY_ESCAPE)
+			{
+				accountOpen = false;
+			}
+			return true;
+		}
+		if (key >= GLFW.GLFW_KEY_1 && key <= GLFW.GLFW_KEY_5)
+		{
+			int index = key - GLFW.GLFW_KEY_1;
+			if (index < navs.size())
+			{
+				AbstractWidget.playButtonClickSound(minecraft.getSoundManager());
+				navs.get(index).action.run();
+				return true;
 			}
 		}
+		return super.keyPressed(event);
+	}
 
-		@Override
-		public void onClick(MouseButtonEvent event, boolean doubleClick) {
-			action.run();
+	private int navAt(double mouseX, double mouseY)
+	{
+		int x = sideX();
+		int w = sideW();
+		if (mouseX < x || mouseX >= x + w)
+		{
+			return -1;
 		}
+		for (int i = 0; i < navs.size(); i++)
+		{
+			int iy = sideTop() + i * (itemH() + gap());
+			if (mouseY >= iy && mouseY < iy + itemH())
+			{
+				return i;
+			}
+		}
+		return -1;
+	}
 
-		@Override
-		protected void updateWidgetNarration(NarrationElementOutput output) {
-			defaultButtonNarrationText(output);
+	// -------------------------------------------------------------- helpers
+
+	private static String renderer()
+	{
+		Minecraft client = Minecraft.getInstance();
+		if (FabricLoader.getInstance().isModLoaded("vulkanmod"))
+		{
+			return "VulkanMod";
 		}
+		if (client.getResourceManager() != null && FabricLoader.getInstance().isModLoaded("sodium"))
+		{
+			return "Sodium";
+		}
+		return "Vanilla";
+	}
+
+	private record Nav(String icon, String label, int accent, boolean primary, Runnable action)
+	{
 	}
 }

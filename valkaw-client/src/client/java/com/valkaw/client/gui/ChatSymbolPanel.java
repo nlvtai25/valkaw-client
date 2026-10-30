@@ -2,6 +2,7 @@ package com.valkaw.client.gui;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.network.chat.Component;
@@ -34,11 +35,12 @@ public final class ChatSymbolPanel {
 	private static final int CELL = 16;
 	private static final int COLS = 10;
 	private static final int ROWS = 10;
-	private static final int HEADER = 16;
-	private static final int PAD = 4;
-	private static final int PANEL_W = COLS * CELL + PAD * 2;
+	private static final int HEADER = 20;
+	private static final int PAD = 5;
+	private static final int PANEL_W = COLS * CELL + PAD * 2 + 4;
 	private static final int PANEL_H = HEADER + ROWS * CELL + PAD * 2;
 	private static final int COLOR_ROWS = (COLOR_CODES.length + COLS - 1) / COLS;
+	private static final int SURFACE = 0xF80A111C;
 
 	private static boolean open;
 	private static boolean colorTab;
@@ -65,15 +67,16 @@ public final class ChatSymbolPanel {
 	}
 
 	public static void render(ChatScreen screen, GuiGraphics graphics, int mouseX, int mouseY) {
+		Font font = Minecraft.getInstance().font;
 		int tx = tabX(screen.width);
 		int ty = tabY(screen.height);
 		boolean tabHot = inside(mouseX, mouseY, tx, ty, TAB_W, TAB_H);
-		graphics.fill(tx, ty, tx + TAB_W, ty + TAB_H, open || tabHot ? 0xFF1B3A5C : 0xE60E1626);
-		graphics.renderOutline(tx, ty, TAB_W, TAB_H, open || tabHot ? 0xFF4FA8E0 : 0xFF2A6B9A);
-		var tabFont = Minecraft.getInstance().font;
-		graphics.drawString(tabFont, "\u2756", tx + (TAB_W - tabFont.width("\u2756")) / 2, ty + 3, 0xFF7DD3FC, false);
+		Ui.round(graphics, tx, ty, TAB_W, TAB_H, Ui.R_PILL, open || tabHot ? 0xFF16243C : 0xEE0B1220);
+		graphics.renderOutline(tx, ty, TAB_W, TAB_H, open || tabHot ? Ui.alpha(Ui.ACCENT, 0.7F) : Ui.LINE_SOFT);
+		graphics.drawString(font, "\u2756", tx + (TAB_W - font.width("\u2756")) / 2, ty + 3,
+				open || tabHot ? Ui.ACCENT : Ui.TEXT_2, false);
 		if (tabHot) {
-			drawTooltip(graphics, "Custom Symbols", mouseX, mouseY);
+			drawTooltip(graphics, "Custom symbols", mouseX, mouseY);
 		}
 		if (!open) {
 			return;
@@ -81,54 +84,55 @@ public final class ChatSymbolPanel {
 
 		int px = panelX(screen.width);
 		int py = panelY(screen.height);
-		graphics.fill(px, py, px + PANEL_W, py + PANEL_H, 0xF00A111C);
-		graphics.renderOutline(px, py, PANEL_W, PANEL_H, 0xFF2A6B9A);
+		Ui.panel(graphics, px, py, PANEL_W, PANEL_H, Ui.R_PANEL, SURFACE);
 		drawHeader(graphics, px, py, mouseX, mouseY);
 
-		int gx = px + PAD;
+		int gx = px + PAD + 2;
 		int gy = py + HEADER + PAD;
-		graphics.enableScissor(gx, gy, px + PANEL_W - PAD, gy + ROWS * CELL);
+		graphics.enableScissor(gx, gy, gx + COLS * CELL, gy + ROWS * CELL);
 		if (colorTab) {
 			drawColors(graphics, gx, gy, mouseX, mouseY);
 		} else {
 			drawSymbols(graphics, gx, gy, mouseX, mouseY);
 		}
 		graphics.disableScissor();
+
 		if (!colorTab && maxScroll() > 0) {
 			int rows = (SYMBOLS.length + COLS - 1) / COLS;
-			int barH = Math.max(12, ROWS * CELL * ROWS / rows);
-			int barY = gy + (ROWS * CELL - barH) * scrollRow / maxScroll();
-			graphics.fill(px + PANEL_W - 3, barY, px + PANEL_W - 1, barY + barH, 0xFF3D7FA8);
+			float visible = (float) ROWS / rows;
+			float offset = (float) scrollRow / maxScroll();
+			Ui.scrollbar(graphics, px + PANEL_W - 5, gy, ROWS * CELL, offset, visible, Ui.ACCENT);
 		}
 	}
 
 	private static void drawHeader(GuiGraphics graphics, int px, int py, int mouseX, int mouseY) {
-		int half = (PANEL_W - PAD * 2) / 2;
+		Font font = Minecraft.getInstance().font;
+		int x = px + PAD + 2;
+		int w = (PANEL_W - (PAD + 2) * 2 - 4) / 2;
 		for (int i = 0; i < 2; i++) {
-			int x = px + PAD + i * half;
-			int w = i == 0 ? half : PANEL_W - PAD * 2 - half;
+			int tabX = x + i * (w + 4);
 			boolean active = (i == 1) == colorTab;
-			boolean hot = inside(mouseX, mouseY, x, py + PAD, w, HEADER - PAD);
-			graphics.fill(x, py + PAD, x + w, py + HEADER - PAD / 2,
-					active ? 0xFF1B3A5C : hot ? 0xFF14263A : 0xFF0E1626);
-			String label = i == 0 ? "Symbols" : "Color";
-			int color = active ? 0xFF9BDBFF : 0xFF7E93AD;
-			graphics.drawString(Minecraft.getInstance().font, label,
-					x + (w - Minecraft.getInstance().font.width(label)) / 2, py + 5, color, false);
+			boolean hot = inside(mouseX, mouseY, tabX, py + 5, w, HEADER - 7);
+			Ui.round(graphics, tabX, py + 5, w, HEADER - 7, 5,
+					active ? Ui.alpha(Ui.ACCENT, 0.16F) : hot ? 0x14FFFFFF : 0x00000000);
+			String label = i == 0 ? "SYMBOLS" : "COLOUR";
+			graphics.drawString(font, label, tabX + (w - font.width(label)) / 2, py + 9,
+					active ? Ui.ACCENT : Ui.MUTED, false);
 		}
 	}
 
 	private static void drawTooltip(GuiGraphics graphics, String text, int mouseX, int mouseY) {
-		var font = Minecraft.getInstance().font;
+		Font font = Minecraft.getInstance().font;
 		int w = font.width(text);
 		int x = mouseX - w - 10;
 		int y = mouseY - 12;
-		graphics.fill(x - 3, y - 3, x + w + 3, y + 11, 0xF0100010);
-		graphics.renderOutline(x - 3, y - 3, w + 6, 14, 0xFF5000FF);
-		graphics.drawString(font, text, x, y, 0xFFDCE7F5, false);
+		Ui.round(graphics, x - 4, y - 4, w + 8, 15, 4, 0xF20A111C);
+		graphics.renderOutline(x - 4, y - 4, w + 8, 15, Ui.LINE_SOFT);
+		graphics.drawString(font, text, x, y, Ui.TEXT, false);
 	}
 
 	private static void drawSymbols(GuiGraphics graphics, int gx, int gy, int mouseX, int mouseY) {
+		Font font = Minecraft.getInstance().font;
 		for (int i = 0; i < SYMBOLS.length; i++) {
 			int col = i % COLS;
 			int row = i / COLS - scrollRow;
@@ -137,38 +141,40 @@ public final class ChatSymbolPanel {
 			}
 			int x = gx + col * CELL;
 			int y = gy + row * CELL;
-			boolean hot = inside(mouseX, mouseY, x, y, CELL - 1, CELL - 1);
-			graphics.fill(x, y, x + CELL - 1, y + CELL - 1, 0xFF152033);
-			graphics.renderOutline(x, y, CELL - 1, CELL - 1, hot ? 0xFF6FC7F5 : 0xFF243447);
-			var font = Minecraft.getInstance().font;
-			graphics.drawString(font, SYMBOLS[i], x + (CELL - 1 - font.width(SYMBOLS[i])) / 2, y + 4,
-					0xFFDCE7F5, false);
+			boolean hot = inside(mouseX, mouseY, x, y, CELL - 2, CELL - 2);
+			Ui.round(graphics, x, y, CELL - 2, CELL - 2, 3, hot ? 0xFF1B2C46 : 0xFF121B2C);
+			if (hot) {
+				graphics.renderOutline(x, y, CELL - 2, CELL - 2, Ui.alpha(Ui.ACCENT, 0.6F));
+			}
+			graphics.drawString(font, SYMBOLS[i], x + (CELL - 2 - font.width(SYMBOLS[i])) / 2, y + 4,
+					hot ? 0xFFFFFFFF : Ui.TEXT_2, false);
 		}
 	}
 
 	private static void drawColors(GuiGraphics graphics, int gx, int gy, int mouseX, int mouseY) {
-		var font = Minecraft.getInstance().font;
+		Font font = Minecraft.getInstance().font;
 		for (int i = 0; i < COLOR_CODES.length; i++) {
 			int x = gx + (i % COLS) * CELL;
 			int y = gy + (i / COLS) * CELL;
 			int rgb = COLOR_RGB[i];
-			boolean hot = inside(mouseX, mouseY, x, y, CELL - 1, CELL - 1);
-			graphics.fill(x, y, x + CELL - 1, y + CELL - 1, 0xFF000000 | rgb);
-			graphics.renderOutline(x, y, CELL - 1, CELL - 1, hot ? 0xFF6FC7F5 : 0xFF243447);
-			graphics.drawString(font, COLOR_CODES[i], x + (CELL - 1 - font.width(COLOR_CODES[i])) / 2, y + 4,
+			boolean hot = inside(mouseX, mouseY, x, y, CELL - 2, CELL - 2);
+			Ui.round(graphics, x, y, CELL - 2, CELL - 2, 3, 0xFF000000 | rgb);
+			if (hot) {
+				graphics.renderOutline(x, y, CELL - 2, CELL - 2, Ui.ACCENT);
+			}
+			graphics.drawString(font, COLOR_CODES[i], x + (CELL - 2 - font.width(COLOR_CODES[i])) / 2, y + 4,
 					luma(rgb) > 0x80 ? 0xFF101010 : 0xFFF2F5FA, false);
 		}
 
 		// format rows: code on the left, live sample on the right so the effect is visible
 		for (int i = 0; i < FORMATS.length; i++) {
 			int y = gy + (COLOR_ROWS + i) * CELL;
-			boolean hot = inside(mouseX, mouseY, gx, y, COLS * CELL, CELL);
-			graphics.fill(gx, y, gx + COLS * CELL, y + CELL - 1, hot ? 0xFF1B3A5C : 0xFF152033);
-			graphics.renderOutline(gx, y, COLS * CELL, CELL - 1, hot ? 0xFF6FC7F5 : 0xFF243447);
+			boolean hot = inside(mouseX, mouseY, gx, y, COLS * CELL, CELL - 2);
+			Ui.round(graphics, gx, y, COLS * CELL, CELL - 2, 3, hot ? 0xFF1B2C46 : 0xFF121B2C);
 			String code = "&" + FORMATS[i].getChar();
-			graphics.drawString(font, code, gx + 2, y + 4, 0xFF9BDBFF, false);
+			graphics.drawString(font, code, gx + 4, y + 4, Ui.ACCENT, false);
 			graphics.drawString(font, Component.literal("Sample").withStyle(FORMATS[i]),
-					gx + 2 + font.width(code) + 6, y + 4, 0xFFDCE7F5, false);
+					gx + 4 + font.width(code) + 6, y + 4, Ui.TEXT_2, false);
 		}
 	}
 
@@ -191,18 +197,17 @@ public final class ChatSymbolPanel {
 			return false;
 		}
 
-		int half = (PANEL_W - PAD * 2) / 2;
+		int x = px + PAD + 2;
+		int w = (PANEL_W - (PAD + 2) * 2 - 4) / 2;
 		for (int i = 0; i < 2; i++) {
-			int x = px + PAD + i * half;
-			int w = i == 0 ? half : PANEL_W - PAD * 2 - half;
-			if (inside(mouseX, mouseY, x, py + PAD, w, HEADER - PAD)) {
+			if (inside(mouseX, mouseY, x + i * (w + 4), py + 5, w, HEADER - 7)) {
 				colorTab = i == 1;
 				scrollRow = 0;
 				return true;
 			}
 		}
 
-		int gx = px + PAD;
+		int gx = px + PAD + 2;
 		int gy = py + HEADER + PAD;
 		int col = (int) ((mouseX - gx) / CELL);
 		int row = (int) ((mouseY - gy) / CELL);

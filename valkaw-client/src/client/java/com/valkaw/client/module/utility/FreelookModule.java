@@ -3,9 +3,9 @@ package com.valkaw.client.module.utility;
 import com.google.gson.JsonObject;
 import com.valkaw.client.module.Category;
 import com.valkaw.client.module.Module;
+import com.valkaw.client.keybinds.Keybinds;
 import com.valkaw.client.module.ModuleManager;
 import com.valkaw.client.module.Setting;
-import com.mojang.blaze3d.platform.InputConstants;
 import java.util.List;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
@@ -26,6 +26,11 @@ public class FreelookModule extends Module {
 	public FreelookModule() {
 		super("freelook", "Freelook", Category.UTILITY);
 		setKey(GLFW.GLFW_KEY_LEFT_ALT);
+	}
+
+	@Override
+	public boolean keyOnly() {
+		return true;
 	}
 
 	private static FreelookModule self() {
@@ -65,7 +70,7 @@ public class FreelookModule extends Module {
 
 	private boolean holding() {
 		Minecraft mc = Minecraft.getInstance();
-		return key() >= 0 && mc.screen == null && InputConstants.isKeyDown(mc.getWindow(), key());
+		return mc.screen == null && Keybinds.down(this);
 	}
 
 	@Override

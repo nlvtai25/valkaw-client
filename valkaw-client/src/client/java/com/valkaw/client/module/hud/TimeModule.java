@@ -38,7 +38,7 @@ public class TimeModule extends HudModule {
 
 	@Override
 	protected int previewHeight() {
-		return 23;
+		return 22;
 	}
 
 	@Override
@@ -55,8 +55,8 @@ public class TimeModule extends HudModule {
 			h = 11;
 		} else {
 			w = Hud.chip(graphics, font, x, y, "DAY", day);
-			w = Math.max(w, Hud.chipRaw(graphics, font, x, y + 12, "TIME", clock));
-			h = 23;
+			w = Math.max(w, Hud.chipRaw(graphics, font, x, y + 11, "TIME", clock));
+			h = 22;
 		}
 	}
 

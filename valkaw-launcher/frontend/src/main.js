@@ -21,9 +21,7 @@ function showPage(name) {
         $('pageEyebrow').textContent = pages[name].eyebrow;
     }
     if (name === 'resources') {
-        requestAnimationFrame(() => {
-            openResourceBrowser();
-        });
+        requestAnimationFrame(() => refreshResourceContext());
     }
 }
 
@@ -41,7 +39,6 @@ async function loadConfig() {
     $('gpuList').classList.toggle('hidden', isWin);
     $('gpuWin').classList.toggle('hidden', !isWin);
     $('gpuPref').value = String(cfg.gpuPref || 0);
-    $('username').value = cfg.username || '';
     const profile = cfg.profile || 'gl';
     const radio = document.querySelector(`input[name="profile"][value="${profile}"]`);
     if (radio) radio.checked = true;
@@ -55,7 +52,10 @@ async function loadConfig() {
     $('windowHeight').value = cfg.windowHeight || 900;
     syncWindowPreset();
     $('autoUpdate').checked = !!cfg.autoUpdate;
-    const ar = document.querySelector(`input[name="afterRun"][value="${cfg.afterRun || 'hide'}"]`);
+    // Unknown values (or an older config) must still leave one option picked,
+    // otherwise saving the settings would read an empty radio group.
+    const ar = document.querySelector(`input[name="afterRun"][value="${cfg.afterRun || 'hide'}"]`)
+        || document.querySelector('input[name="afterRun"][value="hide"]');
     if (ar) ar.checked = true;
     updateUserChip();
     $('welcome').textContent = cfg.username ? `Welcome back, ${cfg.username}` : 'Welcome back';
@@ -193,24 +193,15 @@ function setInstallProgress(stage, pct) {
 
 EventsOn('install:progress', (stage, pct) => setInstallProgress(stage, pct));
 
+// The player name is edited in-game now (main menu account pill), so the
+// launcher only mirrors whatever was saved there.
 function currentUsername() {
-    const name = $('username').value.trim();
-    updateUserChip();
-    return name;
+    return (cfg.username || 'Player').trim();
 }
 
 function updateUserChip() {
-    const name = $('username').value.trim() || 'Guest';
-    $('userChip').textContent = name;
+    $('userChip').textContent = currentUsername() || 'Guest';
 }
-
-$('username').addEventListener('input', updateUserChip);
-$('username').addEventListener('keydown', (e) => {
-    if (e.key !== 'Enter') return;
-    e.preventDefault();
-    currentUsername();
-    $('username').blur();
-});
 
 async function refreshUpdateStatus() {
     const el = $('updateStatus');
@@ -256,7 +247,6 @@ $('installBtn').addEventListener('click', async () => {
     $('installStage').textContent = 'Starting...';
     cfg.profile = profile;
     cfg.version = $('version').value;
-    cfg.username = currentUsername();
     cfg.windowWidth = parseInt($('windowWidth').value) || 1600;
     cfg.windowHeight = parseInt($('windowHeight').value) || 900;
     await SaveConfig(cfg);
@@ -296,7 +286,6 @@ let graphicsWarned = false;
 async function syncConfig() {
     cfg.profile = document.querySelector('input[name="profile"]:checked').value;
     cfg.version = $('version').value;
-    cfg.username = currentUsername();
     cfg.windowWidth = parseInt($('windowWidth').value) || 1600;
     cfg.windowHeight = parseInt($('windowHeight').value) || 900;
     await SaveConfig(cfg);
@@ -414,7 +403,9 @@ let resourceCtx = { gameVersion: '', profile: 'gl', loader: 'fabric', gameDir: '
 let resourceTab = 'mod';
 let resourceQuery = '';
 let resourceOffset = 0;
-const resourceLimit = 20;
+// 7 rows of 3 cards: the last row (Forge Config API Port, Collective, FancyMenu)
+// still fits above the status line without clipping the grid.
+const resourceLimit = 21;
 let resourceResults = [];
 let resourceSelectedProject = null;
 let resourceSelectedVersions = [];
@@ -456,29 +447,6 @@ const RESOURCE_FILTER_CONFIG = {
             key: 'resolution', title: 'Resolution', options: [
                 ['8x-', '8x or lower'], ['16x', '16x'], ['32x', '32x'], ['48x', '48x'],
                 ['64x', '64x'], ['128x', '128x'], ['256x', '256x'], ['512x+', '512x or higher'],
-            ],
-        },
-    ],
-    shader: [
-        {
-            key: 'category', title: 'Category', options: [
-                ['cartoon', 'Cartoon'], ['cursed', 'Cursed'], ['fantasy', 'Fantasy'],
-                ['realistic', 'Realistic'], ['semi-realistic', 'Semi Realistic'],
-                ['vanilla-like', 'Vanilla Like'],
-            ],
-        },
-        {
-            key: 'feature', title: 'Feature', options: [
-                ['atmosphere', 'Atmosphere'], ['bloom', 'Bloom'],
-                ['colored-lighting', 'Colored Lighting'], ['foliage', 'Foliage'],
-                ['path-tracing', 'Path Tracing'], ['pbr', 'PBR'],
-                ['reflections', 'Reflections'], ['shadows', 'Shadows'],
-            ],
-        },
-        {
-            key: 'performance', title: 'Performance Impact', options: [
-                ['potato', 'Potato'], ['low', 'Low'], ['medium', 'Medium'],
-                ['high', 'High'], ['screenshot', 'Screenshot'],
             ],
         },
     ],
@@ -544,13 +512,11 @@ function buildResourceFilterPayload() {
 
 function resourceProjectTypeForTab(tab) {
     if (tab === 'resourcepack') return 'resourcepack';
-    if (tab === 'shader') return 'shader';
     return 'mod';
 }
 
 function resourceDestTypeForTab(tab) {
     if (tab === 'resourcepack') return 'resourcepack';
-    if (tab === 'shader') return 'shaderpack';
     return 'mod';
 }
 
@@ -571,7 +537,6 @@ async function refreshResourceContext() {
 // exactly where a file landed.
 function resourceTargetDir(destType) {
     if (destType === 'resourcepack') return resourceCtx.rpDir || '';
-    if (destType === 'shaderpack') return resourceCtx.shaderDir || '';
     return resourceCtx.modsDir || '';
 }
 
@@ -641,14 +606,18 @@ if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
 
 $('openResourceBrowser').addEventListener('click', openResourceBrowser);
 $('resourceClose').addEventListener('click', closeResourceBrowser);
-$('resourceOpenDir').addEventListener('click', async () => {
+// Opens the profile's mods folder so files downloaded outside the launcher can
+// be dropped in directly.
+$('openModsFolder').addEventListener('click', async () => {
+    const btn = $('openModsFolder');
+    const label = btn.textContent;
     try {
-        await OpenResourceDir(resourceDestTypeForTab(resourceTab));
-        const dir = resourceTargetDir(resourceDestTypeForTab(resourceTab));
-        $('resourceStatus').textContent = dir ? `Opened ${dir}` : 'Opened resource folder.';
+        await OpenResourceDir('mod');
+        btn.textContent = 'Opened';
     } catch (e) {
-        $('resourceStatus').textContent = 'Failed to open folder: ' + e;
+        btn.textContent = 'Failed';
     }
+    setTimeout(() => { btn.textContent = label; }, 1400);
 });
 
 document.querySelectorAll('.resource-tab').forEach(btn => {
@@ -728,7 +697,7 @@ async function searchResources(offset) {
     $('resourceProgress').style.width = '0%';
     try {
         const projectType = resourceProjectTypeForTab(resourceTab);
-        // Only mods are tied to a loader; resource and shader packs are not.
+        // Only mods are tied to a loader; resource packs are not.
         const loader = projectType === 'mod' ? (resourceCtx.loader || 'fabric') : '';
         const res = await SearchModrinth(
             resourceQuery,
@@ -887,7 +856,6 @@ $('saveBtn').addEventListener('click', async () => {
     cfg.windowHeight = parseInt($('windowHeight').value) || 900;
     cfg.autoUpdate = $('autoUpdate').checked;
     cfg.afterRun = document.querySelector('input[name="afterRun"]:checked').value;
-    cfg.username = currentUsername();
     cfg.profile = document.querySelector('input[name="profile"]:checked').value;
     cfg.gpu = document.querySelector('input[name="gpu"]:checked')?.value || '';
     cfg.gpuPref = parseInt($('gpuPref').value) || 0;

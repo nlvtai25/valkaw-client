@@ -4,10 +4,13 @@
 	"compatibilityLevel": "JAVA_21",
 	"client": [
 		"MinecraftScreenMixin",
+		"MinecraftAccountMixin",
 		"GuiHudMixin",
 		"GuiCrosshairMixin",
 		"GameRendererMixin",
 		"ScreenEffectRendererMixin",
+		"ScreenBackdropMixin",
+		"FramerateLimitTrackerMixin",
 		"ChatComponentMixin",
 		"ChatSymbolMixin",
 		"MouseHandlerMixin",

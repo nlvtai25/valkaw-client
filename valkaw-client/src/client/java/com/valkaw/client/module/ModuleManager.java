@@ -2,11 +2,13 @@ package com.valkaw.client.module;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.mojang.blaze3d.platform.InputConstants;
 import com.valkaw.client.gui.ClientSettingsScreen;
 import com.valkaw.client.gui.HudEditorScreen;
+import com.valkaw.client.keybinds.Keybinds;
 import com.valkaw.client.module.hud.ArmorHudModule;
 import com.valkaw.client.module.hud.ComboModule;
 import com.valkaw.client.module.hud.CoordinatesModule;
@@ -24,6 +26,7 @@ import com.valkaw.client.module.hud.SprintHudModule;
 import com.valkaw.client.module.hud.TimeModule;
 import com.valkaw.client.module.hud.TpsModule;
 import com.valkaw.client.module.performance.ClearFluidsModule;
+import com.valkaw.client.module.performance.MenuBackdropModule;
 import com.valkaw.client.module.performance.CloudsModule;
 import com.valkaw.client.module.performance.NoFogModule;
 import com.valkaw.client.module.performance.ParticlesModule;
@@ -42,6 +45,8 @@ import com.valkaw.client.module.utility.ToggleSneakModule;
 import com.valkaw.client.module.utility.ToggleSprintModule;
 import com.valkaw.client.module.utility.ZoomModule;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -68,6 +73,8 @@ public final class ModuleManager {
 	private final TextStyle globalStyle = new TextStyle(0xFF7DF9FF);
 	private static final int SETTINGS_KEY = GLFW.GLFW_KEY_RIGHT_SHIFT;
 	private int editorKey = GLFW.GLFW_KEY_F6;
+	private String username = "";
+	private final List<String> accounts = new ArrayList<>();
 	private boolean editorKeyHeld;
 	private boolean settingsKeyHeld;
 	private boolean initialized;
@@ -124,6 +131,7 @@ public final class ModuleManager {
 		register(new RenderDistanceModule());
 		register(new NoFogModule());
 		register(new ClearFluidsModule());
+		register(new MenuBackdropModule());
 		load();
 		LOGGER.info("Valkaw modules ready: {}", modules.size());
 	}
@@ -150,9 +158,9 @@ public final class ModuleManager {
 		}
 		editorKeyHeld = editorDown;
 
+		Keybinds.sync();
 		for (Module module : modules) {
-			int key = module.key();
-			boolean down = key >= 0 && mc.screen == null && InputConstants.isKeyDown(mc.getWindow(), key);
+			boolean down = mc.screen == null && Keybinds.down(module);
 			if (module.pollPress(down)) {
 				if (module.isAction()) {
 					module.onKey();
@@ -202,6 +210,44 @@ public final class ModuleManager {
 		return editorKey;
 	}
 
+	/** Player name picked in-game; empty means "keep whatever the launcher passed". */
+	public String username()
+	{
+		return username;
+	}
+
+	public void setUsername(String name)
+	{
+		username = cleanName(name);
+		if (!username.isBlank() && accounts.stream().noneMatch(entry -> entry.equalsIgnoreCase(username)))
+		{
+			accounts.add(username);
+		}
+		save();
+	}
+
+	/** Names the player saved from the main menu, newest last. */
+	public List<String> accounts()
+	{
+		return accounts;
+	}
+
+	public void removeAccount(String name)
+	{
+		accounts.removeIf(entry -> entry.equalsIgnoreCase(cleanName(name)));
+		if (username.equalsIgnoreCase(cleanName(name)))
+		{
+			username = accounts.isEmpty() ? "" : accounts.get(0);
+		}
+		save();
+	}
+
+	private static String cleanName(String name)
+	{
+		String clean = name == null ? "" : name.trim();
+		return clean.length() > 16 ? clean.substring(0, 16) : clean;
+	}
+
 	public void setEditorKey(int key) {
 		editorKey = key;
 		save();
@@ -221,6 +267,13 @@ public final class ModuleManager {
 	public void save() {
 		JsonObject root = new JsonObject();
 		root.addProperty("editorKey", editorKey);
+		root.addProperty("username", username);
+		JsonArray saved = new JsonArray();
+		for (String entry : accounts)
+		{
+			saved.add(entry);
+		}
+		root.add("accounts", saved);
 		JsonObject global = new JsonObject();
 		globalStyle.write(global);
 		root.add("globalStyle", global);
@@ -247,36 +300,63 @@ public final class ModuleManager {
 
 	private void load() {
 		Path path = configPath();
-		if (!Files.exists(path)) {
+		if (Files.exists(path)) {
+			try {
+				apply(JsonParser.parseString(Files.readString(path)).getAsJsonObject());
+			} catch (Exception e) {
+				LOGGER.warn("Could not read Valkaw config", e);
+			}
 			return;
 		}
-		try {
-			JsonObject root = JsonParser.parseString(Files.readString(path)).getAsJsonObject();
-			if (root.has("editorKey")) {
-				editorKey = root.get("editorKey").getAsInt();
+		// A fresh install starts from the shipped layout, so everyone gets the
+		// same HUD arrangement and module defaults instead of bare positions.
+		try (InputStream stream = ModuleManager.class.getResourceAsStream("/assets/valkawclient/default-config.json")) {
+			if (stream == null) {
+				return;
 			}
-			if (root.has("globalStyle")) {
-				globalStyle.read(root.getAsJsonObject("globalStyle"));
-			}
-			JsonObject entries = root.getAsJsonObject("modules");
-			for (Module module : modules) {
-				if (entries == null || !entries.has(module.id())) {
-					continue;
-				}
-				JsonObject entry = entries.getAsJsonObject(module.id());
-				if (entry.has("key")) {
-					module.setKey(entry.get("key").getAsInt());
-				}
-				if (entry.has("style")) {
-					module.style().read(entry.getAsJsonObject("style"));
-				}
-				module.readExtra(entry);
-				if (entry.has("enabled")) {
-					module.setEnabled(entry.get("enabled").getAsBoolean());
-				}
-			}
+			apply(JsonParser.parseString(new String(stream.readAllBytes(), StandardCharsets.UTF_8)).getAsJsonObject());
+			username = "";
+			accounts.clear();
+			save();
 		} catch (Exception e) {
-			LOGGER.warn("Could not load Valkaw config", e);
+			LOGGER.warn("Could not load the bundled Valkaw layout", e);
+		}
+	}
+
+	private void apply(JsonObject root) {
+		if (root.has("editorKey")) {
+			editorKey = root.get("editorKey").getAsInt();
+		}
+		if (root.has("username")) {
+			username = root.get("username").getAsString();
+		}
+		if (root.has("accounts")) {
+			for (var entry : root.getAsJsonArray("accounts")) {
+				String name = cleanName(entry.getAsString());
+				if (!name.isBlank()) {
+					accounts.add(name);
+				}
+			}
+		}
+		if (root.has("globalStyle")) {
+			globalStyle.read(root.getAsJsonObject("globalStyle"));
+		}
+		JsonObject entries = root.getAsJsonObject("modules");
+		for (Module module : modules) {
+			if (entries == null || !entries.has(module.id())) {
+				continue;
+			}
+			JsonObject entry = entries.getAsJsonObject(module.id());
+			if (entry.has("key")) {
+				module.setKey(entry.get("key").getAsInt());
+			}
+			if (entry.has("style")) {
+				module.style().read(entry.getAsJsonObject("style"));
+			}
+			module.readExtra(entry);
+			if (entry.has("enabled")) {
+				module.setEnabled(entry.get("enabled").getAsBoolean());
+			}
 		}
 	}
 }

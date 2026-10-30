@@ -3,9 +3,9 @@ package com.valkaw.client.module.utility;
 import com.google.gson.JsonObject;
 import com.valkaw.client.module.Category;
 import com.valkaw.client.module.Module;
+import com.valkaw.client.keybinds.Keybinds;
 import com.valkaw.client.module.ModuleManager;
 import com.valkaw.client.module.Setting;
-import com.mojang.blaze3d.platform.InputConstants;
 import java.util.List;
 import net.minecraft.client.Minecraft;
 import org.lwjgl.glfw.GLFW;
@@ -23,6 +23,11 @@ public class ZoomModule extends Module {
 		setKey(GLFW.GLFW_KEY_C);
 	}
 
+	@Override
+	public boolean keyOnly() {
+		return true;
+	}
+
 	public static float fovOverride() {
 		Module module = ModuleManager.get().byId("zoom");
 		return module instanceof ZoomModule zoom && zoom.holding() ? (float) zoom.zoomFov : -1.0F;
@@ -30,8 +35,7 @@ public class ZoomModule extends Module {
 
 	private boolean holding() {
 		Minecraft mc = Minecraft.getInstance();
-		return isEnabled() && key() >= 0 && mc.screen == null
-				&& InputConstants.isKeyDown(mc.getWindow(), key());
+		return isEnabled() && mc.screen == null && Keybinds.down(this);
 	}
 
 	@Override

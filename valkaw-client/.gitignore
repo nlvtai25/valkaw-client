@@ -3,6 +3,9 @@
 build/
 !gradle/wrapper/gradle-wrapper.jar
 
+# Dev run directory created by runClient
+run/
+
 # IDE
 .idea/
 *.iml

@@ -1,5 +1,6 @@
 package com.valkaw.client;
 
+import com.valkaw.client.keybinds.Keybinds;
 import com.valkaw.client.module.ModuleManager;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
@@ -9,6 +10,7 @@ public class ValkawClient implements ClientModInitializer {
 	@Override
 	public void onInitializeClient() {
 		ModuleManager.get().init();
+		Keybinds.register();
 		ClientTickEvents.START_CLIENT_TICK.register(client -> ModuleManager.get().tick());
 	}
 

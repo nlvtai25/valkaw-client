@@ -1,0 +1,578 @@
+{
+	"editorKey": 295,
+	"username": "",
+	"accounts": [],
+	"globalStyle": {
+		"mode": "HEX",
+		"basic": "&b",
+		"color": -8521217,
+		"color2": -5141249,
+		"prefix": "",
+		"useGlobal": false
+	},
+	"modules": {
+		"fps": {
+			"enabled": true,
+			"key": -1,
+			"style": {
+				"mode": "HEX",
+				"basic": "&b",
+				"color": -8521217,
+				"color2": -5141249,
+				"prefix": "",
+				"useGlobal": false
+			},
+			"x": 4,
+			"y": 4,
+			"anchor": "LEFT",
+			"rightOffset": 4,
+			"lastW": 47,
+			"lastH": 11
+		},
+		"cps": {
+			"enabled": false,
+			"key": -1,
+			"style": {
+				"mode": "HEX",
+				"basic": "&b",
+				"color": -8521217,
+				"color2": -5141249,
+				"prefix": "",
+				"useGlobal": false
+			},
+			"x": 4,
+			"y": 17,
+			"anchor": "LEFT",
+			"rightOffset": 4,
+			"lastW": 0,
+			"lastH": 0
+		},
+		"keystrokes": {
+			"enabled": false,
+			"key": -1,
+			"style": {
+				"mode": "HEX",
+				"basic": "&b",
+				"color": -8521217,
+				"color2": -5141249,
+				"prefix": "",
+				"useGlobal": false
+			},
+			"x": 4,
+			"y": 106,
+			"anchor": "LEFT",
+			"rightOffset": 4,
+			"lastW": 46,
+			"lastH": 60
+		},
+		"coordinates": {
+			"enabled": true,
+			"key": -1,
+			"style": {
+				"mode": "HEX",
+				"basic": "&b",
+				"color": -8521217,
+				"color2": -5141249,
+				"prefix": "",
+				"useGlobal": false
+			},
+			"x": 4,
+			"y": 15,
+			"anchor": "RIGHT",
+			"rightOffset": 374,
+			"lastW": 111,
+			"lastH": 23,
+			"link": "fps",
+			"linkSide": "BELOW",
+			"layout": "VERTICAL",
+			"dimension": false,
+			"biome": true,
+			"direction": false
+		},
+		"ping": {
+			"enabled": true,
+			"key": -1,
+			"style": {
+				"mode": "HEX",
+				"basic": "&b",
+				"color": -8521217,
+				"color2": -5141249,
+				"prefix": "",
+				"useGlobal": false
+			},
+			"x": 4,
+			"y": 61,
+			"anchor": "LEFT",
+			"rightOffset": 205,
+			"lastW": 62,
+			"lastH": 11,
+			"link": "time",
+			"linkSide": "BELOW"
+		},
+		"armor": {
+			"enabled": true,
+			"key": -1,
+			"style": {
+				"mode": "HEX",
+				"basic": "&b",
+				"color": -8521217,
+				"color2": -5141249,
+				"prefix": "",
+				"useGlobal": false
+			},
+			"x": 4,
+			"y": 94,
+			"anchor": "RIGHT",
+			"rightOffset": 397,
+			"lastW": 48,
+			"lastH": 113,
+			"link": "sprint-hud",
+			"linkSide": "BELOW",
+			"layout": "VERTICAL",
+			"split": false
+		},
+		"potions": {
+			"enabled": true,
+			"key": -1,
+			"style": {
+				"mode": "HEX",
+				"basic": "&b",
+				"color": -8521217,
+				"color2": -5141249,
+				"prefix": "",
+				"useGlobal": false
+			},
+			"x": 198,
+			"y": 4,
+			"anchor": "LEFT",
+			"rightOffset": 4,
+			"lastW": 0,
+			"lastH": 0,
+			"fancy": false
+		},
+		"combo": {
+			"enabled": false,
+			"key": -1,
+			"style": {
+				"mode": "HEX",
+				"basic": "&b",
+				"color": -8521217,
+				"color2": -5141249,
+				"prefix": "",
+				"useGlobal": false
+			},
+			"x": 60,
+			"y": 4,
+			"anchor": "LEFT",
+			"rightOffset": 4,
+			"lastW": 0,
+			"lastH": 0
+		},
+		"speed": {
+			"enabled": false,
+			"key": -1,
+			"style": {
+				"mode": "HEX",
+				"basic": "&b",
+				"color": -8521217,
+				"color2": -5141249,
+				"prefix": "",
+				"useGlobal": false
+			},
+			"x": 4,
+			"y": 56,
+			"anchor": "LEFT",
+			"rightOffset": 4,
+			"lastW": 0,
+			"lastH": 0
+		},
+		"pc-info": {
+			"enabled": true,
+			"key": -1,
+			"style": {
+				"mode": "HEX",
+				"basic": "&b",
+				"color": -8521217,
+				"color2": -5141249,
+				"prefix": "",
+				"useGlobal": false
+			},
+			"x": 845,
+			"y": 3,
+			"anchor": "RIGHT",
+			"rightOffset": 4,
+			"lastW": 111,
+			"lastH": 35,
+			"layout": "VERTICAL",
+			"ramPercent": false
+		},
+		"time": {
+			"enabled": true,
+			"key": -1,
+			"style": {
+				"mode": "HEX",
+				"basic": "&b",
+				"color": -8521217,
+				"color2": -5141249,
+				"prefix": "",
+				"useGlobal": false
+			},
+			"x": 4,
+			"y": 38,
+			"anchor": "LEFT",
+			"rightOffset": 422,
+			"lastW": 93,
+			"lastH": 23,
+			"link": "coordinates",
+			"linkSide": "BELOW",
+			"layout": "VERTICAL",
+			"dayPattern": "dd/MM/yyyy",
+			"timePattern": "HH:mm:ss"
+		},
+		"tps": {
+			"enabled": true,
+			"key": -1,
+			"style": {
+				"mode": "HEX",
+				"basic": "&b",
+				"color": -8521217,
+				"color2": -5141249,
+				"prefix": "",
+				"useGlobal": false
+			},
+			"x": 66,
+			"y": 61,
+			"anchor": "LEFT",
+			"rightOffset": 269,
+			"lastW": 57,
+			"lastH": 11,
+			"link": "ping",
+			"linkSide": "RIGHT"
+		},
+		"server-ip": {
+			"enabled": true,
+			"key": -1,
+			"style": {
+				"mode": "HEX",
+				"basic": "&b",
+				"color": -8521217,
+				"color2": -5141249,
+				"prefix": "",
+				"useGlobal": false
+			},
+			"x": 4,
+			"y": 72,
+			"anchor": "LEFT",
+			"rightOffset": 161,
+			"lastW": 64,
+			"lastH": 11,
+			"link": "ping",
+			"linkSide": "BELOW"
+		},
+		"sprint-hud": {
+			"enabled": true,
+			"key": -1,
+			"style": {
+				"mode": "HEX",
+				"basic": "&b",
+				"color": -8521217,
+				"color2": -5141249,
+				"prefix": "",
+				"useGlobal": false
+			},
+			"x": 4,
+			"y": 83,
+			"anchor": "LEFT",
+			"rightOffset": 379,
+			"lastW": 69,
+			"lastH": 11,
+			"link": "server-ip",
+			"linkSide": "BELOW"
+		},
+		"sneak-hud": {
+			"enabled": false,
+			"key": -1,
+			"style": {
+				"mode": "HEX",
+				"basic": "&b",
+				"color": -8521217,
+				"color2": -5141249,
+				"prefix": "",
+				"useGlobal": false
+			},
+			"x": 4,
+			"y": 212,
+			"anchor": "LEFT",
+			"rightOffset": 4,
+			"lastW": 0,
+			"lastH": 0
+		},
+		"crosshair": {
+			"enabled": true,
+			"key": -1,
+			"style": {
+				"mode": "HEX",
+				"basic": "&b",
+				"color": -8521217,
+				"color2": -5141249,
+				"prefix": "",
+				"useGlobal": false
+			},
+			"pattern": "CROSS",
+			"custom": false,
+			"pixels": [
+				"000000000000000",
+				"000000000000000",
+				"000000000000000",
+				"000000000000000",
+				"000000000000000",
+				"000000000000000",
+				"000000000000000",
+				"000000000000000",
+				"000000000000000",
+				"000000000000000",
+				"000000000000000",
+				"000000000000000",
+				"000000000000000",
+				"000000000000000",
+				"000000000000000"
+			]
+		},
+		"toggle-sprint": {
+			"enabled": true,
+			"key": -1,
+			"style": {
+				"mode": "HEX",
+				"basic": "&b",
+				"color": -5141249,
+				"color2": -5141249,
+				"prefix": "",
+				"useGlobal": false
+			}
+		},
+		"toggle-sneak": {
+			"enabled": false,
+			"key": -1,
+			"style": {
+				"mode": "HEX",
+				"basic": "&b",
+				"color": -5141249,
+				"color2": -5141249,
+				"prefix": "",
+				"useGlobal": false
+			}
+		},
+		"zoom": {
+			"enabled": false,
+			"key": 67,
+			"style": {
+				"mode": "HEX",
+				"basic": "&b",
+				"color": -5141249,
+				"color2": -5141249,
+				"prefix": "",
+				"useGlobal": false
+			},
+			"zoomFov": 36.0
+		},
+		"no-hurt-cam": {
+			"enabled": true,
+			"key": -1,
+			"style": {
+				"mode": "HEX",
+				"basic": "&b",
+				"color": -5141249,
+				"color2": -5141249,
+				"prefix": "",
+				"useGlobal": false
+			}
+		},
+		"no-fire": {
+			"enabled": true,
+			"key": -1,
+			"style": {
+				"mode": "HEX",
+				"basic": "&b",
+				"color": -5141249,
+				"color2": -5141249,
+				"prefix": "",
+				"useGlobal": false
+			}
+		},
+		"no-pumpkin": {
+			"enabled": true,
+			"key": -1,
+			"style": {
+				"mode": "HEX",
+				"basic": "&b",
+				"color": -5141249,
+				"color2": -5141249,
+				"prefix": "",
+				"useGlobal": false
+			}
+		},
+		"chat-timestamps": {
+			"enabled": true,
+			"key": -1,
+			"style": {
+				"mode": "HEX",
+				"basic": "&b",
+				"color": -5141249,
+				"color2": -5141249,
+				"prefix": "",
+				"useGlobal": false
+			},
+			"hour12": false
+		},
+		"copy-coords": {
+			"enabled": false,
+			"key": 296,
+			"style": {
+				"mode": "HEX",
+				"basic": "&b",
+				"color": -5141249,
+				"color2": -5141249,
+				"prefix": "",
+				"useGlobal": false
+			}
+		},
+		"copy-chat": {
+			"enabled": false,
+			"key": 297,
+			"style": {
+				"mode": "HEX",
+				"basic": "&b",
+				"color": -5141249,
+				"color2": -5141249,
+				"prefix": "",
+				"useGlobal": false
+			}
+		},
+		"freelook": {
+			"enabled": false,
+			"key": 342,
+			"style": {
+				"mode": "HEX",
+				"basic": "&b",
+				"color": -5141249,
+				"color2": -5141249,
+				"prefix": "",
+				"useGlobal": false
+			},
+			"front": false,
+			"toggleMode": false
+		},
+		"fullbright": {
+			"enabled": true,
+			"key": 71,
+			"style": {
+				"mode": "HEX",
+				"basic": "&b",
+				"color": -5141249,
+				"color2": -5141249,
+				"prefix": "",
+				"useGlobal": false
+			}
+		},
+		"no-bobbing": {
+			"enabled": true,
+			"key": -1,
+			"style": {
+				"mode": "HEX",
+				"basic": "&b",
+				"color": -5141249,
+				"color2": -5141249,
+				"prefix": "",
+				"useGlobal": false
+			}
+		},
+		"block-outline": {
+			"enabled": true,
+			"key": -1,
+			"style": {
+				"mode": "HEX",
+				"basic": "&b",
+				"color": -5141249,
+				"color2": -5141249,
+				"prefix": "",
+				"useGlobal": false
+			},
+			"thickness": 2.0
+		},
+		"particles": {
+			"enabled": false,
+			"key": -1,
+			"style": {
+				"mode": "HEX",
+				"basic": "&b",
+				"color": -10226256,
+				"color2": -5141249,
+				"prefix": "",
+				"useGlobal": false
+			}
+		},
+		"clouds": {
+			"enabled": false,
+			"key": -1,
+			"style": {
+				"mode": "HEX",
+				"basic": "&b",
+				"color": -10226256,
+				"color2": -5141249,
+				"prefix": "",
+				"useGlobal": false
+			}
+		},
+		"render-distance": {
+			"enabled": false,
+			"key": -1,
+			"style": {
+				"mode": "HEX",
+				"basic": "&b",
+				"color": -10226256,
+				"color2": -5141249,
+				"prefix": "",
+				"useGlobal": false
+			}
+		},
+		"no-fog": {
+			"enabled": true,
+			"key": -1,
+			"style": {
+				"mode": "HEX",
+				"basic": "&b",
+				"color": -10226256,
+				"color2": -5141249,
+				"prefix": "",
+				"useGlobal": false
+			}
+		},
+		"clear-water-lava": {
+			"enabled": true,
+			"key": -1,
+			"style": {
+				"mode": "HEX",
+				"basic": "&b",
+				"color": -10226256,
+				"color2": -5141249,
+				"prefix": "",
+				"useGlobal": false
+			},
+			"water": true,
+			"lava": true
+		},
+		"menu-backdrop": {
+			"enabled": true,
+			"key": -1,
+			"style": {
+				"mode": "HEX",
+				"basic": "&b",
+				"color": -10226256,
+				"color2": -5141249,
+				"prefix": "",
+				"useGlobal": false
+			},
+			"opacity": 0
+		}
+	}
+}

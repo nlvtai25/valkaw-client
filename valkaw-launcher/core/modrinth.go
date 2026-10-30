@@ -11,6 +11,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"time"
 
@@ -96,32 +97,82 @@ func (a *App) SearchModrinth(query string, projectType string, gameVersion strin
 		params.Set("facets", string(facetBytes))
 	}
 
-	req, err := http.NewRequest("GET", "https://api.modrinth.com/v2/search?"+params.Encode(), nil)
+	// Mods already inside valkawclient.jar, and renderer mods for the other
+	// profile, are hidden: installing them duplicates a mod id or drags the
+	// wrong renderer into the game, and Minecraft refuses to start.
+	hidden := hiddenModSlugs(a.activeProfile())
+	applyHidden := projectType == "mod" && len(hidden) > 0
+
+	collected := make([]map[string]any, 0, limit)
+	hiddenCount := 0
+	result := modrinthSearchResult{Offset: offset, Limit: limit}
+	cursor := offset
+	for {
+		params.Set("offset", strconv.Itoa(cursor))
+		page, err := a.searchPage(params)
+		if err != nil {
+			if cursor == offset {
+				return "", err
+			}
+			break
+		}
+		result.TotalHits = page.TotalHits
+		for _, hit := range page.Hits {
+			if applyHidden {
+				if slug, ok := hit["slug"].(string); ok {
+					if _, skip := hidden[strings.ToLower(slug)]; skip {
+						hiddenCount++
+						continue
+					}
+				}
+			}
+			collected = append(collected, hit)
+		}
+		cursor += len(page.Hits)
+		// A short page means Modrinth has nothing left. Otherwise keep asking
+		// until the page is full, so hidden mods do not leave gaps in the grid.
+		if len(collected) >= limit || len(page.Hits) < limit || cursor >= page.TotalHits {
+			break
+		}
+	}
+	if len(collected) > limit {
+		collected = collected[:limit]
+	}
+	result.Hits = collected
+	result.HiddenBundled = hiddenCount
+
+	out, err := json.Marshal(result)
 	if err != nil {
 		return "", err
+	}
+	return string(out), nil
+}
+
+// searchPage runs a single search request and decodes the Modrinth response.
+func (a *App) searchPage(params url.Values) (modrinthSearchResult, error) {
+	req, err := http.NewRequest("GET", "https://api.modrinth.com/v2/search?"+params.Encode(), nil)
+	if err != nil {
+		return modrinthSearchResult{}, err
 	}
 	a.modrinthHeaders(req)
 	resp, err := a.modrinthClient().Do(req)
 	if err != nil {
-		return "", err
+		return modrinthSearchResult{}, err
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode >= 400 {
 		body, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
-		return "", fmt.Errorf("modrinth search failed: %s %s", resp.Status, string(body))
+		return modrinthSearchResult{}, fmt.Errorf("modrinth search failed: %s %s", resp.Status, string(body))
 	}
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return "", err
+		return modrinthSearchResult{}, err
 	}
-	// Mods already inside valkawclient.jar, and renderer mods for the other
-	// profile, are hidden: installing them duplicates a mod id or drags the
-	// wrong renderer into the game, and Minecraft refuses to start.
-	filtered, _, ferr := filterSearchHits(body, projectType, hiddenModSlugs(a.activeProfile()))
-	if ferr != nil {
-		return string(body), nil
+	var page modrinthSearchResult
+	if err := json.Unmarshal(body, &page); err != nil {
+		return modrinthSearchResult{}, err
 	}
-	return string(filtered), nil
+	return page, nil
 }
 
 func (a *App) GetModrinthProject(projectId string) (string, error) {

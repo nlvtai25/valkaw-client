@@ -17,11 +17,12 @@ import net.minecraft.world.item.ItemStack;
 public class ArmorHudModule extends HudModule {
 	private static final EquipmentSlot[] SLOTS = {EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS,
 			EquipmentSlot.FEET};
-	private static final int BOX_W = 18;
-	private static final int BOX_H = 27;
+	private static final int ICON = 18;
+	private static final int ROW_H = 18;
 	private static final int GAP = 2;
+	private static final int PAD = 4;
 
-	private Layout layout = Layout.HORIZONTAL;
+	private Layout layout = Layout.VERTICAL;
 	private boolean split;
 	private final ItemStack[] armor = new ItemStack[SLOTS.length];
 
@@ -32,7 +33,7 @@ public class ArmorHudModule extends HudModule {
 
 	@Override
 	protected int previewWidth() {
-		return 80;
+		return 60;
 	}
 
 	@Override
@@ -63,61 +64,74 @@ public class ArmorHudModule extends HudModule {
 			return;
 		}
 
-		int headerW = Hud.width(font, Hud.label("ARMOR")) + 8;
-		int rowW = count == 0 ? 0 : count * BOX_W + (count - 1) * GAP;
-		int contentW = Math.max(rowW, held.isEmpty() ? 0 : BOX_W);
-		int armorH = count == 0 ? 0 : layout == Layout.HORIZONTAL ? BOX_H : count * BOX_H + (count - 1) * GAP;
-		int mainH = held.isEmpty() ? 0 : BOX_H + GAP;
-		int contentH = mainH + armorH;
+		// Item on the left, durability on the right; the widest pair sets the
+		// column so every number starts at the same x.
+		int pairW = ICON;
+		if (!held.isEmpty()) {
+			pairW = Math.max(pairW, pairWidth(font, held));
+		}
+		for (ItemStack stack : armor) {
+			if (!stack.isEmpty()) {
+				pairW = Math.max(pairW, pairWidth(font, stack));
+			}
+		}
+
+		int pieces = count + (held.isEmpty() ? 0 : 1);
+		int bodyW = layout == Layout.HORIZONTAL ? pieces * (pairW + GAP) - GAP : pairW;
+		int bodyH = layout == Layout.HORIZONTAL ? ROW_H : pieces * (ROW_H + GAP) - GAP;
+
 		if (split) {
 			int prefixW = Hud.prefix(graphics, font, x, y, "ARMOR");
-			w = Math.max(prefixW, contentW);
-			h = 13 + contentH;
-			drawItems(graphics, font, held, armor, x, y + 13, true);
+			w = Math.max(prefixW, bodyW);
+			h = 13 + bodyH;
+			drawItems(graphics, font, held, armor, x, y + 13, pairW);
 		} else {
-			w = Math.max(headerW, contentW + 8);
-			h = 15 + contentH;
+			int headerW = Hud.width(font, Hud.label("ARMOR")) + PAD;
+			w = Math.max(headerW, bodyW + PAD);
+			h = 15 + bodyH;
 			graphics.fill(x, y, x + w, y + h, Hud.BG);
 			graphics.fill(x, y, x + 1, y + h, Hud.color());
 			Hud.text(graphics, font, Hud.label("ARMOR"), x + 4, y + 2);
 			graphics.fill(x + 4, y + 12, x + 4 + Hud.width(font, Hud.label("ARMOR")), y + 13, Hud.color());
-			drawItems(graphics, font, held, armor, x + 4, y + 15, false);
+			drawItems(graphics, font, held, armor, x + 4, y + 15, pairW);
 		}
 	}
 
-	private void drawItems(GuiGraphics graphics, Font font, ItemStack held, ItemStack[] armor, int startX, int startY,
-			boolean boxes) {
-		int cursorY = startY;
-		if (!held.isEmpty()) {
-			piece(graphics, font, held, startX, cursorY, boxes);
-			cursorY += BOX_H + GAP;
+	private static int pairWidth(Font font, ItemStack stack) {
+		if (!stack.isDamageableItem()) {
+			return ICON;
 		}
+		return ICON + 3 + font.width(Integer.toString(stack.getMaxDamage() - stack.getDamageValue()));
+	}
+
+	private void drawItems(GuiGraphics graphics, Font font, ItemStack held, ItemStack[] armor, int startX, int startY,
+			int pairW) {
 		int index = 0;
+		if (!held.isEmpty()) {
+			piece(graphics, font, held, startX, startY, pairW);
+			index++;
+		}
 		for (ItemStack stack : armor) {
 			if (stack.isEmpty()) {
 				continue;
 			}
-			int px = layout == Layout.HORIZONTAL ? startX + index * (BOX_W + GAP) : startX;
-			int py = layout == Layout.HORIZONTAL ? cursorY : cursorY + index * (BOX_H + GAP);
-			piece(graphics, font, stack, px, py, boxes);
+			int px = layout == Layout.HORIZONTAL ? startX + index * (pairW + GAP) : startX;
+			int py = layout == Layout.HORIZONTAL ? startY : startY + index * (ROW_H + GAP);
+			piece(graphics, font, stack, px, py, pairW);
 			index++;
 		}
 	}
 
-	private static void piece(GuiGraphics graphics, Font font, ItemStack stack, int px, int py, boolean box) {
-		if (box) {
-			graphics.fill(px, py, px + BOX_W, py + BOX_H, Hud.BG);
-			graphics.fill(px, py, px + 1, py + BOX_H, Hud.color());
-		}
+	private static void piece(GuiGraphics graphics, Font font, ItemStack stack, int px, int py, int pairW) {
 		graphics.renderItem(stack, px + 1, py + 1);
-		if (stack.isDamageableItem()) {
-			int left = stack.getMaxDamage() - stack.getDamageValue();
-			int max = stack.getMaxDamage();
-			float ratio = max <= 0 ? 1.0F : (float) left / max;
-			String text = Integer.toString(left);
-			int color = ratio > 0.6F ? 0xFF63F5B0 : ratio > 0.25F ? 0xFFFFD166 : 0xFFFF7A9A;
-			graphics.drawString(font, text, px + (BOX_W - font.width(text)) / 2, py + BOX_H - 10, color, false);
+		if (!stack.isDamageableItem()) {
+			return;
 		}
+		int left = stack.getMaxDamage() - stack.getDamageValue();
+		int max = stack.getMaxDamage();
+		float ratio = max <= 0 ? 1.0F : (float) left / max;
+		int color = ratio > 0.6F ? 0xFF63F5B0 : ratio > 0.25F ? 0xFFFFD166 : 0xFFFF7A9A;
+		graphics.drawString(font, Integer.toString(left), px + ICON + 2, py + 5, color, false);
 	}
 
 	@Override

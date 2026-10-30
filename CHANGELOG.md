@@ -1,5 +1,33 @@
 # Changelog
 
+## v1.0.4.2 — 2026-10-31
+
+### Launcher
+- The client jar is written to a temporary file and renamed into place, so a game that is already running keeps its open jar instead of reading a half-written one.
+- The username field is gone. The launcher reads the name you set in the game and shows it in the top bar.
+- Windows carries the same core as Linux: resources browser, updates from `assets/downloads` and the username sync.
+- Windows gets the Valkaw icon and the warm launcher colours instead of the old navy background.
+
+## v1.0.2 — 2026-10-31
+
+### Client
+- New main menu in the Saturn style: planet backdrop, wordmark, navigation rail and an account pill that opens a list of saved names.
+- Usernames are created and switched in game. Each name gets a stable offline UUID and is written to the client config.
+- Client Settings rebuilt: category rail, search, All/On filters, compact cards and eased scrolling. Action modules show the value they hold, key-held modules show `Hold <key>`.
+- HUD editor links elements by placing their edges together: right, left, below or above. Links survive a restart, and the element being dragged no longer snaps back to the edge.
+- HUD stays on screen while chat, inventory and containers are open. F1 is the only switch-off.
+- Module keybinds appear under **Valkaw Client** in Controls, so they can be rebound like vanilla keys.
+- New Performance module **Menu Backdrop**: one slider for how dark the screen gets behind in-world menus.
+- Menus follow the configured framerate limit instead of the vanilla 60 fps cap.
+- Inter replaces the vanilla font through a bundled font provider, with the vanilla font and unifont as fallback.
+- New logo, window icons and a high-resolution wordmark; no more scaled bitmap text in the main menu.
+- Armor HUD shows the item and its durability side by side, vertical by default.
+- PC Info rows line up in one block, with values right-aligned.
+- No Bobbing now cancels camera bobbing directly instead of rewriting the player's video setting.
+- Zoom and Freelook are key-held only, with no Enable/Disable switch.
+- The client ships a default config, so a fresh install starts with the curated HUD layout and module set.
+- All 34 modules were smoke-tested before release.
+
 ## v1.0.4.1 — 2026-10-30
 
 ### Launcher

@@ -47,7 +47,7 @@ public class CoordinatesModule extends HudModule {
 	@Override
 	protected int previewHeight() {
 		int lines = 1 + (showDimension ? 1 : 0) + (showDirection ? 1 : 0) + (showBiome ? 1 : 0);
-		return lines * 12 - 1;
+		return lines * 11;
 	}
 
 	@Override
@@ -79,15 +79,15 @@ public class CoordinatesModule extends HudModule {
 		int line = 1;
 		w = Hud.chip(graphics, font, x, y, "XYZ", xyz(player));
 		if (showDimension) {
-			w = Math.max(w, Hud.chipRaw(graphics, font, x, y + line++ * 12, "DIM", dimension));
+			w = Math.max(w, Hud.chipRaw(graphics, font, x, y + line++ * 11, "DIM", dimension));
 		}
 		if (showDirection) {
-			w = Math.max(w, Hud.chipRaw(graphics, font, x, y + line++ * 12, "FACING", direction(player)));
+			w = Math.max(w, Hud.chipRaw(graphics, font, x, y + line++ * 11, "FACING", direction(player)));
 		}
 		if (showBiome) {
-			w = Math.max(w, Hud.chipRaw(graphics, font, x, y + line++ * 12, "BIOME", biome(player)));
+			w = Math.max(w, Hud.chipRaw(graphics, font, x, y + line++ * 11, "BIOME", biome(player)));
 		}
-		h = line * 12 - 1;
+		h = line * 11;
 	}
 
 	@Override

@@ -28,4 +28,13 @@ public class GameRendererMixin {
 			ci.cancel();
 		}
 	}
+
+	@Inject(method = "bobView", at = @At("HEAD"), cancellable = true)
+	private void valkaw$noBobbing(PoseStack poseStack, float partialTick, CallbackInfo ci) {
+		// Skipping the pose here works whether or not the player's own bobbing
+		// option is on, and never rewrites options.txt.
+		if (ModuleManager.isOn("no-bobbing")) {
+			ci.cancel();
+		}
+	}
 }

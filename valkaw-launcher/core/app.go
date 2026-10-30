@@ -75,8 +75,8 @@ func NewApp(version string) *App {
 		Profile:         "gl",
 		Username:        "Player",
 		MemoryMB:        4096,
-		WindowWidth:     1600,
-		WindowHeight:    900,
+		WindowWidth:     1280,
+		WindowHeight:    720,
 		AutoUpdate:      true,
 		AfterRun:        "hide",
 	}
@@ -171,10 +171,37 @@ func (a *App) Startup(ctx context.Context) {
 		a.config.Version = defaultMCVersion
 	}
 	_ = os.MkdirAll(a.config.GameDir, 0755)
-	if a.config.AfterRun == "" {
+	// Older builds could leave an unknown mode behind (garbage in, nothing
+	// happens on launch), so fall back to the platform default.
+	switch a.config.AfterRun {
+	case "hide", "close", "appear":
+	default:
 		a.config.AfterRun = "hide"
+		if runtime.GOOS == "windows" {
+			a.config.AfterRun = "appear"
+		}
 	}
+	a.syncUsername()
 	_ = a.saveConfig()
+}
+
+// syncUsername picks up the name saved from the in-game account menu so the
+// launcher chip matches what the player actually sees in game.
+func (a *App) syncUsername() {
+	profile := a.config.Profile
+	if profile != "gl" && profile != "vk" {
+		profile = "gl"
+	}
+	data, err := os.ReadFile(a.gamePath(profile, "config", "valkaw-client.json"))
+	if err != nil {
+		return
+	}
+	var saved struct {
+		Username string `json:"username"`
+	}
+	if json.Unmarshal(data, &saved) == nil && saved.Username != "" {
+		a.config.Username = saved.Username
+	}
 }
 
 // GetResourceBrowserContext tells the resources browser which Minecraft build

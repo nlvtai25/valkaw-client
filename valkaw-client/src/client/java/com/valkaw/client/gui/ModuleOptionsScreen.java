@@ -10,6 +10,8 @@ import com.valkaw.client.module.TextStyle;
 import com.valkaw.client.module.hud.CrosshairModule;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
@@ -20,33 +22,29 @@ import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 import org.lwjgl.glfw.GLFW;
 
-/** Per-module Options page: text style on the left, module rows on the right. */
+/** Options for one module: text style on the left, settings on the right. */
 public class ModuleOptionsScreen extends Screen {
-	private static final int CYAN = 0xFF7DF9FF;
-	private static final int PURPLE = 0xFFB18CFF;
-	private static final int TEXT = 0xFFD7E3FF;
-	private static final int MUTED = 0xFF7183A8;
-	private static final int GREEN = 0xFF63F5B0;
-	private static final int BG_TOP = 0xFF04060D;
-	private static final int BG_BOTTOM = 0xFF0A1020;
-	private static final int ROW_H = 18;
-	/** Modules whose output is not styled text, so the colour/prefix panel is pointless. */
-	private static final java.util.Set<String> NO_STYLE = java.util.Set.of("freelook", "copy-chat",
-			"chat-timestamps", "no-bobbing", "no-hurt-cam", "copy-coords", "no-fire", "clear-water-lava",
-			"no-pumpkin", "zoom", "toggle-sprint", "toggle-sneak");
+	private static final Set<String> NO_STYLE = Set.of("freelook", "copy-chat", "chat-timestamps",
+			"no-bobbing", "no-hurt-cam", "copy-coords", "no-fire", "clear-water-lava", "no-pumpkin",
+			"zoom", "toggle-sprint", "toggle-sneak");
+	private static final int ROW_H = 32;
+	private static final int ROW_GAP = 3;
+	private static final String CODES = "0123456789abcdef";
 
 	private final Screen parent;
 	private final Module module;
-	private int panelX;
-	private int panelY;
-	private int panelW;
-	private int panelH;
+	private final Ui.Anim toggleAnim = new Ui.Anim(0.0F);
+	private int winX;
+	private int winY;
+	private int winW;
+	private int winH;
+	private int bodyY;
+	private int bodyH;
 	private int styleX;
 	private int styleY;
-	private int optionsX;
-	private int optionsY;
-	private int optionsW;
-	private int optionsH;
+	private int styleW;
+	private int listX;
+	private int listW;
 	private int footerY;
 	private int scroll;
 	private Setting editing;
@@ -54,267 +52,315 @@ public class ModuleOptionsScreen extends Screen {
 	private boolean binding;
 	private boolean color2;
 	private Setting slider;
+	private List<Setting> rows;
 
 	public ModuleOptionsScreen(Screen parent, Module module) {
 		super(Component.literal(module.name() + " Options"));
 		this.parent = parent;
 		this.module = module;
+		toggleAnim.to(module.isEnabled() ? 1.0F : 0.0F);
 	}
 
 	@Override
 	protected void init() {
-		panelW = Math.min(600, width - 20);
-		panelH = Math.min(340, height - 16);
-		panelX = (width - panelW) / 2;
-		panelY = (height - panelH) / 2;
+		winW = Math.min(740, width - 28);
+		winH = Math.min(470, height - 24);
+		winX = (width - winW) / 2;
+		winY = (height - winH) / 2;
+		bodyY = winY + 58;
+		bodyH = winH - 58 - 44;
+		footerY = winY + winH - 30;
+
 		boolean styled = styled();
-		styleX = panelX + 14;
-		styleY = panelY + 54;
-		optionsX = styled ? panelX + 226 : panelX + 14;
-		optionsY = panelY + 54;
-		optionsW = panelW - (styled ? 240 : 28);
-		optionsH = panelH - 84;
-		footerY = panelY + panelH - 26;
+		styleW = Math.min(220, winW / 2 - 20);
+		styleX = winX + 16;
+		styleY = bodyY + 8;
+		listX = styled ? styleX + styleW + 14 : winX + 16;
+		listW = winX + winW - 16 - listX;
+		rows = buildSettings();
 	}
 
 	@Override
 	public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-		graphics.fillGradient(0, 0, width, height, BG_TOP, BG_BOTTOM);
-		graphics.fillGradient(0, 0, width, 90, 0x0022164A, 0x3322164A);
-		graphics.fillGradient(0, height - 100, width, height, 0x001E7FFF, 0x181E7FFF);
+		Ui.backdrop(graphics, width, height, false);
 	}
 
 	@Override
 	public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-		graphics.fill(panelX, panelY, panelX + panelW, panelY + panelH, 0xE20A1120);
-		graphics.fill(panelX, panelY, panelX + panelW, panelY + 1, 0xAA7DF9FF);
-		graphics.fill(panelX, panelY, panelX + 1, panelY + panelH, 0x667DF9FF);
-		graphics.fill(panelX + panelW - 1, panelY, panelX + panelW, panelY + panelH, 0x667DF9FF);
-		graphics.fill(panelX + 2, panelY, panelX + 18, panelY + 2, PURPLE);
-		graphics.fill(panelX + panelW - 18, panelY + panelH - 2, panelX + panelW - 2,
-				panelY + panelH, PURPLE);
-
-		graphics.drawString(font, module.name().toUpperCase(), panelX + 16, panelY + 10, 0xFFFFFFFF, false);
-		graphics.drawString(font, module.category().name() + " // OPTIONS", panelX + 16, panelY + 23, CYAN, false);
-		graphics.fill(panelX + 16, panelY + 38, panelX + panelW - 16, panelY + 39, 0x337DF9FF);
-
+		float dt = Ui.dt();
+		Ui.window(graphics, winX, winY, winW, winH, accent());
+		drawHeader(graphics, mouseX, mouseY, dt);
 		if (styled()) {
 			drawStyle(graphics, mouseX, mouseY);
 		}
-		drawOptions(graphics, mouseX, mouseY);
-
-		boolean backHover = over(mouseX, mouseY, panelX + 14, footerY, 74, 18);
-		graphics.fill(panelX + 14, footerY, panelX + 88, footerY + 18, backHover ? 0xD0162942 : 0xA00E1626);
-		graphics.fill(panelX + 14, footerY, panelX + 16, footerY + 18, CYAN);
-		graphics.drawString(font, "< BACK", panelX + 22, footerY + 5, backHover ? 0xFFFFFFFF : TEXT, false);
-		graphics.drawString(font, "ENTER SAVES  //  ESC CLOSES", panelX + panelW - 16
-				- font.width("ENTER SAVES  //  ESC CLOSES"), footerY + 5, MUTED, false);
-
+		drawSettings(graphics, mouseX, mouseY);
+		drawFooter(graphics, mouseX, mouseY);
 		if (editing != null) {
 			drawEditor(graphics);
 		}
 		super.render(graphics, mouseX, mouseY, partialTick);
 	}
 
+	private void drawHeader(GuiGraphics graphics, int mouseX, int mouseY, float dt) {
+		int x = winX + 16;
+		int y = winY + 14;
+		boolean backHover = over(mouseX, mouseY, x, y + 4, 18, 18);
+		Ui.round(graphics, x, y + 4, 18, 18, 5, backHover ? 0x1FFFFFFF : 0x0CFFFFFF);
+		Ui.chevron(graphics, x + 6, y + 9, backHover ? Ui.ACCENT : Ui.TEXT_2, false);
+
+		graphics.drawString(font, Ui.fit(font, module.name(), winW - 260), x + 28, y + 2, Ui.TEXT, false);
+		// Actions and key-held modules have no on/off state, so the header shows
+		// what they currently hold instead of ENABLED/DISABLED.
+		String state;
+		if (module.isAction()) {
+			state = module.status();
+		} else if (module.keyOnly()) {
+			state = "HOLD " + keyName(module.key());
+		} else {
+			state = module.isEnabled() ? "ENABLED" : "DISABLED";
+		}
+		boolean switchable = !module.isAction() && !module.keyOnly();
+		String sub = module.category().name() + "  ·  " + state;
+		graphics.drawString(font, sub, x + 28, y + 15,
+				switchable ? (module.isEnabled() ? accent() : Ui.MUTED) : Ui.MUTED, false);
+
+		if (switchable) {
+			toggleAnim.to(module.isEnabled() ? 1.0F : 0.0F).speed(18.0F);
+			int toggleX = winX + winW - 78;
+			Ui.toggle(graphics, toggleX, y + 5, toggleAnim.update(dt), accent());
+		}
+
+		boolean closeHover = over(mouseX, mouseY, winX + winW - 34, y + 4, 18, 18);
+		Ui.round(graphics, winX + winW - 34, y + 4, 18, 18, 5, closeHover ? Ui.alpha(Ui.RED, 0.18F) : 0x0CFFFFFF);
+		Ui.closeIcon(graphics, winX + winW - 28, y + 10, closeHover ? Ui.RED : Ui.MUTED);
+		Ui.divider(graphics, winX + 14, winY + 44, winW - 28);
+	}
+
 	private void drawStyle(GuiGraphics graphics, int mouseX, int mouseY) {
 		TextStyle style = module.style();
 		TextStyle target = style.useGlobal() ? ModuleManager.get().globalStyle() : style;
-		graphics.drawString(font, "TEXT STYLE", styleX, styleY - 12, PURPLE, false);
-		row(graphics, styleX, styleY, 198, "MODE", target.mode().name(), CYAN,
-				over(mouseX, mouseY, styleX, styleY, 198, 15));
-		row(graphics, styleX, styleY + 17, 198, "GLOBAL COLOUR", style.useGlobal() ? "ON" : "OFF",
-				style.useGlobal() ? GREEN : MUTED, over(mouseX, mouseY, styleX, styleY + 17, 198, 15));
 
-		int tx = styleX;
-		int ty = styleY + 36;
-		graphics.fill(tx, ty, tx + 96, ty + 14, color2 ? 0xCC2C3F5E : 0x66131D30);
-		graphics.drawString(font, "COLOUR 1", tx + 5, ty + 3, color2 ? MUTED : CYAN, false);
-		graphics.fill(tx + 102, ty, tx + 198, ty + 14, color2 ? 0xCC2C3F5E : 0x66131D30);
-		graphics.drawString(font, "COLOUR 2", tx + 107, ty + 3, color2 ? CYAN : MUTED, false);
+		Ui.tracked(graphics, font, "TEXT STYLE", styleX, styleY, Ui.MUTED);
+		int y = styleY + 16;
+		row(graphics, styleX, y, styleW, "Mode", target.mode().name(), Ui.ACCENT, mouseX, mouseY);
+		row(graphics, styleX, y + 20, styleW, "Global colour", style.useGlobal() ? "On" : "Off",
+				style.useGlobal() ? Ui.GREEN : Ui.MUTED, mouseX, mouseY);
 
-		int py = ty + 18;
-		String codes = "0123456789abcdef";
+		int tabY = y + 44;
+		int tabW = (styleW - 6) / 2;
+		pick(graphics, styleX, tabY, tabW, "Colour 1", !color2, mouseX, mouseY);
+		pick(graphics, styleX + tabW + 6, tabY, tabW, "Colour 2", color2, mouseX, mouseY);
+
+		int paletteY = tabY + 22;
+		int cell = Math.max(14, (styleW - 7 * 3) / 8);
 		for (int i = 0; i < 16; i++) {
-			int col = i % 8;
-			int row = i / 8;
-			int px = tx + col * 25;
-			int yy = py + row * 15;
-			Integer rgb = ChatFormatting.getByCode(codes.charAt(i)) == null ? null
-					: ChatFormatting.getByCode(codes.charAt(i)).getColor();
-			int color = rgb == null ? 0xFFFFFFFF : 0xFF000000 | rgb;
-			graphics.fill(px, yy, px + 22, yy + 12, color);
-			int selected = target.mode() == TextStyle.Mode.BASIC ? target.color() : color2
-					? target.secondary() : target.primary();
+			int px = styleX + (i % 8) * (cell + 3);
+			int py = paletteY + (i / 8) * (cell + 3);
+			ChatFormatting formatting = ChatFormatting.getByCode(CODES.charAt(i));
+			int color = formatting == null || formatting.getColor() == null ? 0xFFFFFFFF
+					: 0xFF000000 | formatting.getColor();
+			Ui.round(graphics, px, py, cell, cell - 2, 3, color);
+			int selected = target.mode() == TextStyle.Mode.BASIC ? target.color()
+					: color2 ? target.secondary() : target.primary();
 			if ((selected & 0xFFFFFF) == (color & 0xFFFFFF)) {
-				graphics.renderOutline(px - 1, yy - 1, 24, 14, 0xFFFFFFFF);
+				graphics.renderOutline(px - 1, py - 1, cell + 2, cell, 0xFFFFFFFF);
 			}
 		}
 
-		int cy = py + 32;
-		row(graphics, styleX, cy, 198, "HEX", target.mode() == TextStyle.Mode.BASIC ? target.basic()
-				: TextStyle.hex(color2 ? target.secondary() : target.primary()), TEXT,
-				over(mouseX, mouseY, styleX, cy, 198, 15));
+		int hexY = paletteY + 2 * (cell + 3) + 6;
+		row(graphics, styleX, hexY, styleW, "Hex",
+				target.mode() == TextStyle.Mode.BASIC ? target.basic()
+						: TextStyle.hex(color2 ? target.secondary() : target.primary()),
+				Ui.TEXT, mouseX, mouseY);
 		if (hasPrefix()) {
-			row(graphics, styleX, cy + 17, 198, "PREFIX", style.prefix().isBlank() ? "(default)" : style.prefix(),
-					TEXT, over(mouseX, mouseY, styleX, cy + 17, 198, 15));
-			if (style.prefix().isBlank()) {
-				graphics.drawString(font, "Custom prefix supports &codes", styleX, cy + 35, MUTED, false);
-			}
+			String prefix = style.prefix().isBlank() ? "(default)" : style.prefix();
+			row(graphics, styleX, hexY + 20, styleW, "Prefix", prefix, Ui.TEXT, mouseX, mouseY);
 		}
 	}
 
-	private void drawOptions(GuiGraphics graphics, int mouseX, int mouseY) {
-		List<Setting> settings = settings();
+	private void drawSettings(GuiGraphics graphics, int mouseX, int mouseY) {
+		List<Setting> settings = rows;
 		int rows = settings.size() + (module.keybindable() ? 1 : 0);
-		int visible = Math.max(1, optionsH / ROW_H);
+		graphics.drawString(font, "OPTIONS", listX, bodyY - 4, Ui.MUTED);
+
+		int top = bodyY + 8;
+		int visible = Math.max(1, (bodyH - 8) / (ROW_H + ROW_GAP));
 		scroll = Math.max(0, Math.min(scroll, Math.max(0, rows - visible)));
-		graphics.enableScissor(optionsX, optionsY, optionsX + optionsW, optionsY + optionsH);
+
+		graphics.enableScissor(listX - 2, top, listX + listW + 2, top + bodyH - 8);
 		for (int i = 0; i < visible; i++) {
 			int index = scroll + i;
-			int y = optionsY + i * ROW_H;
+			int y = top + i * (ROW_H + ROW_GAP);
 			if (index < settings.size()) {
-				drawSetting(graphics, settings.get(index), y, mouseX, mouseY);
+				drawRow(graphics, settings.get(index), y, mouseX, mouseY);
 			} else if (index == settings.size() && module.keybindable()) {
-				boolean hover = over(mouseX, mouseY, optionsX, y, optionsW, 15);
-				graphics.fill(optionsX, y, optionsX + optionsW, y + 15, hover ? 0xCC16233A : 0x66131D30);
-				graphics.fill(optionsX, y, optionsX + 2, y + 15, PURPLE);
-				graphics.drawString(font, "KEYBIND", optionsX + 8, y + 4, TEXT, false);
-				String key = binding ? "PRESS A KEY" : keyName(module.key());
-				graphics.drawString(font, key, optionsX + optionsW - 8 - font.width(key), y + 4,
-						binding ? CYAN : MUTED, false);
+				drawKeyRow(graphics, y, mouseX, mouseY);
 			}
 		}
 		graphics.disableScissor();
+
 		if (rows > visible) {
-			int trackX = optionsX + optionsW - 3;
-			graphics.fill(trackX, optionsY, trackX + 2, optionsY + optionsH, 0x337DF9FF);
-			int thumbH = Math.max(12, optionsH * visible / rows);
-			int thumbY = optionsY + (optionsH - thumbH) * scroll / (rows - visible);
-			graphics.fill(trackX, thumbY, trackX + 2, thumbY + thumbH, CYAN);
+			Ui.scrollbar(graphics, listX + listW + 5, top, bodyH - 12,
+					(float) scroll / (rows - visible), (float) visible / rows, accent());
 		}
 	}
 
-	private void drawSetting(GuiGraphics graphics, Setting setting, int y, int mouseX, int mouseY) {
-		boolean hover = over(mouseX, mouseY, optionsX, y, optionsW, 15);
-		graphics.fill(optionsX, y, optionsX + optionsW, y + 15, hover ? 0xCC16233A : 0x66131D30);
-		graphics.fill(optionsX, y, optionsX + 2, y + 15, hover ? CYAN : 0x557DF9FF);
-		graphics.drawString(font, setting.label(), optionsX + 8, y + 4, TEXT, false);
-		int right = optionsX + optionsW - 8;
+	private void drawRow(GuiGraphics graphics, Setting setting, int y, int mouseX, int mouseY) {
+		boolean hot = over(mouseX, mouseY, listX, y, listW, ROW_H - 4);
+		Ui.round(graphics, listX, y, listW, ROW_H - 4, Ui.R_CARD, hot ? 0xFF16203A : 0xF00F1727);
+		graphics.drawString(font, Ui.fit(font, setting.label(), listW - 120), listX + 10, y + 9,
+				hot ? Ui.TEXT : Ui.TEXT_2, false);
+
+		int right = listX + listW - 10;
 		if (setting.type() == Setting.Type.SLIDER) {
-			int barW = sliderBarWidth();
+			int barW = Math.min(120, Math.max(60, listW / 3));
 			int barX = right - barW;
 			double t = setting.max() <= setting.min() ? 0
 					: (setting.number() - setting.min()) / (setting.max() - setting.min());
-			t = Math.max(0, Math.min(1, t));
-			int knobX = barX + (int) (barW * t);
-			graphics.fill(barX, y + 6, barX + barW, y + 10, 0x553B4E70);
-			graphics.fill(barX, y + 6, knobX, y + 10, CYAN);
-			graphics.fill(knobX - 2, y + 3, knobX + 3, y + 13, 0xFFD7E3FF);
-			graphics.renderOutline(knobX - 2, y + 3, 5, 10, CYAN);
-			String value = setting.value();
-			graphics.drawString(font, value, barX - 6 - font.width(value), y + 4, MUTED, false);
+			Ui.slider(graphics, barX, y + 15, barW, (float) Math.max(0, Math.min(1, t)), accent());
+			Ui.textRight(graphics, font, setting.value(), barX - 8, y + 9, Ui.TEXT);
 			return;
 		}
+
 		String value = setting.value();
-		if (setting.type() == Setting.Type.CHOICE || setting.type() == Setting.Type.BUTTON) {
-			int w = Math.max(50, font.width(value) + 14);
-			graphics.fill(right - w, y + 2, right, y + 13, setting.type() == Setting.Type.BUTTON ? 0xCC2C3F5E : 0x663B4E70);
-			graphics.drawString(font, value, right - w + 7, y + 4,
-					setting.type() == Setting.Type.BUTTON ? CYAN : GREEN, false);
+		if (setting.type() == Setting.Type.BUTTON) {
+			int w = Ui.width(font, value) + 20;
+			Ui.round(graphics, right - w, y + 6, w, 17, Ui.R_PILL, hot ? Ui.alpha(Ui.ACCENT, 0.8F) : 0x2A7DF9FF);
+			graphics.drawString(font, value, right - w + 10, y + 10, hot ? Ui.INK : Ui.ACCENT, false);
+		} else if (setting.type() == Setting.Type.CHOICE) {
+			int w = Ui.width(font, value) + 22;
+			Ui.round(graphics, right - w, y + 6, w, 17, Ui.R_PILL, hot ? 0x22FFFFFF : 0x14FFFFFF);
+			graphics.drawString(font, value, right - w + 8, y + 10, Ui.GREEN, false);
+			Ui.chevron(graphics, right - 9, y + 11, Ui.MUTED, true);
 		} else {
-			graphics.drawString(font, value, right - font.width(value), y + 4, MUTED, false);
+			Ui.textRight(graphics, font, Ui.fit(font, value, listW / 2), right, y + 10, Ui.MUTED);
 		}
+	}
+
+	private void drawKeyRow(GuiGraphics graphics, int y, int mouseX, int mouseY) {
+		boolean hot = over(mouseX, mouseY, listX, y, listW, ROW_H - 4);
+		Ui.round(graphics, listX, y, listW, ROW_H - 4, Ui.R_CARD, hot ? 0xFF16203A : 0xF00F1727);
+		graphics.drawString(font, "Shortcut", listX + 10, y + 9, hot ? Ui.TEXT : Ui.TEXT_2, false);
+		String key = binding ? "PRESS A KEY" : keyName(module.key());
+		int w = Ui.width(font, key) + 20;
+		Ui.round(graphics, listX + listW - 10 - w, y + 6, w, 17, Ui.R_PILL,
+				binding ? Ui.alpha(Ui.ACCENT, 0.22F) : 0x14FFFFFF);
+		graphics.drawString(font, key, listX + listW - 10 - w + 10, y + 10, binding ? Ui.ACCENT : Ui.MUTED, false);
+	}
+
+	private void drawFooter(GuiGraphics graphics, int mouseX, int mouseY) {
+		Ui.divider(graphics, winX + 14, footerY - 12, winW - 28);
+		graphics.drawString(font, "Changes save automatically", winX + 16, footerY, Ui.MUTED);
+		int w = Ui.width(font, "Done") + 18;
+		Ui.button(graphics, font, winX + winW - 16 - w, footerY - 5, "Done", accent(),
+				over(mouseX, mouseY, winX + winW - 16 - w, footerY - 5, w, 18), true);
 	}
 
 	private void drawEditor(GuiGraphics graphics) {
-		int w = Math.min(360, panelW - 60);
-		int x = panelX + (panelW - w) / 2;
-		int y = panelY + panelH / 2 - 26;
-		graphics.fill(x - 2, y - 2, x + w + 2, y + 44, 0xEE040812);
-		graphics.renderOutline(x - 2, y - 2, w + 4, 46, CYAN);
-		graphics.drawString(font, editing.label(), x + 8, y + 7, CYAN, false);
-		graphics.fill(x + 8, y + 20, x + w - 8, y + 36, 0x66131D30);
+		int w = Math.min(340, winW - 60);
+		int x = winX + (winW - w) / 2;
+		int y = winY + winH / 2 - 34;
+		Ui.panel(graphics, x, y, w, 62, Ui.R_PANEL, 0xFF0B1220);
+		graphics.drawString(font, editing.label(), x + 12, y + 9, Ui.ACCENT, false);
+		Ui.round(graphics, x + 12, y + 22, w - 24, 20, 5, 0x66131D30);
 		String visible = editBuffer;
-		int max = w - 34;
-		while (font.width(visible) > max && visible.length() > 1) {
+		while (Ui.width(font, visible) > w - 46 && visible.length() > 1) {
 			visible = visible.substring(1);
 		}
-		graphics.drawString(font, visible, x + 12, y + 25, TEXT, false);
-		graphics.fill(x + 12 + font.width(visible), y + 23,
-				x + 13 + font.width(visible), y + 34, CYAN);
-		graphics.drawString(font, "ENTER SAVE  //  ESC CANCEL", x + 8, y + 39, MUTED, false);
+		graphics.drawString(font, visible, x + 18, y + 28, Ui.TEXT, false);
+		if ((System.currentTimeMillis() / 500) % 2 == 0) {
+			int caret = x + 18 + Ui.width(font, visible);
+			graphics.fill(caret + 1, y + 25, caret + 2, y + 37, Ui.ACCENT);
+		}
+		graphics.drawString(font, "Enter saves  ·  Esc cancels", x + 12, y + 47, Ui.MUTED, false);
 	}
 
 	private void row(GuiGraphics graphics, int x, int y, int w, String label, String value, int valueColor,
-			boolean hover) {
-		graphics.fill(x, y, x + w, y + 15, hover ? 0xCC16233A : 0x66131D30);
-		graphics.fill(x, y, x + 2, y + 15, hover ? CYAN : 0x557DF9FF);
-		graphics.drawString(font, label, x + 7, y + 4, TEXT, false);
-		String shown = value;
-		while (font.width(shown) > w - 60 && shown.length() > 3) {
-			shown = shown.substring(0, shown.length() - 1);
-		}
-		graphics.drawString(font, shown, x + w - 7 - font.width(shown), y + 4, valueColor, false);
+			double mouseX, double mouseY) {
+		boolean hot = over(mouseX, mouseY, x, y, w, 18);
+		Ui.round(graphics, x, y, w, 18, 5, hot ? 0xFF16203A : 0xF00F1727);
+		graphics.drawString(font, label, x + 8, y + 5, Ui.TEXT_2, false);
+		Ui.textRight(graphics, font, Ui.fit(font, value, w - 90), x + w - 8, y + 5, valueColor);
 	}
 
-	private List<Setting> settings() {
-		List<Setting> list = new ArrayList<>();
-		if (module instanceof HudModule hud) {
-			list.add(Setting.choice("SIDE", () -> hud.anchor().name(), () -> {
-				hud.linkTo(hud.anchor() == Anchor.RIGHT ? Anchor.LEFT : Anchor.RIGHT,
-						minecraft.getWindow().getGuiScaledWidth());
-				ModuleManager.get().save();
-			}));
-		}
-		list.addAll(module.settings());
-		if (module.id().equals("crosshair")) {
-			list.add(Setting.button("PATTERN EDITOR", () -> minecraft.setScreen(
-					new CrosshairEditorScreen(this, (CrosshairModule) module))));
-		}
-		return list;
+	private void pick(GuiGraphics graphics, int x, int y, int w, String label, boolean active,
+			double mouseX, double mouseY) {
+		boolean hot = over(mouseX, mouseY, x, y, w, 16);
+		Ui.round(graphics, x, y, w, 16, 5, active ? Ui.alpha(Ui.ACCENT, 0.18F) : hot ? 0x14FFFFFF : 0x0AFFFFFF);
+		graphics.drawString(font, label, x + 7, y + 4, active ? Ui.ACCENT : Ui.MUTED, false);
 	}
+
+	// ------------------------------------------------------------ interaction
 
 	@Override
 	public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
 		double mx = event.x();
 		double my = event.y();
-		if (mx >= panelX + 14 && mx < panelX + 88 && my >= footerY && my < footerY + 18) {
-			AbstractWidget.playButtonClickSound(minecraft.getSoundManager());
+
+		if (over(mx, my, winX + 16, winY + 18, 18, 18)) {
+			click();
 			onClose();
+			return true;
+		}
+		if (over(mx, my, winX + winW - 34, winY + 18, 18, 18)) {
+			click();
+			onClose();
+			return true;
+		}
+		if (!module.isAction() && !module.keyOnly() && over(mx, my, winX + winW - 78, winY + 19, 22, 12)) {
+			module.toggle();
+			click();
+			save();
 			return true;
 		}
 		if (editing != null) {
 			return true;
 		}
-		if (!styled()) {
-			return clickOption(mx, my) || super.mouseClicked(event, doubleClick);
+		if (over(mx, my, winX + winW - 16 - Ui.width(font, "Done") - 18, footerY - 5, 60, 18)) {
+			click();
+			onClose();
+			return true;
 		}
+
+		if (styled() && styleX <= mx && mx < styleX + styleW && styleY <= my && my < styleY + 200) {
+			return clickStyle(mx, my);
+		}
+		return clickSetting(mx, my) || super.mouseClicked(event, doubleClick);
+	}
+
+	private boolean clickStyle(double mx, double my) {
 		TextStyle style = module.style();
 		TextStyle target = style.useGlobal() ? ModuleManager.get().globalStyle() : style;
-		if (over(mx, my, styleX, styleY, 198, 15)) {
+		int y = styleY + 16;
+		if (over(mx, my, styleX, y, styleW, 18)) {
 			target.setMode(target.mode().next());
 			save();
 			return true;
 		}
-		if (over(mx, my, styleX, styleY + 17, 198, 15)) {
+		if (over(mx, my, styleX, y + 20, styleW, 18)) {
 			style.setUseGlobal(!style.useGlobal());
 			save();
 			return true;
 		}
-		if (over(mx, my, styleX, styleY + 36, 96, 14)) {
+
+		int tabY = y + 44;
+		int tabW = (styleW - 6) / 2;
+		if (over(mx, my, styleX, tabY, tabW, 16)) {
 			color2 = false;
 			return true;
 		}
-		if (over(mx, my, styleX + 102, styleY + 36, 96, 14)) {
+		if (over(mx, my, styleX + tabW + 6, tabY, tabW, 16)) {
 			color2 = true;
 			return true;
 		}
-		int paletteY = styleY + 54;
+
+		int paletteY = tabY + 22;
+		int cell = Math.max(14, (styleW - 7 * 3) / 8);
 		for (int i = 0; i < 16; i++) {
-			int px = styleX + (i % 8) * 25;
-			int py = paletteY + (i / 8) * 15;
-			if (over(mx, my, px, py, 22, 12)) {
-				Character code = "0123456789abcdef".charAt(i);
+			int px = styleX + (i % 8) * (cell + 3);
+			int py = paletteY + (i / 8) * (cell + 3);
+			if (over(mx, my, px, py, cell, cell - 2)) {
+				Character code = CODES.charAt(i);
 				ChatFormatting formatting = ChatFormatting.getByCode(code);
 				Integer rgb = formatting == null ? null : formatting.getColor();
 				if (target.mode() == TextStyle.Mode.BASIC) {
@@ -328,11 +374,11 @@ public class ModuleOptionsScreen extends Screen {
 				return true;
 			}
 		}
-		int hexY = paletteY + 32;
-		if (over(mx, my, styleX, hexY, 198, 15)) {
+
+		int hexY = paletteY + 2 * (cell + 3) + 6;
+		if (over(mx, my, styleX, hexY, styleW, 18)) {
 			editing = Setting.text("HEX COLOUR", () -> target.mode() == TextStyle.Mode.BASIC ? target.basic()
-					: TextStyle.hex(color2 ? target.secondary() : target.primary()),
-					value -> {
+					: TextStyle.hex(color2 ? target.secondary() : target.primary()), value -> {
 						if (target.mode() == TextStyle.Mode.BASIC) {
 							target.setBasic(value);
 						} else {
@@ -348,43 +394,41 @@ public class ModuleOptionsScreen extends Screen {
 			editBuffer = editing.value();
 			return true;
 		}
-		if (hasPrefix() && over(mx, my, styleX, hexY + 17, 198, 15)) {
-			editing = Setting.text("PREFIX", () -> style.prefix(),
-					value -> {
-						style.setPrefix(value);
-						save();
-					});
+		if (hasPrefix() && over(mx, my, styleX, hexY + 20, styleW, 18)) {
+			editing = Setting.text("PREFIX", () -> style.prefix(), value -> {
+				style.setPrefix(value);
+				save();
+			});
 			editBuffer = editing.value();
 			return true;
 		}
-
-		return clickOption(mx, my) || super.mouseClicked(event, doubleClick);
+		return false;
 	}
 
-	private boolean clickOption(double mx, double my) {
-		if (my >= optionsY && my < optionsY + optionsH && mx >= optionsX && mx < optionsX + optionsW) {
-			List<Setting> settings = settings();
-			int index = (int) ((my - optionsY) / ROW_H) + scroll;
-			if (index < settings.size()) {
-				Setting setting = settings.get(index);
-				if (setting.type() == Setting.Type.TEXT) {
-					editing = setting;
-					editBuffer = setting.value();
-				} else if (setting.type() == Setting.Type.SLIDER) {
-					slider = setting;
-					setSlider(setting, mx);
-				} else if (setting.type() == Setting.Type.BUTTON) {
-					setting.cycle();
-				} else {
-					setting.cycle();
-					save();
-				}
-				return true;
+	private boolean clickSetting(double mx, double my) {
+		int top = bodyY + 8;
+		if (my < top || my > top + bodyH - 8 || mx < listX || mx > listX + listW) {
+			return false;
+		}
+		int index = (int) ((my - top) / (ROW_H + ROW_GAP)) + scroll;
+		List<Setting> settings = rows;
+		if (index < settings.size()) {
+			Setting setting = settings.get(index);
+			if (setting.type() == Setting.Type.TEXT) {
+				editing = setting;
+				editBuffer = setting.value();
+			} else if (setting.type() == Setting.Type.SLIDER) {
+				slider = setting;
+				setSlider(setting, mx);
+			} else {
+				setting.cycle();
+				save();
 			}
-			if (index == settings.size() && module.keybindable()) {
-				binding = true;
-				return true;
-			}
+			return true;
+		}
+		if (index == settings.size() && module.keybindable()) {
+			binding = true;
+			return true;
 		}
 		return false;
 	}
@@ -408,28 +452,10 @@ public class ModuleOptionsScreen extends Screen {
 		return super.mouseReleased(event);
 	}
 
-	private int sliderBarWidth() {
-		return Math.min(90, optionsW / 2);
-	}
-
-	private void setSlider(Setting setting, double mouseX) {
-		int barX = optionsX + optionsW - 8 - sliderBarWidth();
-		double t = Math.max(0.0, Math.min(1.0, (mouseX - barX) / sliderBarWidth()));
-		double value = setting.min() + t * (setting.max() - setting.min());
-		if (setting.step() > 0) {
-			value = Math.round(value / setting.step()) * setting.step();
-		}
-		setting.setNumber(value);
-	}
-
 	@Override
 	public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
-		if (mouseX >= optionsX && mouseY >= optionsY && mouseY < optionsY + optionsH) {
-			List<Setting> settings = settings();
-			int rows = settings.size() + (module.keybindable() ? 1 : 0);
-			int visible = Math.max(1, optionsH / ROW_H);
-			scroll = (int) Math.max(0, Math.min(Math.max(0, rows - visible),
-					scroll - Math.signum(scrollY)));
+		if (mouseX >= listX && mouseY >= bodyY && mouseY < bodyY + bodyH) {
+			scroll = (int) Math.max(0, scroll - Math.signum(scrollY));
 			return true;
 		}
 		return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
@@ -480,19 +506,47 @@ public class ModuleOptionsScreen extends Screen {
 		return super.charTyped(event);
 	}
 
+	// --------------------------------------------------------------- helpers
+
+	private List<Setting> buildSettings() {
+		List<Setting> list = new ArrayList<>();
+		if (module instanceof HudModule hud) {
+			list.add(Setting.choice("SIDE", () -> hud.anchor().name(), () -> {
+				hud.linkTo(hud.anchor() == Anchor.RIGHT ? Anchor.LEFT : Anchor.RIGHT,
+						minecraft.getWindow().getGuiScaledWidth());
+				ModuleManager.get().save();
+			}));
+		}
+		list.addAll(module.settings());
+		if (module.id().equals("crosshair")) {
+			list.add(Setting.button("PATTERN EDITOR", () -> minecraft.setScreen(
+					new CrosshairEditorScreen(this, (CrosshairModule) module))));
+		}
+		return list;
+	}
+
+	private void setSlider(Setting setting, double mouseX) {
+		int barW = Math.min(120, Math.max(60, listW / 3));
+		int barX = listX + listW - 10 - barW;
+		double t = Math.max(0.0, Math.min(1.0, (mouseX - barX) / barW));
+		double value = setting.min() + t * (setting.max() - setting.min());
+		if (setting.step() > 0) {
+			value = Math.round(value / setting.step()) * setting.step();
+		}
+		setting.setNumber(value);
+	}
+
 	private String keyName(int key) {
 		if (key < 0) {
 			return "NONE";
 		}
-		String name = InputConstants.Type.KEYSYM.getOrCreate(key).getDisplayName().getString().toUpperCase();
-		while (name.length() > 1 && font.width(name) > 86) {
-			name = name.substring(0, name.length() - 1);
-		}
-		return name;
+		String name = InputConstants.Type.KEYSYM.getOrCreate(key).getDisplayName().getString().toUpperCase(Locale.ROOT);
+		return Ui.fit(font, name, 100);
 	}
 
-	private void save() {
-		ModuleManager.get().save();
+	private int accent() {
+		return module.category() == com.valkaw.client.module.Category.HUD ? Ui.ACCENT
+				: module.category() == com.valkaw.client.module.Category.PERFORMANCE ? Ui.GREEN : Ui.COPPER;
 	}
 
 	private boolean hasPrefix() {
@@ -501,6 +555,14 @@ public class ModuleOptionsScreen extends Screen {
 
 	private boolean styled() {
 		return !NO_STYLE.contains(module.id());
+	}
+
+	private void save() {
+		ModuleManager.get().save();
+	}
+
+	private void click() {
+		AbstractWidget.playButtonClickSound(minecraft.getSoundManager());
 	}
 
 	private static boolean over(double mx, double my, int x, int y, int w, int h) {
