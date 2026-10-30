@@ -1,5 +1,17 @@
 # Changelog
 
+## v1.0.6.1 — 2026-10-31
+
+### Launcher
+- New Valkaw logo: an even V stroke, a thinner two-band Saturn ring and a softer halo, replacing the previous mark.
+- The launcher window, dock entry and app icon all use the new logo.
+
+## v1.0.2.1 — 2026-10-31
+
+### Client
+- New Valkaw logo on the window and taskbar icons, the in-game mark and the mod icon.
+- The crosshair editor hint no longer gets cut off; it reads "Overrides the preset".
+
 ## v1.0.6 — 2026-10-31
 
 ### Launcher

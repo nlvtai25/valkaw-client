@@ -37,8 +37,8 @@ export default function Download() {
   return (
     <>
       <Seo
-        title="Download — Valkaw Client 1.0.2"
-        description="Download Valkaw Client 1.0.2 for Minecraft 1.21.11: Sodium and VulkanMod jars, SHA256 hashes, system requirements and the launcher for Linux and Windows."
+        title="Download — Valkaw Client 1.0.2.1"
+        description="Download Valkaw Client 1.0.2.1 for Minecraft 1.21.11: Sodium and VulkanMod jars, SHA256 hashes, system requirements and the launcher for Linux and Windows."
         jsonLd={DOWNLOAD_JSON_LD}
       />
       <main>
@@ -49,7 +49,7 @@ export default function Download() {
               <div>
                 <h1 style={{ maxWidth: '12ch' }}>Two jars, one version.</h1>
                 <p className="lead" style={{ marginTop: 'var(--space-lg)' }}>
-                  Sodium for OpenGL, VulkanMod for Vulkan. Both are 1.0.2.
+                  Sodium for OpenGL, VulkanMod for Vulkan. Both are 1.0.2.1.
                 </p>
                 <ul className="fact-list">
                   <li>Never put both jars in the same profile</li>
@@ -181,7 +181,7 @@ export default function Download() {
         <section className="section band" id="changelog">
           <div className="container" data-reveal>
             <div className="head-block">
-              <h2>What changed in 1.0.2</h2>
+              <h2>What changed in 1.0.2.1</h2>
               <p className="lead">Both builds share the module work. Renderer fixes are listed under their own build.</p>
             </div>
 

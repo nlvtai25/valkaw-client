@@ -475,14 +475,14 @@ export const CATEGORY_META: CategoryMeta[] = [
 export const DOWNLOADS: DownloadBuild[] = [
   {
     id: 'sodium',
-    version: '1.0.2',
+    version: '1.0.2.1',
     channel: 'stable',
     mcVersions: ['1.21.11'],
     loaders: ['Fabric 0.20.1'],
     releaseDate: '2026-10-31',
-    sizeMB: 26,
-    file: 'valkawclient-1.0.2-sodium.jar',
-    sha256: '93004b12309baa19ee17e796790018ab9c8e197ba1d24bad48c45df350a56be0',
+    sizeMB: 25.9,
+    file: 'valkawclient-1.0.2.1-sodium.jar',
+    sha256: '1dea9b037f7dcd6221c62c886c1194ddf38b37047ce7a3f4fde3f00ebf2a6f60',
     changelog: [
       { type: 'added', text: 'Saturn-based main menu with a saved account picker and an in-game username.' },
       { type: 'added', text: 'HUD elements link by touching edges, and the HUD stays visible behind open screens.' },
@@ -493,14 +493,14 @@ export const DOWNLOADS: DownloadBuild[] = [
   },
   {
     id: 'vulkan',
-    version: '1.0.2',
+    version: '1.0.2.1',
     channel: 'stable',
     mcVersions: ['1.21.11'],
     loaders: ['Fabric 0.20.1'],
     releaseDate: '2026-10-31',
-    sizeMB: 31,
-    file: 'valkawclient-1.0.2-vulkan.jar',
-    sha256: 'bd9833af76218b4bd52e5f0f27e3797f29567016f5d11dfe0c311deaa5e570a6',
+    sizeMB: 30.6,
+    file: 'valkawclient-1.0.2.1-vulkan.jar',
+    sha256: '1d027c7afcd2438a43b5eace3f64fcc5121c5c860779509f00f60c7f1a573e0c',
     changelog: [
       { type: 'added', text: 'The same main menu and Client Settings screens as the Sodium build.' },
       { type: 'added', text: 'HUD edge linking, HUD visible behind open screens and the Menu Backdrop slider.' },
