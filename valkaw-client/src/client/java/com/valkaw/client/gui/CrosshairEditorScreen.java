@@ -119,7 +119,7 @@ public class CrosshairEditorScreen extends Screen {
 			}
 		}
 
-		String note = "Custom overrides the preset";
+		String note = "Overrides the preset";
 		graphics.drawString(font, Ui.fit(font, note, areaW - 20), previewX + 10,
 				gridY + areaH - 22, Ui.MUTED, false);
 	}

@@ -625,21 +625,21 @@ export const COMPARISONS: ComparisonRow[] = [
 export const ECOSYSTEM_STATS = [
   { label: 'Mods loaded — Sodium', value: 129, suffix: '' },
   { label: 'Mods loaded — Vulkan', value: 111, suffix: '' },
-  { label: 'Bundled jars — Sodium', value: 22, suffix: '' },
-  { label: 'Bundled jars — Vulkan', value: 14, suffix: '' },
+  { label: 'Bundled jars — Sodium', value: 21, suffix: '' },
+  { label: 'Bundled jars — Vulkan', value: 13, suffix: '' },
 ];
 
 export const SCREENSHOTS: Screenshot[] = [
   {
     src: asset('/shots/menu.webp'),
     title: 'Main menu',
-    caption: 'Starfield, cyan panels and a live session readout. Built in, not a menu replacement mod.',
+    caption: 'A Saturn planet, gold accents and five destinations. Built in, not a menu replacement mod.',
     tag: 'MENU',
   },
   {
     src: asset('/shots/settings.webp'),
     title: 'Client settings',
-    caption: 'Every module has a switch and its own options page. No config file editing.',
+    caption: 'Every module has a switch and its own options page. Search, filter by category, no file editing.',
     tag: 'SETTINGS',
   },
   {
@@ -674,8 +674,8 @@ export const SCREENSHOTS: Screenshot[] = [
   },
   {
     src: asset('/shots/ingame_beach.webp'),
-    title: 'Third-person view',
-    caption: 'Freelook without changing where the player is facing. HUD stays readable.',
-    tag: 'FREELOOK',
+    title: 'Coastline',
+    caption: 'Open water, hills and a rock outcrop, with the HUD reading on top of the world.',
+    tag: 'WORLD',
   },
 ];
