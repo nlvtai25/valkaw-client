@@ -145,6 +145,11 @@ public class ValkawMainMenu extends Screen
 		graphics.fillGradient(0, height - 96, width, height, 0x00000000, 0x77000000);
 	}
 
+	private static String rendererName;
+	private static String subtitle;
+	private static String lastUser;
+	private static String lastInitial = "?";
+
 	private void drawWordmark(GuiGraphics graphics)
 	{
 		int cx = rightX() + rightW() / 2;
@@ -161,8 +166,11 @@ public class ValkawMainMenu extends Screen
 
 		Ui.wordmark(graphics, cx, markY, markW);
 
-		Ui.textCenter(graphics, font, "CLIENT  ·  " + VERSION + "  ·  " + renderer(),
-				cx, markY + markH + 10, Ui.MUTED);
+		if (subtitle == null)
+		{
+			subtitle = "CLIENT  ·  " + VERSION + "  ·  " + renderer();
+		}
+		Ui.textCenter(graphics, font, subtitle, cx, markY + markH + 10, Ui.MUTED);
 	}
 
 	private void drawSidebar(GuiGraphics graphics, int mouseX, int mouseY)
@@ -212,6 +220,7 @@ public class ValkawMainMenu extends Screen
 	private void drawAccount(GuiGraphics graphics)
 	{
 		String name = minecraft.getUser().getName();
+		String initial = initial(name);
 		boolean online = minecraft.getConnection() != null;
 		String status = online ? "Online" : "Offline";
 		int statusColor = online ? Ui.GREEN : Ui.MUTED;
@@ -227,7 +236,7 @@ public class ValkawMainMenu extends Screen
 			accountW = accountH = 26;
 			Ui.round(graphics, x, y, 26, 26, 8, accountOpen ? 0x2AFFFFFF : 0x14FFFFFF);
 			Ui.round(graphics, x + 5, y + 5, 16, 16, 6, Ui.alpha(Ui.COPPER, 0.5F));
-			Ui.textCenter(graphics, font, name.substring(0, 1).toUpperCase(), x + 13, y + 9, Ui.INK);
+			Ui.textCenter(graphics, font, initial, x + 13, y + 9, Ui.INK);
 			Ui.circle(graphics, x + 21, y + 21, 2, statusColor);
 			drawAccountPanel(graphics);
 			return;
@@ -240,7 +249,7 @@ public class ValkawMainMenu extends Screen
 		accountH = 30;
 		Ui.round(graphics, x, y, w, 30, Ui.R_CARD, accountOpen ? 0x2AFFFFFF : 0x12FFFFFF);
 		Ui.round(graphics, x + 5, y + 5, 20, 20, 7, Ui.alpha(Ui.COPPER, 0.42F));
-		Ui.textCenter(graphics, font, name.substring(0, 1).toUpperCase(), x + 15, y + 11, Ui.INK);
+		Ui.textCenter(graphics, font, initial, x + 15, y + 11, Ui.INK);
 		graphics.drawString(font, Ui.fit(font, name, w - 44), x + 30, y + 5, Ui.TEXT, false);
 		Ui.circle(graphics, x + 33, y + 21, 2, statusColor);
 		graphics.drawString(font, status, x + 39, y + 17, statusColor, false);
@@ -463,18 +472,42 @@ public class ValkawMainMenu extends Screen
 
 	// -------------------------------------------------------------- helpers
 
+	private static String initial(String name)
+	{
+		if (!name.equals(lastUser))
+		{
+			lastUser = name;
+			lastInitial = name.isEmpty() ? "?" : name.substring(0, 1).toUpperCase();
+		}
+		return lastInitial;
+	}
+
 	private static String renderer()
 	{
+		if (rendererName != null)
+		{
+			return rendererName;
+		}
 		Minecraft client = Minecraft.getInstance();
+		// The resource manager can still be null on the very first frames; only
+		// cache once it exists so "Vanilla" is never frozen in too early.
+		if (client.getResourceManager() == null)
+		{
+			return "Vanilla";
+		}
 		if (FabricLoader.getInstance().isModLoaded("vulkanmod"))
 		{
-			return "VulkanMod";
+			rendererName = "VulkanMod";
 		}
-		if (client.getResourceManager() != null && FabricLoader.getInstance().isModLoaded("sodium"))
+		else if (FabricLoader.getInstance().isModLoaded("sodium"))
 		{
-			return "Sodium";
+			rendererName = "Sodium";
 		}
-		return "Vanilla";
+		else
+		{
+			rendererName = "Vanilla";
+		}
+		return rendererName;
 	}
 
 	private record Nav(String icon, String label, int accent, boolean primary, Runnable action)

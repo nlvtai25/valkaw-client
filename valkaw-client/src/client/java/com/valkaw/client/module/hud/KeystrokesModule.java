@@ -10,7 +10,7 @@ import net.minecraft.client.gui.GuiGraphics;
 
 public class KeystrokesModule extends HudModule {
 	public KeystrokesModule() {
-		super("keystrokes", "Keystrokes", 4, 106);
+		super("keystrokes", "Keystrokes", 3, 106);
 		setEnabled(true);
 	}
 
@@ -27,15 +27,16 @@ public class KeystrokesModule extends HudModule {
 	@Override
 	public void render(GuiGraphics graphics, Font font) {
 		Options options = Minecraft.getInstance().options;
+		int bx = Hud.plateX(x);
 		int prefixW = Hud.prefix(graphics, font, x, y, "Keys");
 		w = Math.max(46, prefixW);
 		h = 60;
-		Hud.key(graphics, font, x + 16, y + 13, 14, "W", options.keyUp.isDown());
-		Hud.key(graphics, font, x, y + 25, 14, "A", options.keyLeft.isDown());
-		Hud.key(graphics, font, x + 16, y + 25, 14, "S", options.keyDown.isDown());
-		Hud.key(graphics, font, x + 32, y + 25, 14, "D", options.keyRight.isDown());
-		Hud.key(graphics, font, x, y + 37, 46, "SPACE", options.keyJump.isDown());
-		Hud.key(graphics, font, x, y + 49, 22, "LMB", InputState.left());
-		Hud.key(graphics, font, x + 24, y + 49, 22, "RMB", InputState.right());
+		Hud.key(graphics, font, bx + 16, y + 13, 14, "W", options.keyUp.isDown());
+		Hud.key(graphics, font, bx, y + 25, 14, "A", options.keyLeft.isDown());
+		Hud.key(graphics, font, bx + 16, y + 25, 14, "S", options.keyDown.isDown());
+		Hud.key(graphics, font, bx + 32, y + 25, 14, "D", options.keyRight.isDown());
+		Hud.key(graphics, font, bx, y + 37, 46, "SPACE", options.keyJump.isDown());
+		Hud.key(graphics, font, bx, y + 49, 22, "LMB", InputState.left());
+		Hud.key(graphics, font, bx + 24, y + 49, 22, "RMB", InputState.right());
 	}
 }

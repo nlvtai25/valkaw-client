@@ -17,7 +17,14 @@ public class CrosshairModule extends Module {
 		CROSS, DOT, CIRCLE, T, ARROW;
 
 		public Pattern next() {
-			return values()[(ordinal() + 1) % values().length];
+			// Explicit cycle: values() clones the constant array on every call.
+			return switch (this) {
+				case CROSS -> DOT;
+				case DOT -> CIRCLE;
+				case CIRCLE -> T;
+				case T -> ARROW;
+				case ARROW -> CROSS;
+			};
 		}
 
 		public static Pattern parse(String name) {

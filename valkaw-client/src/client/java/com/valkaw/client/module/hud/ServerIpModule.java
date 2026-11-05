@@ -9,7 +9,7 @@ import net.minecraft.client.multiplayer.ServerData;
 
 public class ServerIpModule extends HudModule {
 	public ServerIpModule() {
-		super("server-ip", "Server IP", 4, 186);
+		super("server-ip", "Server IP", 3, 186);
 		setEnabled(true);
 	}
 

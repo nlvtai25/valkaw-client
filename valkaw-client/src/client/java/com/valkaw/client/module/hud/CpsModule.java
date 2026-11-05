@@ -8,7 +8,7 @@ import net.minecraft.client.gui.GuiGraphics;
 
 public class CpsModule extends HudModule {
 	public CpsModule() {
-		super("cps", "CPS", 4, 17);
+		super("cps", "CPS", 3, 17);
 	}
 
 	@Override

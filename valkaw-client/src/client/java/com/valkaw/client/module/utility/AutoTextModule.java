@@ -44,7 +44,7 @@ public class AutoTextModule extends Module {
 	}
 
 	private final List<Entry> entries = new ArrayList<>();
-	private final List<Boolean> held = new ArrayList<>();
+	private boolean[] held = new boolean[8];
 
 	public AutoTextModule() {
 		super("auto-text", "Auto Text", Category.UTILITY);
@@ -73,21 +73,19 @@ public class AutoTextModule extends Module {
 	public void onTick() {
 		Minecraft mc = Minecraft.getInstance();
 		if (mc.player == null || mc.player.connection == null || mc.screen != null) {
-			for (int i = 0; i < held.size(); i++) {
-				held.set(i, false);
-			}
+			java.util.Arrays.fill(held, false);
 			return;
 		}
-		while (held.size() < entries.size()) {
-			held.add(false);
+		if (held.length < entries.size()) {
+			held = java.util.Arrays.copyOf(held, Math.max(held.length * 2, entries.size()));
 		}
 		for (int i = 0; i < entries.size(); i++) {
 			Entry entry = entries.get(i);
 			boolean down = isDown(entry);
-			if (down && !held.get(i)) {
+			if (down && !held[i]) {
 				send(mc, entry.text);
 			}
-			held.set(i, down);
+			held[i] = down;
 		}
 	}
 
@@ -141,7 +139,7 @@ public class AutoTextModule extends Module {
 	@Override
 	public void readExtra(JsonObject json) {
 		entries.clear();
-		held.clear();
+		held = new boolean[8];
 		if (!json.has("entries")) {
 			return;
 		}

@@ -27,7 +27,7 @@ public class TimeModule extends HudModule {
 	private String clock = "--:--:--";
 
 	public TimeModule() {
-		super("time", "Time", 4, 160);
+		super("time", "Time", 3, 160);
 		setEnabled(true);
 	}
 

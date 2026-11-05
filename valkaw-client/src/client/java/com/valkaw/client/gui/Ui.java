@@ -50,8 +50,12 @@ public final class Ui {
 	private static final Style MONO = Style.EMPTY.withFont(new FontDescription.Resource(Minecraft.UNIFORM_FONT));
 	private static final Map<String, Component> MONO_CACHE = new HashMap<>();
 	private static final Map<String, Integer> WIDTHS = new HashMap<>();
+	/** fit() results; labels repeat every frame while a screen is open. */
+	private static final Map<String, String> FIT_CACHE = new HashMap<>();
 	private static Font cachedFont;
 	private static long lastFrame = System.nanoTime();
+	/** Per-radius corner inset table; round() used to sqrt() once per row per call. */
+	private static final int[][] INSETS = new int[65][];
 
 	private Ui() {
 	}
@@ -147,7 +151,10 @@ public final class Ui {
 		}
 	}
 
-	/** Rounded rectangle built from one scanline per row. */
+	/**
+	 * Rounded rectangle. Only the corner rows need per-scanline insets; the
+	 * straight middle is one fill, so a tall panel costs ~2r+1 draws, not h.
+	 */
 	public static void round(GuiGraphics graphics, int x, int y, int w, int h, int radius, int color) {
 		if (w <= 0 || h <= 0 || (color >>> 24) == 0) {
 			return;
@@ -157,10 +164,38 @@ public final class Ui {
 			graphics.fill(x, y, x + w, y + h, color);
 			return;
 		}
-		for (int row = 0; row < h; row++) {
-			int inset = row < r ? inset(row, r) : row >= h - r ? inset(h - 1 - row, r) : 0;
+		// r <= h/2, so the middle band never overlaps the corner rows.
+		int[] insets = insets(r);
+		for (int row = 0; row < r; row++) {
+			int inset = insets[row];
 			graphics.fill(x + inset, y + row, x + w - inset, y + row + 1, color);
 		}
+		graphics.fill(x, y + r, x + w, y + h - r, color);
+		for (int row = h - r; row < h; row++) {
+			int inset = insets[h - 1 - row];
+			graphics.fill(x + inset, y + row, x + w - inset, y + row + 1, color);
+		}
+	}
+
+	/** Corner inset per row for a given radius, computed once per radius. */
+	private static int[] insets(int radius) {
+		if (radius >= INSETS.length) {
+			// Uncached fallback for unusually large radii.
+			int[] table = new int[radius];
+			for (int row = 0; row < radius; row++) {
+				table[row] = inset(row, radius);
+			}
+			return table;
+		}
+		int[] table = INSETS[radius];
+		if (table == null) {
+			table = new int[radius];
+			for (int row = 0; row < radius; row++) {
+				table[row] = inset(row, radius);
+			}
+			INSETS[radius] = table;
+		}
+		return table;
 	}
 
 	private static int inset(int row, int radius) {
@@ -184,11 +219,37 @@ public final class Ui {
 		round(graphics, x + R_WINDOW, y + 1, w - R_WINDOW * 2, 1, 0, 0x18FFFFFF);
 	}
 
+	private static final int[][] CIRCLE_SPANS = new int[33][];
+
 	public static void circle(GuiGraphics graphics, int cx, int cy, int radius, int color) {
+		if ((color >>> 24) == 0 || radius < 0) {
+			return;
+		}
+		int[] spans = spans(radius);
 		for (int dy = -radius; dy <= radius; dy++) {
-			int span = (int) Math.sqrt(Math.max(0, radius * radius - dy * dy));
+			int span = spans[dy + radius];
 			graphics.fill(cx - span, cy + dy, cx + span + 1, cy + dy + 1, color);
 		}
+	}
+
+	/** Half-width of each circle row, computed once per radius. */
+	private static int[] spans(int radius) {
+		if (radius >= CIRCLE_SPANS.length) {
+			int[] table = new int[radius * 2 + 1];
+			for (int dy = -radius; dy <= radius; dy++) {
+				table[dy + radius] = (int) Math.sqrt(Math.max(0, radius * radius - dy * dy));
+			}
+			return table;
+		}
+		int[] table = CIRCLE_SPANS[radius];
+		if (table == null) {
+			table = new int[radius * 2 + 1];
+			for (int dy = -radius; dy <= radius; dy++) {
+				table[dy + radius] = (int) Math.sqrt(Math.max(0, radius * radius - dy * dy));
+			}
+			CIRCLE_SPANS[radius] = table;
+		}
+		return table;
 	}
 
 	/** Horizontal gradient approximated with vertical slices. */
@@ -268,8 +329,16 @@ public final class Ui {
 
 	/** Trims text to fit, appending an ellipsis when it does not. */
 	public static String fit(Font font, String text, int maxWidth) {
-		if (text == null || text.isEmpty() || font.width(text) <= maxWidth) {
+		if (text == null || text.isEmpty()) {
 			return text == null ? "" : text;
+		}
+		if (font.width(text) <= maxWidth) {
+			return text;
+		}
+		String key = maxWidth + "|" + text;
+		String cached = FIT_CACHE.get(key);
+		if (cached != null) {
+			return cached;
 		}
 		// Measure directly on the font: width() would cache one throwaway entry per
 		// candidate length and clear the shared cache once it fills up.
@@ -283,7 +352,12 @@ public final class Ui {
 				high = mid - 1;
 			}
 		}
-		return text.substring(0, Math.max(1, low)) + "...";
+		String fitted = text.substring(0, Math.max(1, low)) + "...";
+		if (FIT_CACHE.size() > 512) {
+			FIT_CACHE.clear();
+		}
+		FIT_CACHE.put(key, fitted);
+		return fitted;
 	}
 
 	// ---------------------------------------------------------------- widgets

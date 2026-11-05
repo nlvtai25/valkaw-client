@@ -57,23 +57,29 @@ public class PcInfoModule extends HudModule {
 			h = 11;
 			return;
 		}
-		// Rows share one width so the labels line up on the left and the values
-		// line up on the right, whichever side of the screen the HUD sits on.
-		int labelWidth = Math.max(Hud.width(font, cpuLabel), Math.max(Hud.width(font, gpuLabel), Hud.width(font, ramLabel)));
-		int valueWidth = Math.max(Hud.width(font, cpu), Math.max(Hud.width(font, gpu), Hud.width(font, ram)));
-		int rowWidth = 14 + labelWidth + valueWidth;
-		row(graphics, font, x, y, rowWidth, cpuLabel, cpu);
-		row(graphics, font, x, y + 11, rowWidth, gpuLabel, gpu);
-		row(graphics, font, x, y + 22, rowWidth, ramLabel, ram);
-		w = rowWidth;
+		// Each plate still hugs its own line, but all rows share one right edge:
+		// the values stay in a single right-aligned column and short lines just
+		// start further right.
+		int cpuWidth = 8 + Hud.width(font, cpuLabel) + Hud.width(font, cpu);
+		int gpuWidth = 8 + Hud.width(font, gpuLabel) + Hud.width(font, gpu);
+		int ramWidth = 8 + Hud.width(font, ramLabel) + Hud.width(font, ram);
+		int width = Math.max(cpuWidth, Math.max(gpuWidth, ramWidth));
+		row(graphics, font, x + width - cpuWidth, y, cpuWidth, cpuLabel, cpu);
+		row(graphics, font, x + width - gpuWidth, y + 11, gpuWidth, gpuLabel, gpu);
+		row(graphics, font, x + width - ramWidth, y + 22, ramWidth, ramLabel, ram);
+		w = width;
 		h = 33;
 	}
 
-	/** One "LABEL value" line; the value is pushed to the opposite edge of the row. */
+	/** One "LABEL value" line with the text right-aligned: 3px label pad, 3px
+	 * gap, 2px right margin, same as before but the plate ends where this
+	 * line does. */
 	private void row(GuiGraphics graphics, Font font, int x, int y, int width, String label, String value) {
-		graphics.fill(x, y, x + width, y + 11, Hud.BG);
-		Hud.text(graphics, font, label, x + 4, y + 2);
-		Hud.text(graphics, font, value, x + width - 4 - Hud.width(font, value), y + 2);
+		int bx = Hud.plateX(x);
+		graphics.fill(bx, y, bx + width, y + 11, Hud.BG);
+		int valueX = bx + width - 2 - Hud.width(font, value);
+		Hud.text(graphics, font, value, valueX, y + 2);
+		Hud.text(graphics, font, label, valueX - 3 - Hud.width(font, label), y + 2);
 	}
 
 	private void sample() {

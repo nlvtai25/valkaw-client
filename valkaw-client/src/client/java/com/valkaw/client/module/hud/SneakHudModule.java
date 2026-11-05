@@ -9,7 +9,7 @@ import net.minecraft.client.gui.GuiGraphics;
 /** Shows the Toggle Sneak state as an ON/OFF chip, always visible while enabled. */
 public class SneakHudModule extends HudModule {
 	public SneakHudModule() {
-		super("sneak-hud", "Sneak HUD", 4, 212);
+		super("sneak-hud", "Sneak HUD", 3, 212);
 		setEnabled(true);
 	}
 

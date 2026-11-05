@@ -12,7 +12,7 @@ public abstract class HudModule extends Module {
 	protected int w;
 	protected int h = 11;
 	private Anchor anchor = Anchor.LEFT;
-	private int rightOffset = 4;
+	private int rightOffset = 3;
 	private String linkId;
 	private Link linkSide = Link.NONE;
 	private int lastW;
@@ -107,10 +107,10 @@ public abstract class HudModule extends Module {
 		anchor = side;
 		if (side == Anchor.RIGHT)
 		{
-			rightOffset = 4;
+			rightOffset = 3;
 			x = Math.max(0, screenWidth - editorWidth() - rightOffset);
 		} else {
-			x = 4;
+			x = 3;
 		}
 	}
 

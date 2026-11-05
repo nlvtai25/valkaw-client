@@ -14,7 +14,7 @@ public class SpeedModule extends HudModule {
 	private boolean sampled;
 
 	public SpeedModule() {
-		super("speed", "Speed", 4, 56);
+		super("speed", "Speed", 3, 56);
 	}
 
 	@Override

@@ -60,6 +60,8 @@ public class ModuleOptionsScreen extends Screen {
 	private int atBinding = -1;
 	private int atEditing = -1;
 	private String atBuffer = "";
+	private final java.util.Map<Integer, String> keyNames = new java.util.HashMap<>();
+	private final java.util.Map<Integer, String> atKeyNames = new java.util.HashMap<>();
 
 	public ModuleOptionsScreen(Screen parent, Module module) {
 		super(Component.literal(module.name() + " Options"));
@@ -723,29 +725,50 @@ public class ModuleOptionsScreen extends Screen {
 	}
 
 	private String keyName(int key) {
-		if (key < 0) {
-			return "NONE";
+		String cached = keyNames.get(key);
+		if (cached != null) {
+			return cached;
 		}
-		String name = InputConstants.Type.KEYSYM.getOrCreate(key).getDisplayName().getString().toUpperCase(Locale.ROOT);
-		return Ui.fit(font, name, 100);
+		String name;
+		if (key < 0) {
+			name = "NONE";
+		} else {
+			name = InputConstants.Type.KEYSYM.getOrCreate(key).getDisplayName().getString()
+					.toUpperCase(Locale.ROOT);
+		}
+		name = Ui.fit(font, name, 100);
+		keyNames.put(key, name);
+		return name;
 	}
 
 	private String keyNameAt(AutoTextModule.Entry entry) {
+		// key * 8 + mods is unique: mods is a 3-bit mask.
+		int cacheKey = entry.key < 0 ? -1 : entry.key * 8 + entry.mods;
+		String cached = atKeyNames.get(cacheKey);
+		if (cached != null) {
+			return cached;
+		}
+		String name;
 		if (entry.key < 0) {
-			return "NONE";
+			name = "NONE";
+		} else {
+			StringBuilder sb = new StringBuilder();
+			if ((entry.mods & AutoTextModule.MOD_CTRL) != 0) {
+				sb.append("CTRL+");
+			}
+			if ((entry.mods & AutoTextModule.MOD_SHIFT) != 0) {
+				sb.append("SHIFT+");
+			}
+			if ((entry.mods & AutoTextModule.MOD_ALT) != 0) {
+				sb.append("ALT+");
+			}
+			sb.append(InputConstants.Type.KEYSYM.getOrCreate(entry.key).getDisplayName().getString()
+					.toUpperCase(Locale.ROOT));
+			name = sb.toString();
 		}
-		StringBuilder sb = new StringBuilder();
-		if ((entry.mods & AutoTextModule.MOD_CTRL) != 0) {
-			sb.append("CTRL+");
-		}
-		if ((entry.mods & AutoTextModule.MOD_SHIFT) != 0) {
-			sb.append("SHIFT+");
-		}
-		if ((entry.mods & AutoTextModule.MOD_ALT) != 0) {
-			sb.append("ALT+");
-		}
-		sb.append(InputConstants.Type.KEYSYM.getOrCreate(entry.key).getDisplayName().getString().toUpperCase(Locale.ROOT));
-		return Ui.fit(font, sb.toString(), 100);
+		name = Ui.fit(font, name, 100);
+		atKeyNames.put(cacheKey, name);
+		return name;
 	}
 
 	private static boolean isModifierKey(int key) {

@@ -44,6 +44,17 @@ public final class Hud {
 		return text.startsWith("[") ? text : "[" + text + "]";
 	}
 
+	/**
+	 * Left edge a chip plate actually draws at: the plate starts flush at the
+	 * module anchor (clamped to the screen edge), while module positions
+	 * (and the editor) stay untouched.
+	 */
+	public static final int BLEED = 0;
+
+	public static int plateX(int x) {
+		return Math.max(0, x - BLEED);
+	}
+
 	/** Draws a "LABEL value" chip and returns its width. */
 	public static int chip(GuiGraphics graphics, Font font, int x, int y, String label, String value) {
 		return chipRaw(graphics, font, x, y, label(label), value);
@@ -52,19 +63,21 @@ public final class Hud {
 	/** Draws a chip whose label is not replaced by the custom prefix. */
 	public static int chipRaw(GuiGraphics graphics, Font font, int x, int y, String label, String value) {
 		int labelWidth = width(font, label);
-		int width = 9 + labelWidth + 3 + width(font, value);
-		graphics.fill(x, y, x + width, y + 11, BG);
-		text(graphics, font, label, x + 4, y + 2);
-		text(graphics, font, value, x + 4 + labelWidth + 3, y + 2);
+		int width = 2 + labelWidth + 3 + width(font, value);
+		int bx = plateX(x);
+		graphics.fill(bx, y, bx + width, y + 11, BG);
+		text(graphics, font, label, bx + 1, y + 2);
+		text(graphics, font, value, bx + 1 + labelWidth + 3, y + 2);
 		return width;
 	}
 
 	/** Draws a module prefix chip and returns its width. */
 	public static int prefix(GuiGraphics graphics, Font font, int x, int y, String label) {
 		String text = label(label);
-		int width = 8 + width(font, text);
-		graphics.fill(x, y, x + width, y + 11, BG);
-		text(graphics, font, text, x + 4, y + 2);
+		int width = 2 + width(font, text);
+		int bx = plateX(x);
+		graphics.fill(bx, y, bx + width, y + 11, BG);
+		text(graphics, font, text, bx + 1, y + 2);
 		return width;
 	}
 
@@ -78,9 +91,10 @@ public final class Hud {
 
 	/** Raw value chip with an explicit colour, used by status icons. */
 	public static int value(GuiGraphics graphics, Font font, int x, int y, String value, int color) {
-		int width = 9 + width(font, value);
-		graphics.fill(x, y, x + width, y + 11, BG);
-		graphics.drawString(font, value, x + 4, y + 2, color, false);
+		int width = 2 + width(font, value);
+		int bx = plateX(x);
+		graphics.fill(bx, y, bx + width, y + 11, BG);
+		graphics.drawString(font, value, bx + 1, y + 2, color, false);
 		return width;
 	}
 

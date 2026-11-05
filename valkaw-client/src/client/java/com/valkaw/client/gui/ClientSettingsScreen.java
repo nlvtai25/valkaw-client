@@ -42,6 +42,8 @@ public class ClientSettingsScreen extends Screen
 	private float scrollTarget;
 	private List<Module> cached;
 	private String cacheKey = "";
+	private final Map<Integer, String> keyLabels = new HashMap<>();
+	private final Map<String, String> cardIcons = new HashMap<>();
 
 	/** Grid metrics, shared by the renderer and the click handler. */
 	private static final int CARD_H = 62;
@@ -737,13 +739,24 @@ public class ClientSettingsScreen extends Screen
 	/** Short uppercase label for a GLFW key code, e.g. C or LEFT ALT. */
 	private String keyLabel(int key)
 	{
+		String cached = keyLabels.get(key);
+		if (cached != null)
+		{
+			return cached;
+		}
+		String label;
 		if (key < 0)
 		{
-			return "UNBOUND";
+			label = "UNBOUND";
 		}
-		String name = com.mojang.blaze3d.platform.InputConstants.Type.KEYSYM.getOrCreate(key)
-				.getDisplayName().getString();
-		return name.toUpperCase(Locale.ROOT);
+		else
+		{
+			String name = com.mojang.blaze3d.platform.InputConstants.Type.KEYSYM.getOrCreate(key)
+					.getDisplayName().getString();
+			label = name.toUpperCase(Locale.ROOT);
+		}
+		keyLabels.put(key, label);
+		return label;
 	}
 
 	private static boolean over(double mx, double my, int x, int y, int w, int h)
@@ -775,6 +788,11 @@ public class ClientSettingsScreen extends Screen
 	}
 
 	private String iconFor(Module module)
+	{
+		return cardIcons.computeIfAbsent(module.id(), id -> resolveIcon(module));
+	}
+
+	private String resolveIcon(Module module)
 	{
 		String id = module.id();
 		if (id.contains("fps")) return "gauge";

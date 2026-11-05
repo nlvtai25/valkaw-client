@@ -20,14 +20,14 @@ public class ArmorHudModule extends HudModule {
 	private static final int ICON = 18;
 	private static final int ROW_H = 18;
 	private static final int GAP = 2;
-	private static final int PAD = 4;
+	private static final int PAD = 1;
 
 	private Layout layout = Layout.VERTICAL;
 	private boolean split;
 	private final ItemStack[] armor = new ItemStack[SLOTS.length];
 
 	public ArmorHudModule() {
-		super("armor", "Armor HUD", 120, 4);
+		super("armor", "Armor HUD", 120, 3);
 		setEnabled(true);
 	}
 
@@ -80,19 +80,20 @@ public class ArmorHudModule extends HudModule {
 		int bodyW = layout == Layout.HORIZONTAL ? pieces * (pairW + GAP) - GAP : pairW;
 		int bodyH = layout == Layout.HORIZONTAL ? ROW_H : pieces * (ROW_H + GAP) - GAP;
 
+		int bx = Hud.plateX(x);
 		if (split) {
 			int prefixW = Hud.prefix(graphics, font, x, y, "Armor");
 			w = Math.max(prefixW, bodyW);
 			h = 13 + bodyH;
-			drawItems(graphics, font, held, armor, x, y + 13, pairW);
+			drawItems(graphics, font, held, armor, bx, y + 13, pairW);
 		} else {
 			int headerW = Hud.width(font, Hud.label("Armor")) + PAD;
 			w = Math.max(headerW, bodyW + PAD);
 			h = 15 + bodyH;
-			graphics.fill(x, y, x + w, y + h, Hud.BG);
-			Hud.text(graphics, font, Hud.label("Armor"), x + 4, y + 2);
-			graphics.fill(x + 4, y + 12, x + 4 + Hud.width(font, Hud.label("Armor")), y + 13, Hud.color());
-			drawItems(graphics, font, held, armor, x + 4, y + 15, pairW);
+			graphics.fill(bx, y, bx + w, y + h, Hud.BG);
+			Hud.text(graphics, font, Hud.label("Armor"), bx + 1, y + 2);
+			graphics.fill(bx + 1, y + 12, bx + 1 + Hud.width(font, Hud.label("Armor")), y + 13, Hud.color());
+			drawItems(graphics, font, held, armor, bx + 1, y + 15, pairW);
 		}
 	}
 

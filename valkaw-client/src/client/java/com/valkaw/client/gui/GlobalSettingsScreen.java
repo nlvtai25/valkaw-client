@@ -12,6 +12,9 @@ import net.minecraft.network.chat.Component;
 public class GlobalSettingsScreen extends Screen {
 	private static final int ROW_H = 32;
 	private static final int ROW_GAP = 3;
+	private static final char[] FORMAT_CHARS = { 'l', 'n', 'o', 'm', 'r' };
+	private static final String[] COLOR_CODES = {
+			"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f" };
 	private Screen parent;
 	private int winX;
 	private int winY;
@@ -97,7 +100,7 @@ public class GlobalSettingsScreen extends Screen {
 			int cell = Math.max(14, (styleW - 7 * 3) / 8);
 			int px = listX;
 			int py = y + 6;
-			for (char code : new char[] { 'l', 'n', 'o', 'm', 'r' }) {
+			for (char code : FORMAT_CHARS) {
 				int cx = px;
 				int cy = py;
 				String s = "&" + code;
@@ -117,7 +120,7 @@ public class GlobalSettingsScreen extends Screen {
 			graphics.drawString(font, "Color", listX, py, Ui.TEXT_2, false);
 			py += 14;
 			int ccell = Math.max(14, (styleW - 9 * 3) / 10);
-			String[] codes = new String[] { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f" };
+			String[] codes = COLOR_CODES;
 			for (int i = 0; i < codes.length; i++) {
 				int cx = listX + (i % 10) * (ccell + 3);
 				int cy = py + (i / 10) * (ccell + 3);
@@ -142,7 +145,7 @@ public class GlobalSettingsScreen extends Screen {
 
 		int paletteY = tabY + 22;
 		int cell = Math.max(14, (styleW - 9 * 3) / 10);
-		String[] codes = new String[] { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f" };
+		String[] codes = COLOR_CODES;
 		for (int i = 0; i < codes.length; i++) {
 			int cx = listX + (i % 10) * (cell + 3);
 			int cy = paletteY + (i / 10) * (cell + 3);
@@ -187,7 +190,7 @@ public class GlobalSettingsScreen extends Screen {
 			int cell = Math.max(14, (styleW - 7 * 3) / 8);
 			int px = listX;
 			int py = y + 6;
-			for (char code : new char[] { 'l', 'n', 'o', 'm', 'r' }) {
+			for (char code : FORMAT_CHARS) {
 				if (over(mx, my, px, py, cell, cell - 2)) {
 					style.setBasic(toggleBasic(style.basic(), code));
 					save();
@@ -201,7 +204,7 @@ public class GlobalSettingsScreen extends Screen {
 			}
 			py += cell + 10 + 14;
 			int ccell = Math.max(14, (styleW - 9 * 3) / 10);
-			String[] codes = new String[] { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f" };
+			String[] codes = COLOR_CODES;
 			for (int i = 0; i < codes.length; i++) {
 				int cx = listX + (i % 10) * (ccell + 3);
 				int cy = py + (i / 10) * (ccell + 3);
@@ -231,7 +234,7 @@ public class GlobalSettingsScreen extends Screen {
 
 		int paletteY = tabY + 22;
 		int cell = Math.max(14, (styleW - 9 * 3) / 10);
-		String[] codes = new String[] { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f" };
+		String[] codes = COLOR_CODES;
 		for (int i = 0; i < codes.length; i++) {
 			int cx = listX + (i % 10) * (cell + 3);
 			int cy = paletteY + (i / 10) * (cell + 3);

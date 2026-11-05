@@ -10,7 +10,14 @@ public final class TextStyle {
 		BASIC, HEX, RAINBOW, GRADIENT, PULSE;
 
 		public Mode next() {
-			return values()[(ordinal() + 1) % values().length];
+			// Explicit cycle: values() clones the constant array on every call.
+			return switch (this) {
+				case BASIC -> HEX;
+				case HEX -> RAINBOW;
+				case RAINBOW -> GRADIENT;
+				case GRADIENT -> PULSE;
+				case PULSE -> BASIC;
+			};
 		}
 
 		public static Mode parse(String name) {

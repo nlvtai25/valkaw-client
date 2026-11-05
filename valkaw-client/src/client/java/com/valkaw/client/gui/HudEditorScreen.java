@@ -16,7 +16,7 @@ import net.minecraft.network.chat.Component;
 /** Drag HUD elements around, drop them on an edge to pin them there. */
 public class HudEditorScreen extends Screen {
 	private static final int SNAP = 8;
-	private static final int MARGIN = 4;
+	private static final int MARGIN = 3;
 	private static final int LINK = 18;
 	/** How close two edges have to be before they count as touching. */
 	private static final int TOUCH = 3;

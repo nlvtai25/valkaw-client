@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.0.4 — 2026-11-05
+
+### Client
+- Performance: menus and HUD render noticeably cheaper per frame. Rounded panels draw their body as one rectangle and only scanline the two corners (was one fill per scanline), circle spans and text-fit results are cached, and the chat symbol panel only draws the visible slice instead of every symbol.
+- Cached repeated lookups across screens: chat copy-button code formatting, keybind names in Client Settings and Module Options, the main-menu renderer/subtitle, Coordinates biome names (keyed by `ResourceKey`) and dimension label, and Potion effect display names.
+- Removed per-frame allocations: enum `next()` no longer clones `values()`, Auto Text keeps held-state in a primitive array, and Global Settings hoists fixed arrays out of the render loop.
+- HUD plates now hug their text: chip padding tightened to 1px, plates start flush at the module anchor via `Hud.plateX` (`BLEED = 0`), screen margins standardized to 3px across all HUD modules and the HUD editor, and every left-column module defaults to `x = 3`.
+- PC Info rows each draw their own snug plate while sharing one right edge, so values stay in a single right-aligned column; Armor HUD, Potion HUD and Keystrokes draw their backgrounds through the same plate positioning.
+
 ## v1.0.7 — 2026-11-05
 
 ### Launcher

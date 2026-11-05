@@ -9,7 +9,7 @@ import net.minecraft.client.gui.GuiGraphics;
 /** Shows the Toggle Sprint state as an ON/OFF chip, always visible while enabled. */
 public class SprintHudModule extends HudModule {
 	public SprintHudModule() {
-		super("sprint-hud", "Sprint HUD", 4, 199);
+		super("sprint-hud", "Sprint HUD", 3, 199);
 		setEnabled(true);
 	}
 

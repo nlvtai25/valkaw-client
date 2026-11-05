@@ -8,7 +8,7 @@ import net.minecraft.client.gui.GuiGraphics;
 
 public class FpsModule extends HudModule {
 	public FpsModule() {
-		super("fps", "FPS", 4, 4);
+		super("fps", "FPS", 3, 3);
 		setEnabled(true);
 	}
 

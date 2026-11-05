@@ -8,14 +8,20 @@ import com.valkaw.client.module.Setting;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.biome.Biome;
 
 public class CoordinatesModule extends HudModule {
-	private static final Map<String, String> BIOME_NAMES = new HashMap<>();
+	private static final Map<ResourceKey<Biome>, String> BIOME_NAMES = new HashMap<>();
+	private static ResourceKey<Level> cachedDimension;
+	private static String cachedDimensionName = "";
 
 	private Layout layout = Layout.VERTICAL;
 	private boolean showDimension = true;
@@ -23,7 +29,7 @@ public class CoordinatesModule extends HudModule {
 	private boolean showDirection = true;
 
 	public CoordinatesModule() {
-		super("coordinates", "Coordinates", 4, 69);
+		super("coordinates", "Coordinates", 3, 69);
 		setEnabled(true);
 	}
 
@@ -33,11 +39,24 @@ public class CoordinatesModule extends HudModule {
 	}
 
 	public static String biome(LocalPlayer player) {
-		return player.level().getBiome(player.blockPosition()).unwrapKey()
-				.map(key -> BIOME_NAMES.computeIfAbsent(
-						"biome." + key.identifier().getNamespace() + "." + key.identifier().getPath(),
-						name -> Component.translatable(name).getString()))
-				.orElse("Unknown");
+		Optional<ResourceKey<Biome>> key = player.level().getBiome(player.blockPosition()).unwrapKey();
+		if (key.isEmpty()) {
+			return "Unknown";
+		}
+		// The translation key string is only built on a cache miss now.
+		return BIOME_NAMES.computeIfAbsent(key.get(), biome -> {
+			var id = biome.identifier();
+			return Component.translatable("biome." + id.getNamespace() + "." + id.getPath()).getString();
+		});
+	}
+
+	public static String dimension(LocalPlayer player) {
+		ResourceKey<Level> key = player.level().dimension();
+		if (key != cachedDimension) {
+			cachedDimension = key;
+			cachedDimensionName = key.identifier().getPath().toUpperCase();
+		}
+		return cachedDimensionName;
 	}
 
 	public static String direction(LocalPlayer player) {
@@ -63,7 +82,7 @@ public class CoordinatesModule extends HudModule {
 			h = 0;
 			return;
 		}
-		String dimension = player.level().dimension().identifier().getPath().toUpperCase();
+		String dimension = dimension(player);
 		if (layout == Layout.HORIZONTAL) {
 			int cursor = x;
 			int first = Hud.chip(graphics, font, cursor, y, "XYZ", xyz(player));

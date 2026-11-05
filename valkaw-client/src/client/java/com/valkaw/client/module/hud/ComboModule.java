@@ -12,7 +12,7 @@ public class ComboModule extends HudModule {
 	private static long lastHit;
 
 	public ComboModule() {
-		super("combo", "Combo", 60, 4);
+		super("combo", "Combo", 60, 3);
 	}
 
 	/** Called from the attack hook. */

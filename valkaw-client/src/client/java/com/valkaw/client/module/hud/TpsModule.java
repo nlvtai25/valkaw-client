@@ -16,7 +16,7 @@ public class TpsModule extends HudModule {
 	private String text = "20.0";
 
 	public TpsModule() {
-		super("tps", "TPS", 4, 225);
+		super("tps", "TPS", 3, 225);
 		setEnabled(true);
 	}
 

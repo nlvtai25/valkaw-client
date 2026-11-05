@@ -11,7 +11,7 @@ import net.minecraft.client.player.LocalPlayer;
 
 public class PingModule extends HudModule {
 	public PingModule() {
-		super("ping", "Ping", 4, 30);
+		super("ping", "Ping", 3, 30);
 	}
 
 	@Override

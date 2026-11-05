@@ -152,12 +152,12 @@ public final class ChatSymbolPanel {
 
 	private static void drawSymbols(GuiGraphics graphics, int gx, int gy, int mouseX, int mouseY) {
 		Font font = Minecraft.getInstance().font;
-		for (int i = 0; i < SYMBOLS.length; i++) {
+		// Only the visible slice is drawn; SYMBOLS can hold thousands of entries.
+		int first = scrollRow * COLS;
+		int last = Math.min(SYMBOLS.length, first + ROWS * COLS);
+		for (int i = first; i < last; i++) {
 			int col = i % COLS;
 			int row = i / COLS - scrollRow;
-			if (row < 0 || row >= ROWS) {
-				continue;
-			}
 			int x = gx + col * CELL;
 			int y = gy + row * CELL;
 			boolean hot = inside(mouseX, mouseY, x, y, CELL - 2, CELL - 2);

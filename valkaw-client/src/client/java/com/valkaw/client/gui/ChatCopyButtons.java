@@ -24,6 +24,9 @@ public final class ChatCopyButtons {
 	private static final Pattern STAMP = Pattern.compile("^(?:[&§].)*\\[\\d{1,2}:\\d{2}(:\\d{2})?(\\s?[AP]M)?\\]\\s?");
 	/** Color value to legacy code, so a copied line keeps the colors the server sent. */
 	private static final Map<Integer, ChatFormatting> BY_COLOR = new HashMap<>();
+	private static final String HEX = "0123456789ABCDEF";
+	/** codes() result per style; chat lines reuse the same handful of styles every frame. */
+	private static final Map<Style, String> CODE_CACHE = new HashMap<>();
 
 	static {
 		for (ChatFormatting formatting : ChatFormatting.values()) {
@@ -113,6 +116,10 @@ public final class ChatCopyButtons {
 	}
 
 	private static String codes(Style style) {
+		String cached = CODE_CACHE.get(style);
+		if (cached != null) {
+			return cached;
+		}
 		StringBuilder out = new StringBuilder();
 		TextColor color = style.getColor();
 		if (color != null) {
@@ -121,7 +128,8 @@ public final class ChatCopyButtons {
 				out.append('&').append(formatting.getChar());
 			} else {
 				// One "&#RRGGBB" token instead of the six-codepoint vanilla form.
-				out.append("&#").append(String.format("%06X", color.getValue() & 0xFFFFFF));
+				out.append("&#");
+				appendHex(out, color.getValue() & 0xFFFFFF);
 			}
 		}
 		if (style.isBold()) {
@@ -139,7 +147,18 @@ public final class ChatCopyButtons {
 		if (style.isObfuscated()) {
 			out.append("&k");
 		}
-		return out.toString();
+		String result = out.toString();
+		if (CODE_CACHE.size() > 256) {
+			CODE_CACHE.clear();
+		}
+		CODE_CACHE.put(style, result);
+		return result;
+	}
+
+	private static void appendHex(StringBuilder out, int rgb) {
+		for (int shift = 20; shift >= 0; shift -= 4) {
+			out.append(HEX.charAt((rgb >> shift) & 0xF));
+		}
 	}
 
 	private record Entry(int x, int y, int w, int h, String text) {
