@@ -4,10 +4,12 @@ import com.valkaw.client.module.Category;
 import com.valkaw.client.module.Module;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
+import org.lwjgl.glfw.GLFW;
 
 public class ToggleSprintModule extends Module {
 	public ToggleSprintModule() {
 		super("toggle-sprint", "Toggle Sprint", Category.UTILITY);
+		setKey(GLFW.GLFW_KEY_V);
 	}
 
 	@Override

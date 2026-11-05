@@ -2,32 +2,17 @@ package com.valkaw.client.module.utility;
 
 import com.valkaw.client.module.Category;
 import com.valkaw.client.module.Module;
-import net.minecraft.client.Minecraft;
-import net.minecraft.network.chat.Component;
-import org.lwjgl.glfw.GLFW;
 
-/** Copies the latest chat message; ChatComponentMixin keeps the plain text. */
+/** Adds a Copy chip next to every chat line; the chip and its click live in ChatComponentMixin and ChatCopyButtons. */
 public class CopyChatModule extends Module {
-	private static String last = "";
-
 	public CopyChatModule() {
-		super("copy-chat", "Copy Chat", Category.UTILITY, true);
-		setKey(GLFW.GLFW_KEY_F8);
+		super("copy-chat", "Copy Chat", Category.UTILITY);
+		setEnabled(true);
 	}
 
-	public static void remember(Component message) {
-		last = message.getString();
-	}
-
+	/** Copying is done with the per-line chip, so this module has no key bind. */
 	@Override
-	public String status() {
-		return "READY";
-	}
-
-	@Override
-	public void onKey() {
-		if (!last.isBlank()) {
-			Minecraft.getInstance().keyboardHandler.setClipboard(last);
-		}
+	public boolean keybindable() {
+		return false;
 	}
 }

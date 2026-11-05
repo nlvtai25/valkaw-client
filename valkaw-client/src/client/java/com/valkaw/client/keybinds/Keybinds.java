@@ -36,7 +36,7 @@ public final class Keybinds {
 				Identifier.fromNamespaceAndPath("valkawclient", "main"));
 		for (Module module : ModuleManager.get().all())
 		{
-			if (!module.keybindable() || module.key() < 0)
+			if (!module.keybindable())
 			{
 				continue;
 			}
@@ -48,6 +48,10 @@ public final class Keybinds {
 	/** Key state as bound in Controls, which may differ from the key stored on the module. */
 	public static boolean down(Module module)
 	{
+		if (!module.keybindable())
+		{
+			return false;
+		}
 		KeyMapping mapping = MAPPINGS.get(module.id());
 		if (mapping != null)
 		{
@@ -60,8 +64,13 @@ public final class Keybinds {
 	}
 
 	/**
-	 * Keeps the two places a key can be edited in step: our own binding screen and
-	 * the vanilla Controls screen. Whichever side moved last wins.
+	 * Keeps the two places a key can be edited in step: our own binding screen
+	 * and the vanilla Controls screen. Whichever side moved last wins.
+	 *
+	 * <p>Direction detection: the module key and the vanilla mapping normally
+	 * agree. When they diverge, the side whose value still matches the last
+	 * synced value is the one that stayed still, so the other side moved and
+	 * its value is adopted.
 	 */
 	public static void sync()
 	{
@@ -77,28 +86,64 @@ public final class Keybinds {
 			{
 				continue;
 			}
-			int bound = KeyBindingHelper.getBoundKeyOf(entry.getValue()).getValue();
+			KeyMapping mapping = entry.getValue();
+			int bound = KeyBindingHelper.getBoundKeyOf(mapping).getValue();
 			int key = module.key();
 			Integer last = LAST.get(module.id());
 			if (last == null)
 			{
+				// First sight: trusted the live vanilla binding, which may have
+				// loaded a different key from options.txt than the module's own
+				// config; align both sides on it.
+				if (key != bound)
+				{
+					module.setKey(bound);
+					changed = true;
+				}
+				LAST.put(module.id(), bound);
+				continue;
+			}
+			if (bound == key)
+			{
 				LAST.put(module.id(), key);
 				continue;
 			}
-			if (bound != last && key == last)
+			if (bound == last)
 			{
-				module.setKey(bound);
-				changed = true;
+				// The module side moved (our binding screen): push it to the vanilla mapping.
+				mapping.setKey(key < 0 ? InputConstants.UNKNOWN : InputConstants.Type.KEYSYM.getOrCreate(key));
+				LAST.put(module.id(), key);
+				continue;
 			}
-			else if (key != last && bound == last)
-			{
-				entry.getValue().setKey(key < 0 ? InputConstants.UNKNOWN : InputConstants.Type.KEYSYM.getOrCreate(key));
-			}
-			LAST.put(module.id(), module.key());
+			// The vanilla side moved (player edited Controls): adopt it on the module.
+			module.setKey(bound);
+			changed = true;
+			LAST.put(module.id(), bound);
 		}
 		if (changed)
 		{
 			ModuleManager.get().save();
+		}
+	}
+
+	/**
+	 * Pushes the module's current key straight to its vanilla key mapping (used by the
+	 * in-mod binding screen so it matches Options > Controls immediately).
+	 */
+	public static void apply(Module module)
+	{
+		KeyMapping mapping = MAPPINGS.get(module.id());
+		if (mapping == null)
+		{
+			return;
+		}
+		int key = module.key();
+		mapping.setKey(key < 0 ? InputConstants.UNKNOWN : InputConstants.Type.KEYSYM.getOrCreate(key));
+		LAST.put(module.id(), module.key());
+		Minecraft mc = Minecraft.getInstance();
+		if (mc != null && mc.options != null)
+		{
+			mc.options.save();
 		}
 	}
 }

@@ -34,16 +34,14 @@ public final class Hud {
 		return style;
 	}
 
-	public static TextStyle effective() {
-		return effective;
-	}
-
 	public static int color() {
 		return effective.color();
 	}
 
+	/** Module prefix in "[NAME]" form; a custom prefix keeps its own brackets. */
 	public static String label(String fallback) {
-		return style.prefix().isBlank() ? fallback : style.prefix();
+		String text = style.prefix().isBlank() ? fallback : style.prefix();
+		return text.startsWith("[") ? text : "[" + text + "]";
 	}
 
 	/** Draws a "LABEL value" chip and returns its width. */
@@ -56,7 +54,6 @@ public final class Hud {
 		int labelWidth = width(font, label);
 		int width = 9 + labelWidth + 3 + width(font, value);
 		graphics.fill(x, y, x + width, y + 11, BG);
-		graphics.fill(x, y, x + 1, y + 11, color());
 		text(graphics, font, label, x + 4, y + 2);
 		text(graphics, font, value, x + 4 + labelWidth + 3, y + 2);
 		return width;
@@ -67,7 +64,6 @@ public final class Hud {
 		String text = label(label);
 		int width = 8 + width(font, text);
 		graphics.fill(x, y, x + width, y + 11, BG);
-		graphics.fill(x, y, x + 1, y + 11, color());
 		text(graphics, font, text, x + 4, y + 2);
 		return width;
 	}
@@ -84,29 +80,29 @@ public final class Hud {
 	public static int value(GuiGraphics graphics, Font font, int x, int y, String value, int color) {
 		int width = 9 + width(font, value);
 		graphics.fill(x, y, x + width, y + 11, BG);
-		graphics.fill(x, y, x + 1, y + 11, color);
 		graphics.drawString(font, value, x + 4, y + 2, color, false);
 		return width;
 	}
 
 	public static int width(Font font, String text) {
-		String plain = strip(text);
-		if (plain.isEmpty()) {
+		if (text == null || text.isEmpty()) {
 			return 0;
 		}
 		if (font != cachedFont) {
 			WIDTHS.clear();
 			cachedFont = font;
 		}
-		Integer cached = WIDTHS.get(plain);
+		Integer cached = WIDTHS.get(text);
 		if (cached != null) {
 			return cached;
 		}
-		int value = font.width(plain);
+		// Measure the styled component so bold &-codes widen the chip like they
+		// do when drawn, instead of under-measuring the plain text.
+		int value = hasCodes(text) ? font.width(component(text)) : font.width(text);
 		if (WIDTHS.size() > 256) {
 			WIDTHS.clear();
 		}
-		WIDTHS.put(plain, value);
+		WIDTHS.put(text, value);
 		return value;
 	}
 
@@ -116,7 +112,7 @@ public final class Hud {
 			return;
 		}
 		if (hasCodes(text)) {
-			graphics.drawString(font, component(text, effective), x, y, effective.color(), false);
+			graphics.drawString(font, component(text), x, y, effective.color(), false);
 			return;
 		}
 		// shortcut: per-char draw allocates a String and re-measures the glyph; only animated styles pay it.
@@ -135,27 +131,11 @@ public final class Hud {
 		graphics.drawString(font, text, x, y, effective.color(), false);
 	}
 
-	public static String strip(String text) {
-		if (text == null || text.indexOf('&') < 0 && text.indexOf('§') < 0) {
-			return text == null ? "" : text;
-		}
-		StringBuilder out = new StringBuilder(text.length());
-		for (int i = 0; i < text.length(); i++) {
-			char c = text.charAt(i);
-			if ((c == '&' || c == '§') && i + 1 < text.length()) {
-				i++;
-				continue;
-			}
-			out.append(c);
-		}
-		return out.toString();
-	}
-
 	private static boolean hasCodes(String text) {
 		return text.indexOf('&') >= 0 || text.indexOf('§') >= 0;
 	}
 
-	private static Component component(String text, TextStyle style) {
+	private static Component component(String text) {
 		MutableComponent root = Component.empty();
 		StringBuilder part = new StringBuilder();
 		ChatFormatting current = null;

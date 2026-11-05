@@ -5,7 +5,9 @@ import com.valkaw.client.hud.Hud;
 import com.valkaw.client.module.HudModule;
 import com.valkaw.client.module.Layout;
 import com.valkaw.client.module.Setting;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -13,6 +15,8 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
 
 public class CoordinatesModule extends HudModule {
+	private static final Map<String, String> BIOME_NAMES = new HashMap<>();
+
 	private Layout layout = Layout.VERTICAL;
 	private boolean showDimension = true;
 	private boolean showBiome = true;
@@ -30,8 +34,9 @@ public class CoordinatesModule extends HudModule {
 
 	public static String biome(LocalPlayer player) {
 		return player.level().getBiome(player.blockPosition()).unwrapKey()
-				.map(key -> Component.translatable("biome." + key.identifier().getNamespace() + "."
-						+ key.identifier().getPath()).getString())
+				.map(key -> BIOME_NAMES.computeIfAbsent(
+						"biome." + key.identifier().getNamespace() + "." + key.identifier().getPath(),
+						name -> Component.translatable(name).getString()))
 				.orElse("Unknown");
 	}
 
@@ -64,13 +69,13 @@ public class CoordinatesModule extends HudModule {
 			int first = Hud.chip(graphics, font, cursor, y, "XYZ", xyz(player));
 			cursor += first + 2;
 			if (showDimension) {
-				cursor += Hud.chipRaw(graphics, font, cursor, y, "DIM", dimension) + 2;
+				cursor += Hud.chip(graphics, font, cursor, y, "Dim", dimension) + 2;
 			}
 			if (showDirection) {
-				cursor += Hud.chipRaw(graphics, font, cursor, y, "FACING", direction(player)) + 2;
+				cursor += Hud.chip(graphics, font, cursor, y, "Facing", direction(player)) + 2;
 			}
 			if (showBiome) {
-				cursor += Hud.chipRaw(graphics, font, cursor, y, "BIOME", biome(player)) + 2;
+				cursor += Hud.chip(graphics, font, cursor, y, "Biome", biome(player)) + 2;
 			}
 			w = cursor - x - 2;
 			h = 11;
@@ -79,13 +84,13 @@ public class CoordinatesModule extends HudModule {
 		int line = 1;
 		w = Hud.chip(graphics, font, x, y, "XYZ", xyz(player));
 		if (showDimension) {
-			w = Math.max(w, Hud.chipRaw(graphics, font, x, y + line++ * 11, "DIM", dimension));
+			w = Math.max(w, Hud.chip(graphics, font, x, y + line++ * 11, "Dim", dimension));
 		}
 		if (showDirection) {
-			w = Math.max(w, Hud.chipRaw(graphics, font, x, y + line++ * 11, "FACING", direction(player)));
+			w = Math.max(w, Hud.chip(graphics, font, x, y + line++ * 11, "Facing", direction(player)));
 		}
 		if (showBiome) {
-			w = Math.max(w, Hud.chipRaw(graphics, font, x, y + line++ * 11, "BIOME", biome(player)));
+			w = Math.max(w, Hud.chip(graphics, font, x, y + line++ * 11, "Biome", biome(player)));
 		}
 		h = line * 11;
 	}

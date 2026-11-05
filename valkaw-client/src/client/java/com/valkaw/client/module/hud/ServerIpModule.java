@@ -23,7 +23,7 @@ public class ServerIpModule extends HudModule {
 		} else if (mc.hasSingleplayerServer()) {
 			value = "SINGLEPLAYER";
 		}
-		w = Hud.chip(graphics, font, x, y, "SERVER", value);
+		w = Hud.chip(graphics, font, x, y, "Server", value);
 		h = 11;
 	}
 }

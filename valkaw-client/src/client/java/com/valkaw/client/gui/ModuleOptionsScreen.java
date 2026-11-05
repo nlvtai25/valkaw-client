@@ -3,11 +3,13 @@ package com.valkaw.client.gui;
 import com.mojang.blaze3d.platform.InputConstants;
 import com.valkaw.client.module.Anchor;
 import com.valkaw.client.module.HudModule;
+import com.valkaw.client.keybinds.Keybinds;
 import com.valkaw.client.module.Module;
 import com.valkaw.client.module.ModuleManager;
 import com.valkaw.client.module.Setting;
 import com.valkaw.client.module.TextStyle;
 import com.valkaw.client.module.hud.CrosshairModule;
+import com.valkaw.client.module.utility.AutoTextModule;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -26,9 +28,10 @@ import org.lwjgl.glfw.GLFW;
 public class ModuleOptionsScreen extends Screen {
 	private static final Set<String> NO_STYLE = Set.of("freelook", "copy-chat", "chat-timestamps",
 			"no-bobbing", "no-hurt-cam", "copy-coords", "no-fire", "clear-water-lava", "no-pumpkin",
-			"zoom", "toggle-sprint", "toggle-sneak");
+			"zoom", "toggle-sprint", "toggle-sneak", "auto-text");
 	private static final int ROW_H = 32;
 	private static final int ROW_GAP = 3;
+	private static final int SEGMENT_GAP = 4;
 	private static final String CODES = "0123456789abcdef";
 
 	private final Screen parent;
@@ -53,6 +56,10 @@ public class ModuleOptionsScreen extends Screen {
 	private boolean color2;
 	private Setting slider;
 	private List<Setting> rows;
+	private List<AutoTextModule.Entry> atEntries;
+	private int atBinding = -1;
+	private int atEditing = -1;
+	private String atBuffer = "";
 
 	public ModuleOptionsScreen(Screen parent, Module module) {
 		super(Component.literal(module.name() + " Options"));
@@ -78,6 +85,14 @@ public class ModuleOptionsScreen extends Screen {
 		listX = styled ? styleX + styleW + 14 : winX + 16;
 		listW = winX + winW - 16 - listX;
 		rows = buildSettings();
+		if (module instanceof AutoTextModule at) {
+			atEntries = new ArrayList<>();
+			for (AutoTextModule.Entry entry : at.entries()) {
+				atEntries.add(new AutoTextModule.Entry(entry.text, entry.key, entry.mods));
+			}
+			atBinding = -1;
+			atEditing = -1;
+		}
 	}
 
 	@Override
@@ -180,7 +195,9 @@ public class ModuleOptionsScreen extends Screen {
 
 	private void drawSettings(GuiGraphics graphics, int mouseX, int mouseY) {
 		List<Setting> settings = rows;
-		int rows = settings.size() + (module.keybindable() ? 1 : 0);
+		boolean at = module instanceof AutoTextModule;
+		int base = settings.size() + (module.keybindable() ? 1 : 0);
+		int rows = base + (at ? atEntries.size() + 1 : 0);
 		graphics.drawString(font, "OPTIONS", listX, bodyY - 4, Ui.MUTED);
 
 		int top = bodyY + 8;
@@ -195,6 +212,16 @@ public class ModuleOptionsScreen extends Screen {
 				drawRow(graphics, settings.get(index), y, mouseX, mouseY);
 			} else if (index == settings.size() && module.keybindable()) {
 				drawKeyRow(graphics, y, mouseX, mouseY);
+			} else if (at) {
+				int ai = index - base;
+				if (ai == 0 && atEntries.size() < AutoTextModule.MAX_ENTRIES) {
+					drawAddRow(graphics, y, mouseX, mouseY);
+				} else {
+					int ei = ai - 1;
+					if (ei >= 0 && ei < atEntries.size()) {
+						drawAtRow(graphics, ei, y, mouseX, mouseY);
+					}
+				}
 			}
 		}
 		graphics.disableScissor();
@@ -227,6 +254,15 @@ public class ModuleOptionsScreen extends Screen {
 			int w = Ui.width(font, value) + 20;
 			Ui.round(graphics, right - w, y + 6, w, 17, Ui.R_PILL, hot ? Ui.alpha(Ui.ACCENT, 0.8F) : 0x2A7DF9FF);
 			graphics.drawString(font, value, right - w + 10, y + 10, hot ? Ui.INK : Ui.ACCENT, false);
+		} else if (setting.type() == Setting.Type.SEGMENT) {
+			int x = right;
+			for (int i = setting.options().size() - 1; i >= 0; i--) {
+				int w = segmentWidth(setting, i);
+				x -= w;
+		pick(graphics, x, y + 6, w, setting.options().get(i), setting.selected() == i, mouseX, mouseY);
+				x -= SEGMENT_GAP;
+			}
+			return;
 		} else if (setting.type() == Setting.Type.CHOICE) {
 			int w = Ui.width(font, value) + 22;
 			Ui.round(graphics, right - w, y + 6, w, 17, Ui.R_PILL, hot ? 0x22FFFFFF : 0x14FFFFFF);
@@ -246,6 +282,42 @@ public class ModuleOptionsScreen extends Screen {
 		Ui.round(graphics, listX + listW - 10 - w, y + 6, w, 17, Ui.R_PILL,
 				binding ? Ui.alpha(Ui.ACCENT, 0.22F) : 0x14FFFFFF);
 		graphics.drawString(font, key, listX + listW - 10 - w + 10, y + 10, binding ? Ui.ACCENT : Ui.MUTED, false);
+	}
+
+	private void drawAtRow(GuiGraphics graphics, int ai, int y, int mouseX, int mouseY) {
+		AutoTextModule.Entry entry = atEntries.get(ai);
+		boolean hot = over(mouseX, mouseY, listX, y, listW, ROW_H - 4);
+		Ui.round(graphics, listX, y, listW, ROW_H - 4, Ui.R_CARD, hot ? 0xFF16203A : 0xF00F1727);
+		graphics.drawString(font, (ai + 1) + ".", listX + 10, y + 9, Ui.MUTED, false);
+		boolean editingHere = atEditing == ai;
+		String text = editingHere ? atBuffer : (entry.text.isEmpty() ? "(empty)" : entry.text);
+		int textX = listX + 34;
+		graphics.drawString(font, Ui.fit(font, text, listW - 190), textX, y + 9,
+				editingHere ? Ui.ACCENT : (entry.text.isEmpty() ? Ui.MUTED : Ui.TEXT), false);
+		if (editingHere && (System.currentTimeMillis() / 500) % 2 == 0) {
+			int caretX = textX + Ui.width(font, Ui.fit(font, text, listW - 190));
+			graphics.fill(caretX + 1, y + 6, caretX + 2, y + 18, Ui.ACCENT);
+		}
+
+		boolean bindingHere = atBinding == ai;
+		String key = bindingHere ? "PRESS KEY..." : keyNameAt(entry);
+		int w = Ui.width(font, key) + 20;
+		Ui.round(graphics, listX + listW - 40 - w, y + 6, w, 17, Ui.R_PILL,
+				bindingHere ? Ui.alpha(Ui.ACCENT, 0.22F) : 0x14FFFFFF);
+		graphics.drawString(font, key, listX + listW - 40 - w + 10, y + 10,
+				bindingHere ? Ui.ACCENT : Ui.MUTED, false);
+
+		boolean delHover = over(mouseX, mouseY, listX + listW - 30, y + 5, 18, 18);
+		Ui.round(graphics, listX + listW - 30, y + 5, 18, 18, 5,
+				delHover ? Ui.alpha(Ui.RED, 0.18F) : 0x0CFFFFFF);
+		Ui.closeIcon(graphics, listX + listW - 25, y + 11, delHover ? Ui.RED : Ui.MUTED);
+	}
+
+	private void drawAddRow(GuiGraphics graphics, int y, int mouseX, int mouseY) {
+		boolean hot = over(mouseX, mouseY, listX, y, listW, ROW_H - 4);
+		Ui.round(graphics, listX, y, listW, ROW_H - 4, Ui.R_CARD, hot ? 0xFF16203A : 0xF00F1727);
+		graphics.drawString(font, "+ ADD LINE", listX + (listW - Ui.width(font, "+ ADD LINE")) / 2,
+				y + 9, hot ? Ui.ACCENT : Ui.MUTED, false);
 	}
 
 	private void drawFooter(GuiGraphics graphics, int mouseX, int mouseY) {
@@ -287,7 +359,12 @@ public class ModuleOptionsScreen extends Screen {
 			double mouseX, double mouseY) {
 		boolean hot = over(mouseX, mouseY, x, y, w, 16);
 		Ui.round(graphics, x, y, w, 16, 5, active ? Ui.alpha(Ui.ACCENT, 0.18F) : hot ? 0x14FFFFFF : 0x0AFFFFFF);
-		graphics.drawString(font, label, x + 7, y + 4, active ? Ui.ACCENT : Ui.MUTED, false);
+		int tw = Ui.width(font, label);
+		if (tw > w - 6) {
+			label = Ui.fit(font, label, w - 6);
+			tw = Ui.width(font, label);
+		}
+		graphics.drawString(font, label, x + (w - tw) / 2, y + 4, active ? Ui.ACCENT : Ui.MUTED, false);
 	}
 
 	// ------------------------------------------------------------ interaction
@@ -420,6 +497,19 @@ public class ModuleOptionsScreen extends Screen {
 			} else if (setting.type() == Setting.Type.SLIDER) {
 				slider = setting;
 				setSlider(setting, mx);
+			} else if (setting.type() == Setting.Type.SEGMENT) {
+				int sx = listX + listW - 10;
+				int sy = bodyY + 8 + (index - scroll) * (ROW_H + ROW_GAP);
+				for (int i = setting.options().size() - 1; i >= 0; i--) {
+					int w = segmentWidth(setting, i);
+					sx -= w;
+					if (over(mx, my, sx, sy + 6, w, 16)) {
+						setting.pick(i);
+						save();
+						return true;
+					}
+					sx -= SEGMENT_GAP;
+				}
 			} else {
 				setting.cycle();
 				save();
@@ -429,6 +519,45 @@ public class ModuleOptionsScreen extends Screen {
 		if (index == settings.size() && module.keybindable()) {
 			binding = true;
 			return true;
+		}
+		if (module instanceof AutoTextModule) {
+			int base = settings.size() + (module.keybindable() ? 1 : 0);
+			int ai = index - base;
+			int sy = top + (index - scroll) * (ROW_H + ROW_GAP);
+			if (ai == 0 && atEntries.size() < AutoTextModule.MAX_ENTRIES) {
+				atEntries.add(0, new AutoTextModule.Entry());
+				atEditing = 0;
+				atBuffer = "";
+				atBinding = -1;
+				return true;
+			}
+			int ei = ai - 1;
+			if (ei >= 0 && ei < atEntries.size()) {
+				AutoTextModule.Entry entry = atEntries.get(ei);
+				if (over(mx, my, listX + listW - 30, sy + 5, 18, 18)) {
+					atEntries.remove(ei);
+					if (atBinding == ei) {
+						atBinding = -1;
+					}
+					if (atEditing == ei) {
+						atEditing = -1;
+					}
+					applyAt();
+					save();
+					return true;
+				}
+				String key = keyNameAt(entry);
+				int w = Ui.width(font, key) + 20;
+				if (over(mx, my, listX + listW - 40 - w, sy + 6, w, 17)) {
+					atBinding = atBinding == ei ? -1 : ei;
+					atEditing = -1;
+					return true;
+				}
+				atEditing = ei;
+				atBuffer = entry.text;
+				atBinding = -1;
+				return true;
+			}
 		}
 		return false;
 	}
@@ -463,6 +592,47 @@ public class ModuleOptionsScreen extends Screen {
 
 	@Override
 	public boolean keyPressed(KeyEvent event) {
+		if (atEditing >= 0) {
+			if (event.key() == GLFW.GLFW_KEY_ESCAPE) {
+				atEditing = -1;
+				return true;
+			}
+			if (event.key() == GLFW.GLFW_KEY_ENTER || event.key() == GLFW.GLFW_KEY_KP_ENTER) {
+				atEntries.get(atEditing).text = atBuffer;
+				atEditing = -1;
+				applyAt();
+				save();
+				return true;
+			}
+			if (event.key() == GLFW.GLFW_KEY_BACKSPACE) {
+				if (!atBuffer.isEmpty()) {
+					atBuffer = atBuffer.substring(0, atBuffer.length() - 1);
+				}
+				return true;
+			}
+			return false;
+		}
+		if (atBinding >= 0) {
+			if (event.key() == GLFW.GLFW_KEY_ESCAPE) {
+				AutoTextModule.Entry entry = atEntries.get(atBinding);
+				entry.key = -1;
+				entry.mods = 0;
+				atBinding = -1;
+				applyAt();
+				save();
+				return true;
+			}
+			if (isModifierKey(event.key())) {
+				return true;
+			}
+			AutoTextModule.Entry entry = atEntries.get(atBinding);
+			entry.key = event.key();
+			entry.mods = currentMods();
+			atBinding = -1;
+			applyAt();
+			save();
+			return true;
+		}
 		if (editing != null) {
 			if (event.key() == GLFW.GLFW_KEY_ESCAPE) {
 				editing = null;
@@ -484,6 +654,7 @@ public class ModuleOptionsScreen extends Screen {
 		}
 		if (binding) {
 			module.setKey(event.key() == GLFW.GLFW_KEY_ESCAPE ? -1 : event.key());
+			Keybinds.apply(module);
 			binding = false;
 			save();
 			return true;
@@ -497,6 +668,12 @@ public class ModuleOptionsScreen extends Screen {
 
 	@Override
 	public boolean charTyped(CharacterEvent event) {
+		if (atEditing >= 0) {
+			if (event.codepoint() >= 32 && event.codepoint() != 127 && atBuffer.length() < 64) {
+				atBuffer += event.codepointAsString();
+			}
+			return true;
+		}
 		if (editing != null) {
 			if (event.codepoint() >= 32 && event.codepoint() != 127 && editBuffer.length() < 64) {
 				editBuffer += event.codepointAsString();
@@ -525,6 +702,15 @@ public class ModuleOptionsScreen extends Screen {
 		return list;
 	}
 
+	private int segmentWidth(Setting setting, int index) {
+		List<String> options = setting.options();
+		if (options == null || options.isEmpty()) {
+			return Ui.width(font, setting.value()) + 18;
+		}
+		String s = options.get(index);
+		return Math.min(Ui.width(font, s) + 26, (int) (listW * 0.48));
+	}
+
 	private void setSlider(Setting setting, double mouseX) {
 		int barW = Math.min(120, Math.max(60, listW / 3));
 		int barX = listX + listW - 10 - barW;
@@ -542,6 +728,52 @@ public class ModuleOptionsScreen extends Screen {
 		}
 		String name = InputConstants.Type.KEYSYM.getOrCreate(key).getDisplayName().getString().toUpperCase(Locale.ROOT);
 		return Ui.fit(font, name, 100);
+	}
+
+	private String keyNameAt(AutoTextModule.Entry entry) {
+		if (entry.key < 0) {
+			return "NONE";
+		}
+		StringBuilder sb = new StringBuilder();
+		if ((entry.mods & AutoTextModule.MOD_CTRL) != 0) {
+			sb.append("CTRL+");
+		}
+		if ((entry.mods & AutoTextModule.MOD_SHIFT) != 0) {
+			sb.append("SHIFT+");
+		}
+		if ((entry.mods & AutoTextModule.MOD_ALT) != 0) {
+			sb.append("ALT+");
+		}
+		sb.append(InputConstants.Type.KEYSYM.getOrCreate(entry.key).getDisplayName().getString().toUpperCase(Locale.ROOT));
+		return Ui.fit(font, sb.toString(), 100);
+	}
+
+	private static boolean isModifierKey(int key) {
+		return key == GLFW.GLFW_KEY_LEFT_CONTROL || key == GLFW.GLFW_KEY_RIGHT_CONTROL
+				|| key == GLFW.GLFW_KEY_LEFT_SHIFT || key == GLFW.GLFW_KEY_RIGHT_SHIFT
+				|| key == GLFW.GLFW_KEY_LEFT_ALT || key == GLFW.GLFW_KEY_RIGHT_ALT;
+	}
+
+	private int currentMods() {
+		com.mojang.blaze3d.platform.Window window = minecraft.getWindow();
+		int mods = 0;
+		if (InputConstants.isKeyDown(window, GLFW.GLFW_KEY_LEFT_CONTROL)
+				|| InputConstants.isKeyDown(window, GLFW.GLFW_KEY_RIGHT_CONTROL)) {
+			mods |= AutoTextModule.MOD_CTRL;
+		}
+		if (InputConstants.isKeyDown(window, GLFW.GLFW_KEY_LEFT_SHIFT)
+				|| InputConstants.isKeyDown(window, GLFW.GLFW_KEY_RIGHT_SHIFT)) {
+			mods |= AutoTextModule.MOD_SHIFT;
+		}
+		if (InputConstants.isKeyDown(window, GLFW.GLFW_KEY_LEFT_ALT)
+				|| InputConstants.isKeyDown(window, GLFW.GLFW_KEY_RIGHT_ALT)) {
+			mods |= AutoTextModule.MOD_ALT;
+		}
+		return mods;
+	}
+
+	private void applyAt() {
+		((AutoTextModule) module).setEntries(atEntries);
 	}
 
 	private int accent() {
@@ -571,6 +803,9 @@ public class ModuleOptionsScreen extends Screen {
 
 	@Override
 	public void onClose() {
+		if (module instanceof AutoTextModule) {
+			applyAt();
+		}
 		ModuleManager.get().save();
 		minecraft.setScreen(parent);
 	}

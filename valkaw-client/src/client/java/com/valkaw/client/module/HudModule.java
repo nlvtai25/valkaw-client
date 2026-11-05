@@ -82,21 +82,21 @@ public abstract class HudModule extends Module {
 
 	/** Right-anchored modules follow the right edge after a resize. */
 	public void applyAnchor(int screenWidth) {
-		if (linked())
+		if (parent() != null)
 		{
 			// The position comes from the element this one is attached to.
 			return;
 		}
 		if (anchor == Anchor.RIGHT)
 		{
-			x = Math.max(0, screenWidth - rightOffset - anchorWidth());
+			x = Math.max(0, screenWidth - rightOffset - editorWidth());
 		}
 	}
 
 	public void setAnchor(Anchor side, int screenWidth) {
 		if (side == Anchor.RIGHT)
 		{
-			rightOffset = Math.max(0, screenWidth - (x + anchorWidth()));
+			rightOffset = Math.max(0, screenWidth - (x + editorWidth()));
 		}
 		anchor = side;
 	}
@@ -108,7 +108,7 @@ public abstract class HudModule extends Module {
 		if (side == Anchor.RIGHT)
 		{
 			rightOffset = 4;
-			x = Math.max(0, screenWidth - anchorWidth() - rightOffset);
+			x = Math.max(0, screenWidth - editorWidth() - rightOffset);
 		} else {
 			x = 4;
 		}
@@ -153,29 +153,25 @@ public abstract class HudModule extends Module {
 		}
 		if (linkSide == Link.RIGHT)
 		{
-			x = parent.x() + parent.anchorWidth();
+			x = parent.x() + parent.editorWidth();
 			y = parent.y();
 		} else if (linkSide == Link.LEFT) {
-			x = parent.x() - anchorWidth();
+			x = parent.x() - editorWidth();
 			y = parent.y();
 		} else if (linkSide == Link.BELOW) {
 			x = parent.x();
-			y = parent.y() + parent.anchorHeight();
+			y = parent.y() + parent.editorHeight();
 		} else {
 			x = parent.x();
-			y = parent.y() - anchorHeight();
+			y = parent.y() - editorHeight();
 		}
 		return true;
 	}
 
 	/** The element this one is attached to, or null when the chain is broken. */
 	public HudModule parent() {
-		if (!linked())
-		{
-			return null;
-		}
-		Object target = ModuleManager.get().byId(linkId);
-		if (!(target instanceof HudModule parent) || parent == this || !parent.isEnabled())
+		HudModule parent = resolveParent();
+		if (parent == null)
 		{
 			return null;
 		}
@@ -187,17 +183,23 @@ public abstract class HudModule extends Module {
 			{
 				return null;
 			}
-			walk = walk.parent();
+			walk = walk.resolveParent();
 		}
 		return parent;
 	}
 
-	private int anchorWidth() {
-		return width() > 0 ? width() : editorWidth();
-	}
-
-	private int anchorHeight() {
-		return height() > 0 ? height() : editorHeight();
+	/** Linked parent without the cycle walk, so {@link #parent()} stays iterative. */
+	private HudModule resolveParent() {
+		if (!linked())
+		{
+			return null;
+		}
+		Object target = ModuleManager.get().byId(linkId);
+		if (!(target instanceof HudModule parent) || parent == this || !parent.isEnabled())
+		{
+			return null;
+		}
+		return parent;
 	}
 
 	public Anchor anchor() {

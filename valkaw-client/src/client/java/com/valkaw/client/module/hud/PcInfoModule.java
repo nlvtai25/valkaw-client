@@ -2,7 +2,6 @@ package com.valkaw.client.module.hud;
 
 import com.google.gson.JsonObject;
 import com.valkaw.client.hud.Hud;
-import com.valkaw.client.module.Anchor;
 import com.valkaw.client.module.HudModule;
 import com.valkaw.client.module.Layout;
 import com.valkaw.client.module.Setting;
@@ -48,35 +47,31 @@ public class PcInfoModule extends HudModule {
 	public void render(GuiGraphics graphics, Font font) {
 		sample();
 		String cpuLabel = Hud.label("CPU");
+		String gpuLabel = "[GPU]";
+		String ramLabel = "[RAM]";
 		if (layout == Layout.HORIZONTAL) {
 			int cursor = x;
 			cursor += Hud.chip(graphics, font, cursor, y, "CPU", cpu) + 2;
-			cursor += Hud.chipRaw(graphics, font, cursor, y, "GPU", gpu) + 2;
-			w = cursor - x + Hud.chipRaw(graphics, font, cursor, y, "RAM", ram);
+			cursor += Hud.chipRaw(graphics, font, cursor, y, gpuLabel, gpu) + 2;
+			w = cursor - x + Hud.chipRaw(graphics, font, cursor, y, ramLabel, ram);
 			h = 11;
 			return;
 		}
 		// Rows share one width so the labels line up on the left and the values
 		// line up on the right, whichever side of the screen the HUD sits on.
-		int labelWidth = Math.max(Hud.width(font, cpuLabel), Math.max(Hud.width(font, "GPU"), Hud.width(font, "RAM")));
+		int labelWidth = Math.max(Hud.width(font, cpuLabel), Math.max(Hud.width(font, gpuLabel), Hud.width(font, ramLabel)));
 		int valueWidth = Math.max(Hud.width(font, cpu), Math.max(Hud.width(font, gpu), Hud.width(font, ram)));
 		int rowWidth = 14 + labelWidth + valueWidth;
-		boolean flip = anchor() == Anchor.RIGHT;
-		row(graphics, font, x, y, rowWidth, cpuLabel, cpu, flip);
-		row(graphics, font, x, y + 11, rowWidth, "GPU", gpu, flip);
-		row(graphics, font, x, y + 22, rowWidth, "RAM", ram, flip);
+		row(graphics, font, x, y, rowWidth, cpuLabel, cpu);
+		row(graphics, font, x, y + 11, rowWidth, gpuLabel, gpu);
+		row(graphics, font, x, y + 22, rowWidth, ramLabel, ram);
 		w = rowWidth;
 		h = 33;
 	}
 
 	/** One "LABEL value" line; the value is pushed to the opposite edge of the row. */
-	private void row(GuiGraphics graphics, Font font, int x, int y, int width, String label, String value, boolean flip) {
+	private void row(GuiGraphics graphics, Font font, int x, int y, int width, String label, String value) {
 		graphics.fill(x, y, x + width, y + 11, Hud.BG);
-		if (flip) {
-			graphics.fill(x + width - 1, y, x + width, y + 11, Hud.color());
-		} else {
-			graphics.fill(x, y, x + 1, y + 11, Hud.color());
-		}
 		Hud.text(graphics, font, label, x + 4, y + 2);
 		Hud.text(graphics, font, value, x + width - 4 - Hud.width(font, value), y + 2);
 	}

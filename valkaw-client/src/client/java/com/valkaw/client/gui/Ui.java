@@ -268,14 +268,22 @@ public final class Ui {
 
 	/** Trims text to fit, appending an ellipsis when it does not. */
 	public static String fit(Font font, String text, int maxWidth) {
-		if (text == null || width(font, text) <= maxWidth) {
+		if (text == null || text.isEmpty() || font.width(text) <= maxWidth) {
 			return text == null ? "" : text;
 		}
-		String cut = text;
-		while (cut.length() > 1 && width(font, cut + "...") > maxWidth) {
-			cut = cut.substring(0, cut.length() - 1);
+		// Measure directly on the font: width() would cache one throwaway entry per
+		// candidate length and clear the shared cache once it fills up.
+		int low = 0;
+		int high = text.length();
+		while (low < high) {
+			int mid = (low + high + 1) >>> 1;
+			if (font.width(text.substring(0, mid) + "...") <= maxWidth) {
+				low = mid;
+			} else {
+				high = mid - 1;
+			}
 		}
-		return cut + "...";
+		return text.substring(0, Math.max(1, low)) + "...";
 	}
 
 	// ---------------------------------------------------------------- widgets

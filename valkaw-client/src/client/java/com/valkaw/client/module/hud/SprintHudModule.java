@@ -6,7 +6,7 @@ import com.valkaw.client.module.ModuleManager;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 
-/** Shows the Toggle Sprint state; empty in the editor when the toggle is off. */
+/** Shows the Toggle Sprint state as an ON/OFF chip, always visible while enabled. */
 public class SprintHudModule extends HudModule {
 	public SprintHudModule() {
 		super("sprint-hud", "Sprint HUD", 4, 199);
@@ -20,12 +20,8 @@ public class SprintHudModule extends HudModule {
 
 	@Override
 	public void render(GuiGraphics graphics, Font font) {
-		if (!ModuleManager.isOn("toggle-sprint")) {
-			w = 0;
-			h = 0;
-			return;
-		}
-		w = Hud.chip(graphics, font, x, y, "SPRINT", "ON");
+		boolean on = ModuleManager.isOn("toggle-sprint");
+		w = Hud.chip(graphics, font, x, y, "Sprint", on ? "ON" : "OFF");
 		h = 11;
 	}
 }

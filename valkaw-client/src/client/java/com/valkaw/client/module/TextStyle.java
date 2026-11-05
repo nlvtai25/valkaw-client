@@ -1,8 +1,8 @@
 package com.valkaw.client.module;
 
 import com.google.gson.JsonObject;
-import java.awt.Color;
 import net.minecraft.ChatFormatting;
+import net.minecraft.util.Mth;
 
 /** Per-module HUD colour and prefix. Colours are ARGB; BASIC uses a vanilla colour code. */
 public final class TextStyle {
@@ -50,9 +50,10 @@ public final class TextStyle {
 		String value = basic == null ? "" : basic.trim();
 		if (value.length() >= 2 && (value.charAt(0) == '&' || value.charAt(0) == '§')) {
 			char code = Character.toLowerCase(value.charAt(1));
-			if (ChatFormatting.getByCode(code) != null) {
+			ChatFormatting formatting = ChatFormatting.getByCode(code);
+			if (formatting != null) {
 				this.basic = "&" + code;
-				Integer rgb = ChatFormatting.getByCode(code).getColor();
+				Integer rgb = formatting.getColor();
 				if (rgb != null) {
 					this.color = 0xFF000000 | rgb;
 				}
@@ -150,7 +151,7 @@ public final class TextStyle {
 
 	private static int rainbow(long millis, int offset) {
 		float hue = ((millis % 6000L) / 6000.0F + offset * 0.045F) % 1.0F;
-		return 0xFF000000 | Color.HSBtoRGB(hue, 0.65F, 1.0F);
+		return 0xFF000000 | Mth.hsvToRgb(hue, 0.65F, 1.0F);
 	}
 
 	private static int pulse(int argb, long millis) {

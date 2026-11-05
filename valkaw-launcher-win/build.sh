@@ -21,4 +21,4 @@ if [ ! -s webview2/MicrosoftEdgeWebView2Setup.exe ]; then
   curl -fsSL "https://go.microsoft.com/fwlink/p/?LinkId=2124703" -o webview2/MicrosoftEdgeWebView2Setup.exe
 fi
 
-wails build -platform windows/amd64 -o valkaw-launcher-win.exe "$@"
+wails build -platform windows/amd64 -skipbindings -o valkaw-launcher-win.exe "$@"

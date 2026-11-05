@@ -78,7 +78,7 @@ func NewApp(version string) *App {
 		Version:         defaultMCVersion,
 		Profile:         "gl",
 		Username:        "Player",
-		MemoryMB:        4096,
+		MemoryMB:        3072,
 		WindowWidth:     1280,
 		WindowHeight:    720,
 		AutoUpdate:      true,
@@ -157,7 +157,7 @@ func (a *App) Startup(ctx context.Context) {
 	a.config.LauncherVersion = a.version
 	a.config.Platform = runtime.GOOS
 	if a.config.MemoryMB == 0 {
-		a.config.MemoryMB = 4096
+		a.config.MemoryMB = 3072
 	}
 	a.config.WindowWidth, a.config.WindowHeight = windowSize(a.config.WindowWidth, a.config.WindowHeight)
 	if a.config.Profile == "" {

@@ -23,6 +23,7 @@ Thumbs.db
 
 # local workspace settings (do not commit)
 .opencode/
+.design-os/
 
 # stray go build output
 valkaw-launcher/valkaw-launcher

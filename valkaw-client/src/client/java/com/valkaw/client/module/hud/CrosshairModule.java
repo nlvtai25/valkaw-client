@@ -71,20 +71,10 @@ public class CrosshairModule extends Module {
 		custom = enabled;
 	}
 
-	public void clearCustom() {
-		for (boolean[] row : pixels) {
-			java.util.Arrays.fill(row, false);
-		}
-	}
-
 	public void togglePixel(int x, int y, boolean on) {
 		if (x >= 0 && y >= 0 && x < GRID && y < GRID) {
 			pixels[y][x] = on;
 		}
-	}
-
-	public boolean[][] pixels() {
-		return pixels;
 	}
 
 	public void renderCrosshair(GuiGraphics graphics) {

@@ -7,21 +7,25 @@ import com.valkaw.client.keybinds.Keybinds;
 import com.valkaw.client.module.ModuleManager;
 import com.valkaw.client.module.Setting;
 import java.util.List;
+import net.minecraft.client.CameraType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.util.Mth;
 import org.lwjgl.glfw.GLFW;
 
 /**
- * Toggle Perspective with an unlocked camera: the view turns on its own while the
- * player body keeps facing where it was. {@code CameraMixin} puts the camera behind
- * (or in front of) the player using the freelook rotation.
+ * Freelook unlocks the third-person camera: the view turns on its own while the
+ * player body keeps facing where it was. {@code CameraMixin} puts the camera
+ * behind (or in front of) the player using the freelook rotation. To make the
+ * player model render, the camera type is forced to third person for as long as
+ * the module is active and restored afterwards.
  */
 public class FreelookModule extends Module {
 	private static float yaw;
 	private static float pitch;
 	private boolean front;
 	private boolean toggleMode;
+	private CameraType savedCameraType;
 
 	public FreelookModule() {
 		super("freelook", "Freelook", Category.UTILITY);
@@ -76,18 +80,43 @@ public class FreelookModule extends Module {
 	@Override
 	public List<Setting> settings() {
 		return List.of(
-				Setting.choice("WHEN PRESSING", () -> front ? "THIRD-PERSON FRONT" : "THIRD-PERSON BACK",
-						() -> front = !front),
+				Setting.segment("VIEW", List.of("BACK", "FRONT"),
+						() -> front ? 1 : 0, i -> {
+							front = i == 1;
+							if (isEnabled()) {
+								applyCameraType();
+							}
+						}),
 				Setting.choice("MODE", () -> toggleMode ? "TOGGLE" : "PRESSING", () -> toggleMode = !toggleMode));
+	}
+
+	/** Force third person so the player body renders while freelook is active. */
+	private void applyCameraType() {
+		Minecraft mc = Minecraft.getInstance();
+		if (mc.options != null) {
+			mc.options.setCameraType(front ? CameraType.THIRD_PERSON_FRONT : CameraType.THIRD_PERSON_BACK);
+		}
 	}
 
 	@Override
 	public void onEnable() {
-		LocalPlayer player = Minecraft.getInstance().player;
+		Minecraft mc = Minecraft.getInstance();
+		LocalPlayer player = mc.player;
 		if (player != null) {
 			yaw = player.getYRot();
 			pitch = player.getXRot();
 		}
+		savedCameraType = mc.options == null ? null : mc.options.getCameraType();
+		applyCameraType();
+	}
+
+	@Override
+	public void onDisable() {
+		Minecraft mc = Minecraft.getInstance();
+		if (savedCameraType != null && mc.options != null) {
+			mc.options.setCameraType(savedCameraType);
+		}
+		savedCameraType = null;
 	}
 
 	@Override

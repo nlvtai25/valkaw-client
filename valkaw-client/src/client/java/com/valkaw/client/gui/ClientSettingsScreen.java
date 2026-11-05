@@ -3,6 +3,7 @@ package com.valkaw.client.gui;
 import com.valkaw.client.module.Category;
 import com.valkaw.client.module.Module;
 import com.valkaw.client.module.ModuleManager;
+import com.valkaw.client.module.TextStyle;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -32,6 +33,7 @@ public class ClientSettingsScreen extends Screen
 	private final Screen parent;
 	private final Map<String, Ui.Anim> toggleAnims = new HashMap<>();
 	private Category tab;
+	private boolean showGlobal;
 	private String query = "";
 	private boolean searchFocused;
 	private boolean enabledOnly;
@@ -146,13 +148,41 @@ public class ClientSettingsScreen extends Screen
 		layout();
 		drawSidebar(graphics, mouseX, mouseY);
 		drawHeader(graphics, mouseX, mouseY);
-		drawGrid(graphics, mouseX, mouseY, dt);
+		if (showGlobal)
+		{
+			drawGlobal(graphics, mouseX, mouseY, dt);
+		}
+		else
+		{
+			drawGrid(graphics, mouseX, mouseY, dt);
+		}
 		drawFooter(graphics, mouseX, mouseY);
 		if (bindingEditor)
 		{
 			drawBindingBanner(graphics);
 		}
 		super.render(graphics, mouseX, mouseY, partialTick);
+	}
+
+	private void drawGlobal(GuiGraphics graphics, int mouseX, int mouseY, float dt)
+	{
+		int columns = mW >= 700 ? 3 : mW >= 430 ? 2 : 1;
+		int cardW = (mW - CARD_GAP * (columns - 1)) / columns;
+		int y = gTop;
+		int x = mX;
+		TextStyle global = ModuleManager.get().globalStyle();
+		Ui.round(graphics, x, y, cardW, CARD_H, 12, 0xFF15181F);
+		Ui.round(graphics, x + 1, y + 1, cardW - 2, CARD_H - 2, 11, 0x10FFFFFF);
+		Ui.text(graphics, font, "Text Color", x + 14, y + 12, Ui.TEXT);
+		Ui.text(graphics, font, "Global color applied to HUD text using 'Use global'.", x + 14, y + 26, Ui.MUTED);
+		int swatch = global.primary();
+		Ui.round(graphics, x + cardW - 34, y + 16, 20, 20, 6, 0x22FFFFFF);
+		graphics.fill(x + cardW - 33, y + 17, x + cardW - 15, y + 35, swatch | 0xFF000000);
+		Ui.chevron(graphics, x + cardW - 12, y + 25, Ui.MUTED, true);
+		if (over(mouseX, mouseY, x, y, cardW, CARD_H))
+		{
+			Ui.round(graphics, x, y, cardW, CARD_H, 12, 0x12FFFFFF);
+		}
 	}
 
 	// ------------------------------------------------------------- sidebar
@@ -183,7 +213,7 @@ public class ClientSettingsScreen extends Screen
 		{
 			Category category = index == 0 ? null : TABS[index - 1];
 			int y = rowY(index);
-			boolean active = tab == category;
+			boolean active = tab == category && !showGlobal;
 			boolean hot = over(mouseX, mouseY, sX + 6, y, sW - 12, 28);
 			int accent = category == null ? Ui.TEXT_2 : accent(category);
 			int count = category == null ? ModuleManager.get().all().size() : ModuleManager.get().byCategory(category).size();
@@ -210,6 +240,26 @@ public class ClientSettingsScreen extends Screen
 			}
 		}
 
+		int globalY = sY + sH - 56;
+		boolean globalActive = showGlobal;
+		boolean globalHot = over(mouseX, mouseY, sX + 6, globalY, sW - 12, 28);
+		if (globalActive)
+		{
+			Ui.round(graphics, sX + 6, globalY, sW - 12, 28, 8, Ui.alpha(Ui.ACCENT, 0.14F));
+			Ui.round(graphics, sX + 6, globalY + 6, 3, 16, 2, Ui.ACCENT);
+		}
+		else if (globalHot)
+		{
+			Ui.round(graphics, sX + 6, globalY, sW - 12, 28, 8, 0x0FFFFFFF);
+		}
+		int globalTileX = narrow ? sX + (sW - 16) / 2 : sX + 14;
+		Ui.round(graphics, globalTileX, globalY + 6, 16, 16, 6, Ui.alpha(Ui.ACCENT, globalActive ? 0.26F : 0.14F));
+		Ui.icon(graphics, "layers", globalTileX + 8, globalY + 14, Ui.ACCENT);
+		if (!narrow)
+		{
+			Ui.text(graphics, font, "Global Settings", sX + 38, globalY + 10, globalActive ? Ui.TEXT : Ui.TEXT_2);
+		}
+
 		if (!narrow)
 		{
 			Ui.divider(graphics, sX + 12, sY + sH - 30, sW - 24);
@@ -224,32 +274,45 @@ public class ClientSettingsScreen extends Screen
 		graphics.pose().pushMatrix();
 		graphics.pose().translate(mX, 22);
 		graphics.pose().scale(1.2F, 1.2F);
-		graphics.drawString(font, "Modules", 0, 0, Ui.TEXT, false);
+		graphics.drawString(font, showGlobal ? "Global Settings" : "Modules", 0, 0, Ui.TEXT, false);
 		graphics.pose().popMatrix();
-		Ui.text(graphics, font, enabled() + " of " + ModuleManager.get().all().size() + " enabled", mX, 40, Ui.MUTED);
+		if (showGlobal)
+		{
+			Ui.text(graphics, font, "Shared options for text style and client-wide color", mX, 40, Ui.MUTED);
+		}
+		else
+		{
+			Ui.text(graphics, font, enabled() + " of " + ModuleManager.get().all().size() + " enabled", mX, 40, Ui.MUTED);
+		}
 
-		boolean overAll = over(mouseX, mouseY, allX - 8, chipY - 3, Ui.width(font, "All") + 22, 18);
-		boolean overOn = over(mouseX, mouseY, onX - 8, chipY - 3, Ui.width(font, "On") + 22, 18);
-		chip(graphics, "All", allX, chipY, tab == null, overAll);
-		chip(graphics, "On", onX, chipY, enabledOnly, overOn);
+		boolean overAll = over(mouseX, mouseY, allX - 8, chipY - 4, Ui.width(font, "All") + 22, 18);
+		boolean overOn = over(mouseX, mouseY, onX - 8, chipY - 4, Ui.width(font, "On") + 22, 18);
+		if (!showGlobal)
+		{
+			chip(graphics, "All", allX, chipY, tab == null, overAll);
+			chip(graphics, "On", onX, chipY, enabledOnly, overOn);
+		}
 
 		boolean hot = over(mouseX, mouseY, searchX, searchY, searchW, 20);
-		Ui.round(graphics, searchX, searchY, searchW, 20, 7, hot || searchFocused ? 0x1AFFFFFF : 0x0FFFFFFF);
-		Ui.circle(graphics, searchX + 11, searchY + 10, 3, Ui.MUTED);
-		graphics.fill(searchX + 13, searchY + 11, searchX + 20, searchY + 12, Ui.MUTED);
-		String shown = query.isEmpty() ? (searchFocused ? "" : "Search modules") : Ui.fit(font, query, searchW - 42);
-		Ui.text(graphics, font, shown, searchX + 22, searchY + 6, query.isEmpty() ? Ui.MUTED : Ui.TEXT);
-		if (searchFocused)
+		if (!showGlobal)
 		{
-			int caret = searchX + 22 + Ui.width(font, shown) + 1;
-			if ((System.currentTimeMillis() / 500) % 2 == 0)
+			Ui.round(graphics, searchX, searchY, searchW, 20, 7, hot || searchFocused ? 0x1AFFFFFF : 0x0FFFFFFF);
+			Ui.circle(graphics, searchX + 11, searchY + 10, 3, Ui.MUTED);
+			graphics.fill(searchX + 13, searchY + 11, searchX + 20, searchY + 12, Ui.MUTED);
+			String shown = query.isEmpty() ? (searchFocused ? "" : "Search modules") : Ui.fit(font, query, searchW - 42);
+			Ui.text(graphics, font, shown, searchX + 22, searchY + 6, query.isEmpty() ? Ui.MUTED : Ui.TEXT);
+			if (searchFocused)
 			{
-				graphics.fill(caret, searchY + 5, caret + 1, searchY + 15, Ui.TEXT);
+				int caret = searchX + 22 + Ui.width(font, shown) + 1;
+				if ((System.currentTimeMillis() / 500) % 2 == 0)
+				{
+					graphics.fill(caret, searchY + 5, caret + 1, searchY + 15, Ui.TEXT);
+				}
 			}
-		}
-		if (!query.isEmpty())
-		{
-			Ui.closeIcon(graphics, searchX + searchW - 13, searchY + 7, Ui.MUTED);
+			if (!query.isEmpty())
+			{
+				Ui.closeIcon(graphics, searchX + searchW - 13, searchY + 7, Ui.MUTED);
+			}
 		}
 
 		Ui.closeIcon(graphics, closeX, closeY, over(mouseX, mouseY, closeX - 4, closeY - 4, 15, 15) ? Ui.TEXT : Ui.MUTED);
@@ -408,6 +471,18 @@ public class ClientSettingsScreen extends Screen
 			return true;
 		}
 
+		int globalY = sY + sH - 56;
+		if (over(mx, my, sX + 6, globalY, sW - 12, 28))
+		{
+			showGlobal = true;
+			tab = null;
+			cached = null;
+			scroll = scrollTarget = 0;
+			searchFocused = false;
+			click();
+			return true;
+		}
+
 		if (over(mx, my, allX - 8, chipY - 4, Ui.width(font, "All") + 22, 18))
 		{
 			tab = null;
@@ -429,6 +504,7 @@ public class ClientSettingsScreen extends Screen
 		{
 			if (over(mx, my, sX + 6, rowY(index), sW - 12, 28))
 			{
+				showGlobal = false;
 				tab = index == 0 ? null : TABS[index - 1];
 				cached = null;
 				scroll = scrollTarget = 0;
@@ -459,6 +535,21 @@ public class ClientSettingsScreen extends Screen
 		{
 			onClose();
 			return true;
+		}
+
+		if (showGlobal)
+		{
+			int columns = mW >= 700 ? 3 : mW >= 430 ? 2 : 1;
+			int cardW = (mW - CARD_GAP * (columns - 1)) / columns;
+			int y = gTop;
+			int x = mX;
+			if (over(mx, my, x, y, cardW, CARD_H))
+			{
+				click();
+				minecraft.setScreen(new GlobalSettingsScreen(this));
+				return true;
+			}
+			return super.mouseClicked(event, doubleClick);
 		}
 
 		int index = indexAt(mx, my);

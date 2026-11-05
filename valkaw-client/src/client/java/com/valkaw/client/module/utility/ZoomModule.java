@@ -16,7 +16,10 @@ import org.lwjgl.glfw.GLFW;
  * (world join, config load) can never leave the game zoomed in.
  */
 public class ZoomModule extends Module {
+	/** Saved zoom point, restored on the next hold. */
 	private double zoomFov = 30.0;
+	/** Scroll offset for the current hold only; 0 means "not scrolled yet". */
+	private double scrollFov;
 
 	public ZoomModule() {
 		super("zoom", "Zoom", Category.UTILITY);
@@ -30,7 +33,12 @@ public class ZoomModule extends Module {
 
 	public static float fovOverride() {
 		Module module = ModuleManager.get().byId("zoom");
-		return module instanceof ZoomModule zoom && zoom.holding() ? (float) zoom.zoomFov : -1.0F;
+		return module instanceof ZoomModule zoom && zoom.holding() ? (float) zoom.activeFov() : -1.0F;
+	}
+
+	/** The scrolled value only lives while the key is held, so the saved point always wins. */
+	private double activeFov() {
+		return scrollFov > 0.0 ? scrollFov : zoomFov;
 	}
 
 	private boolean holding() {
@@ -41,23 +49,21 @@ public class ZoomModule extends Module {
 	@Override
 	public void onTick() {
 		if (!holding()) {
+			// Release drops the scroll offset: the next zoom starts at the saved point.
+			scrollFov = 0.0;
 			setEnabled(false);
 			ModuleManager.get().save();
 		}
 	}
 
-	public double zoomFov() {
-		return zoomFov;
-	}
-
-	/** Scroll while zooming changes the FOV; consumes the wheel only while active. */
+	/** Scroll while zooming changes the FOV for this hold only; consumes the wheel only while active. */
 	public static boolean adjustScroll(double delta) {
 		Module module = ModuleManager.get().byId("zoom");
 		if (!(module instanceof ZoomModule zoom) || !zoom.holding()) {
 			return false;
 		}
-		zoom.zoomFov = Math.max(10.0, Math.min(90.0, zoom.zoomFov - delta * 2.0));
-		ModuleManager.get().save();
+		double from = zoom.activeFov();
+		zoom.scrollFov = Math.max(10.0, Math.min(90.0, from - delta * 2.0));
 		return true;
 	}
 

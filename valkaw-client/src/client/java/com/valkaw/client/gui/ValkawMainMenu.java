@@ -26,6 +26,7 @@ public class ValkawMainMenu extends Screen
 {
 	private static final String VERSION = FabricLoader.getInstance().getModContainer("valkawclient")
 			.map(container -> "v" + container.getMetadata().getVersion().getFriendlyString()).orElse("v1.0.1");
+	private static final java.util.regex.Pattern NAME_CHAR = java.util.regex.Pattern.compile("[A-Za-z0-9_]");
 
 	private final List<Nav> navs = new ArrayList<>(5);
 	private static final int ACCOUNT_ROW = 18;
@@ -372,7 +373,7 @@ public class ValkawMainMenu extends Screen
 			return super.charTyped(event);
 		}
 		String typed = event.codepointAsString();
-		if (!typed.isEmpty() && accountInput.length() < 16 && typed.matches("[A-Za-z0-9_]"))
+		if (!typed.isEmpty() && accountInput.length() < 16 && NAME_CHAR.matcher(typed).matches())
 		{
 			accountInput += typed;
 		}

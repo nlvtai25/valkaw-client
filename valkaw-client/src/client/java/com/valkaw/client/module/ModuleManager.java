@@ -31,6 +31,7 @@ import com.valkaw.client.module.performance.CloudsModule;
 import com.valkaw.client.module.performance.NoFogModule;
 import com.valkaw.client.module.performance.ParticlesModule;
 import com.valkaw.client.module.performance.RenderDistanceModule;
+import com.valkaw.client.module.utility.AutoTextModule;
 import com.valkaw.client.module.utility.BlockOutlineModule;
 import com.valkaw.client.module.utility.ChatTimestampsModule;
 import com.valkaw.client.module.utility.CopyChatModule;
@@ -126,6 +127,7 @@ public final class ModuleManager {
 		register(new FullbrightModule());
 		register(new NoBobbingModule());
 		register(new BlockOutlineModule());
+		register(new AutoTextModule());
 		register(new ParticlesModule());
 		register(new CloudsModule());
 		register(new RenderDistanceModule());
@@ -166,8 +168,8 @@ public final class ModuleManager {
 					module.onKey();
 				} else {
 					module.toggle();
+					save();
 				}
-				save();
 			}
 			if (module.isEnabled()) {
 				module.onTick();
@@ -206,10 +208,6 @@ public final class ModuleManager {
 		return globalStyle;
 	}
 
-	public int editorKey() {
-		return editorKey;
-	}
-
 	/** Player name picked in-game; empty means "keep whatever the launcher passed". */
 	public String username()
 	{
@@ -237,7 +235,7 @@ public final class ModuleManager {
 		accounts.removeIf(entry -> entry.equalsIgnoreCase(cleanName(name)));
 		if (username.equalsIgnoreCase(cleanName(name)))
 		{
-			username = accounts.isEmpty() ? "" : accounts.get(0);
+			username = accounts.isEmpty() ? "" : accounts.get(accounts.size() - 1);
 		}
 		save();
 	}
@@ -328,7 +326,7 @@ public final class ModuleManager {
 			editorKey = root.get("editorKey").getAsInt();
 		}
 		if (root.has("username")) {
-			username = root.get("username").getAsString();
+			username = cleanName(root.get("username").getAsString());
 		}
 		if (root.has("accounts")) {
 			for (var entry : root.getAsJsonArray("accounts")) {

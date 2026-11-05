@@ -81,18 +81,17 @@ public class ArmorHudModule extends HudModule {
 		int bodyH = layout == Layout.HORIZONTAL ? ROW_H : pieces * (ROW_H + GAP) - GAP;
 
 		if (split) {
-			int prefixW = Hud.prefix(graphics, font, x, y, "ARMOR");
+			int prefixW = Hud.prefix(graphics, font, x, y, "Armor");
 			w = Math.max(prefixW, bodyW);
 			h = 13 + bodyH;
 			drawItems(graphics, font, held, armor, x, y + 13, pairW);
 		} else {
-			int headerW = Hud.width(font, Hud.label("ARMOR")) + PAD;
+			int headerW = Hud.width(font, Hud.label("Armor")) + PAD;
 			w = Math.max(headerW, bodyW + PAD);
 			h = 15 + bodyH;
 			graphics.fill(x, y, x + w, y + h, Hud.BG);
-			graphics.fill(x, y, x + 1, y + h, Hud.color());
-			Hud.text(graphics, font, Hud.label("ARMOR"), x + 4, y + 2);
-			graphics.fill(x + 4, y + 12, x + 4 + Hud.width(font, Hud.label("ARMOR")), y + 13, Hud.color());
+			Hud.text(graphics, font, Hud.label("Armor"), x + 4, y + 2);
+			graphics.fill(x + 4, y + 12, x + 4 + Hud.width(font, Hud.label("Armor")), y + 13, Hud.color());
 			drawItems(graphics, font, held, armor, x + 4, y + 15, pairW);
 		}
 	}

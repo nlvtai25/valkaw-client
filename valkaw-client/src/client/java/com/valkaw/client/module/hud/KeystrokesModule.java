@@ -27,7 +27,7 @@ public class KeystrokesModule extends HudModule {
 	@Override
 	public void render(GuiGraphics graphics, Font font) {
 		Options options = Minecraft.getInstance().options;
-		int prefixW = Hud.prefix(graphics, font, x, y, "KEYS");
+		int prefixW = Hud.prefix(graphics, font, x, y, "Keys");
 		w = Math.max(46, prefixW);
 		h = 60;
 		Hud.key(graphics, font, x + 16, y + 13, 14, "W", options.keyUp.isDown());

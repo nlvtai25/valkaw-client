@@ -18,6 +18,8 @@ public abstract class CameraMixin {
 	@Shadow
 	private Entity entity;
 	@Shadow
+	private boolean detached;
+	@Shadow
 	private float eyeHeight;
 	@Shadow
 	private float eyeHeightOld;
@@ -37,9 +39,10 @@ public abstract class CameraMixin {
 	protected abstract float getMaxZoom(float distance);
 
 	@Inject(method = "setup(Lnet/minecraft/world/level/Level;Lnet/minecraft/world/entity/Entity;ZZF)V", at = @At("TAIL"))
-	private void valkaw$freelook(Level level, Entity entity, boolean detached, boolean thirdPerson, float partialTick,
+	private void valkaw$freelook(Level level, Entity entity, boolean detachedVanilla, boolean thirdPerson, float partialTick,
 			CallbackInfo ci) {
 		if (!FreelookModule.active()) {
+			this.detached = !net.minecraft.client.Minecraft.getInstance().options.getCameraType().isFirstPerson();
 			return;
 		}
 		setPosition(Mth.lerp(partialTickTime, entity.xo, entity.getX()),
@@ -57,5 +60,6 @@ public abstract class CameraMixin {
 		float distance = entity instanceof LivingEntity living
 				? (float) living.getAttributeValue(Attributes.CAMERA_DISTANCE) : 4.0F;
 		move(-getMaxZoom(scale * distance), 0.0F, 0.0F);
+		this.detached = true;
 	}
 }

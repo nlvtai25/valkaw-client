@@ -2,6 +2,7 @@ package com.valkaw.client.module.hud;
 
 import com.valkaw.client.hud.Hud;
 import com.valkaw.client.module.HudModule;
+import com.valkaw.client.module.ModuleManager;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 
@@ -16,6 +17,11 @@ public class ComboModule extends HudModule {
 
 	/** Called from the attack hook. */
 	public static void hit() {
+		// Ignore hits while the HUD is off so a re-enabled module never shows a
+		// combo left over from before it was turned on.
+		if (!ModuleManager.isOn("combo")) {
+			return;
+		}
 		combo++;
 		lastHit = System.currentTimeMillis();
 	}
@@ -39,7 +45,7 @@ public class ComboModule extends HudModule {
 			h = 0;
 			return;
 		}
-		w = Hud.chip(graphics, font, x, y, "COMBO", Integer.toString(combo));
+		w = Hud.chip(graphics, font, x, y, "Combo", Integer.toString(combo));
 		h = 11;
 	}
 }

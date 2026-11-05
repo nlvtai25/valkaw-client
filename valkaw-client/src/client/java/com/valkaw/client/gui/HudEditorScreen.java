@@ -62,7 +62,7 @@ public class HudEditorScreen extends Screen {
 		super.render(graphics, mouseX, mouseY, partialTick);
 		InputState.poll();
 		// The dragged element is skipped so it keeps the position under the pointer.
-		HudRenderer.layout(ModuleManager.get().hudModules(), width, true, dragging);
+		HudRenderer.layout(ModuleManager.get().hudModules(), width, dragging);
 
 		hovered = false;
 		for (HudModule module : ModuleManager.get().hudModules()) {

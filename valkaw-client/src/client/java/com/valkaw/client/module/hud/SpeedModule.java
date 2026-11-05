@@ -47,7 +47,7 @@ public class SpeedModule extends HudModule {
 	public void render(GuiGraphics graphics, Font font) {
 		int scaled = (int) Math.round(speed * 10.0);
 		String value = (scaled / 10) + "." + Math.abs(scaled % 10) + " b/s";
-		w = Hud.chip(graphics, font, x, y, "SPD", value);
+		w = Hud.chip(graphics, font, x, y, "Speed", value);
 		h = 11;
 	}
 }

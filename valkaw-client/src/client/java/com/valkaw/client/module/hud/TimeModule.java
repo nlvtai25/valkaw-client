@@ -50,12 +50,12 @@ public class TimeModule extends HudModule {
 			clock = LocalTime.now().format(timeFormatter);
 		}
 		if (layout == Layout.HORIZONTAL) {
-			int first = Hud.chip(graphics, font, x, y, "DAY", day);
-			w = first + 2 + Hud.chipRaw(graphics, font, x + first + 2, y, "TIME", clock);
+			int first = Hud.chip(graphics, font, x, y, "Day", day);
+			w = first + 2 + Hud.chip(graphics, font, x + first + 2, y, "Time", clock);
 			h = 11;
 		} else {
-			w = Hud.chip(graphics, font, x, y, "DAY", day);
-			w = Math.max(w, Hud.chipRaw(graphics, font, x, y + 11, "TIME", clock));
+			w = Hud.chip(graphics, font, x, y, "Day", day);
+			w = Math.max(w, Hud.chip(graphics, font, x, y + 11, "Time", clock));
 			h = 22;
 		}
 	}

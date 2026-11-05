@@ -30,6 +30,9 @@ public final class ChatSymbolPanel {
 			ChatFormatting.OBFUSCATED, ChatFormatting.BOLD, ChatFormatting.STRIKETHROUGH,
 			ChatFormatting.UNDERLINE, ChatFormatting.ITALIC, ChatFormatting.RESET,
 	};
+	/** "&" + code and the preview component, built once instead of per frame. */
+	private static final String[] FORMAT_CODES = buildFormatCodes();
+	private static final Component[] FORMAT_SAMPLES = buildFormatSamples();
 	private static final int TAB_W = 44;
 	private static final int TAB_H = 14;
 	private static final int CELL = 16;
@@ -47,6 +50,22 @@ public final class ChatSymbolPanel {
 	private static int scrollRow;
 
 	private ChatSymbolPanel() {
+	}
+
+	private static String[] buildFormatCodes() {
+		String[] out = new String[FORMATS.length];
+		for (int i = 0; i < FORMATS.length; i++) {
+			out[i] = "&" + FORMATS[i].getChar();
+		}
+		return out;
+	}
+
+	private static Component[] buildFormatSamples() {
+		Component[] out = new Component[FORMATS.length];
+		for (int i = 0; i < FORMATS.length; i++) {
+			out[i] = Component.literal("Sample").withStyle(FORMATS[i]);
+		}
+		return out;
 	}
 
 	private static String[] buildSymbols() {
@@ -171,9 +190,9 @@ public final class ChatSymbolPanel {
 			int y = gy + (COLOR_ROWS + i) * CELL;
 			boolean hot = inside(mouseX, mouseY, gx, y, COLS * CELL, CELL - 2);
 			Ui.round(graphics, gx, y, COLS * CELL, CELL - 2, 3, hot ? 0xFF1B2C46 : 0xFF121B2C);
-			String code = "&" + FORMATS[i].getChar();
+			String code = FORMAT_CODES[i];
 			graphics.drawString(font, code, gx + 4, y + 4, Ui.ACCENT, false);
-			graphics.drawString(font, Component.literal("Sample").withStyle(FORMATS[i]),
+			graphics.drawString(font, FORMAT_SAMPLES[i],
 					gx + 4 + font.width(code) + 6, y + 4, Ui.TEXT_2, false);
 		}
 	}
@@ -218,7 +237,7 @@ public final class ChatSymbolPanel {
 			if (row < COLOR_ROWS) {
 				screen.insertText(COLOR_CODES[row * COLS + col], false);
 			} else if (row - COLOR_ROWS < FORMATS.length) {
-				screen.insertText("&" + FORMATS[row - COLOR_ROWS].getChar(), false);
+				screen.insertText(FORMAT_CODES[row - COLOR_ROWS], false);
 			}
 			return true;
 		}

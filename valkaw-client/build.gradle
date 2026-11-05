@@ -53,11 +53,26 @@ dependencies {
 		"maven.modrinth:c2me-fabric:0.4.0-alpha.0.28+1.21.11",
 	].each { include it }
 
+	// `include` nests a mod inside the shipped jar. Only the core renderer also goes on
+	// the dev runtime classpath: the satellite mods (sodium-extra, fzzy-config, ...)
+	// pull dependencies that the dev runtime cannot resolve, so `runClient` would crash
+	// before it ever draws a frame.
 	if (valkawVariant == "vulkan") {
 		[
 			"maven.modrinth:vulkanmod:0.6.8+1.21.11",
 			"maven.modrinth:not-enough-vulkan:1.6.2+1.21.11",
 		].each { include it }
+		modRuntimeOnly "maven.modrinth:vulkanmod:0.6.8+1.21.11"
+		// Fabric only loads the jars nested inside a mod when it is installed from a
+		// mods folder, not from the dev classpath, so the Vulkan bindings VulkanMod
+		// normally injects are missing in `runClient`. Same jars, taken from its
+		// META-INF/jars and put on the dev runtime directly.
+		runtimeOnly files(
+				"libs/lwjgl-vulkan-3.3.3.jar",
+				"libs/lwjgl-vma-3.3.3.jar",
+				"libs/lwjgl-vma-3.3.3-natives-linux.jar",
+				"libs/lwjgl-shaderc-3.3.3.jar",
+				"libs/lwjgl-shaderc-3.3.3-natives-linux.jar")
 	} else {
 		[
 			"maven.modrinth:sodium:mc1.21.11-0.8.15-beta.1-fabric",
@@ -70,6 +85,7 @@ dependencies {
 			"maven.modrinth:fzzy-config:0.7.7+1.21.11",
 			"maven.modrinth:fabric-language-kotlin:1.14.2+kotlin.2.4.21",
 		].each { include it }
+		modRuntimeOnly "maven.modrinth:sodium:mc1.21.11-0.8.15-beta.1-fabric"
 	}
 }
 
@@ -79,11 +95,15 @@ def valkawExtras = (valkawVariant == "vulkan" ? [
 	"greedy-meshing-0.6.1+1.21.11.jar",
 	"lambdynamiclights-4.9.1+1.21.11.jar",
 	"ImmediatelyFast-Fabric-1.14.3+1.21.11.jar",
+	"offlinemodefix-1.1.0+1.21.11.jar",
+	"rpc-1.2.4+1.20.3-1.21.11-fabric.jar",
 ] : [
 	"entityculling-fabric-1.11.3-mc1.21.11.jar",
 	"greedy-meshing-0.6.1+1.21.11.jar",
 	"lambdynamiclights-4.9.1+1.21.11.jar",
 	"sodiumfpscapfix-fabric-1.21.11-1.0.37.jar",
+	"offlinemodefix-1.1.0+1.21.11.jar",
+	"rpc-1.2.4+1.20.3-1.21.11-fabric.jar",
 ])
 
 tasks.named("remapJar") {

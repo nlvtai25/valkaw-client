@@ -15,10 +15,4 @@ public enum Link {
 		}
 		return NONE;
 	}
-
-	/** True when the module sits beside its parent instead of above or below it. */
-	public boolean horizontal()
-	{
-		return this == RIGHT || this == LEFT;
-	}
 }

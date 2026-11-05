@@ -12,9 +12,9 @@ public final class HudRenderer {
 	}
 
 	/** Positions every enabled element for the current window width. */
-	public static void layout(List<HudModule> modules, int screenWidth, boolean editor)
+	public static void layout(List<HudModule> modules, int screenWidth)
 	{
-		layout(modules, screenWidth, editor, null);
+		layout(modules, screenWidth, null);
 	}
 
 	/**
@@ -24,7 +24,7 @@ public final class HudRenderer {
 	 *
 	 * @param skip element being dragged by the editor, left where the player put it
 	 */
-	public static void layout(List<HudModule> modules, int screenWidth, boolean editor, HudModule skip)
+	public static void layout(List<HudModule> modules, int screenWidth, HudModule skip)
 	{
 		for (HudModule module : modules)
 		{
@@ -33,20 +33,26 @@ public final class HudRenderer {
 				module.applyAnchor(screenWidth);
 			}
 		}
-		// Children need the final position of their parent, so resolve a few times.
+		// Children need the final position of their parent, so resolve until a
+		// pass stops moving anything (a broken or absent link ends the chain).
 		for (int pass = 0; pass < 4; pass++)
 		{
+			boolean moved = false;
 			for (HudModule module : modules)
 			{
-				if (module.isEnabled() && module != skip)
+				if (module.isEnabled() && module != skip && module.applyLink())
 				{
-					module.applyLink();
+					moved = true;
 				}
+			}
+			if (!moved)
+			{
+				break;
 			}
 		}
 	}
 
-	public static void render(GuiGraphics graphics, float partialTick)
+	public static void render(GuiGraphics graphics)
 	{
 		Minecraft mc = Minecraft.getInstance();
 		// Screens (inventory, chat, containers) draw on top of the HUD, so the
@@ -62,7 +68,7 @@ public final class HudRenderer {
 		{
 			// Only re-anchor while no screen is open: the HUD editor positions the
 			// element being dragged itself, so anchoring here would fight the mouse.
-			layout(modules, screenWidth, false);
+			layout(modules, screenWidth);
 		}
 		for (HudModule module : modules)
 		{

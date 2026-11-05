@@ -1,6 +1,7 @@
 package com.valkaw.client.module;
 
 import com.google.gson.JsonObject;
+import java.util.List;
 
 /**
  * Base module. State (enabled/keybind) is serialized by {@link ModuleManager};
@@ -116,8 +117,8 @@ public abstract class Module {
 	}
 
 	/** Module-specific rows shown in its Options screen. */
-	public java.util.List<Setting> settings() {
-		return java.util.List.of();
+	public List<Setting> settings() {
+		return List.of();
 	}
 
 	public void onEnable() {

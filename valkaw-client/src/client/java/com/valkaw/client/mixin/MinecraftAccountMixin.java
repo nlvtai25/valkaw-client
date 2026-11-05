@@ -1,5 +1,6 @@
 package com.valkaw.client.mixin;
 
+import com.mojang.authlib.GameProfile;
 import com.valkaw.client.Account;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.User;
@@ -19,6 +20,22 @@ public class MinecraftAccountMixin
 		if (user != null)
 		{
 			cir.setReturnValue(user);
+		}
+	}
+
+	/**
+	 * The {@code user} field still holds the launcher profile, so the default
+	 * implementation would hand out that name. The integrated server stores this
+	 * as its singleplayer owner and compares it on logout; a mismatch leaves the
+	 * server running forever while the client waits for it to shut down.
+	 */
+	@Inject(method = "getGameProfile", at = @At("HEAD"), cancellable = true)
+	private void valkaw$accountProfile(CallbackInfoReturnable<GameProfile> cir)
+	{
+		User user = Account.user();
+		if (user != null)
+		{
+			cir.setReturnValue(new GameProfile(user.getProfileId(), user.getName()));
 		}
 	}
 }

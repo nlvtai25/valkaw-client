@@ -26,7 +26,7 @@ public class PingModule extends HudModule {
 				value = info.getLatency() + "ms";
 			}
 		}
-		w = Hud.chip(graphics, font, x, y, "PING", value);
+		w = Hud.chip(graphics, font, x, y, "Ping", value);
 		h = 11;
 	}
 }

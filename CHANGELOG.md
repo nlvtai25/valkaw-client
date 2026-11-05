@@ -1,5 +1,22 @@
 # Changelog
 
+## v1.0.7 — 2026-11-05
+
+### Launcher
+- Fixed Linux Vulkan detection: the launcher read `0.0.0` from `vulkaninfo --summary` because it only matched parenthesized versions. It now parses the printed `x.y.z` forms and re-encodes vendor driver versions (NVIDIA, AMD, Intel) correctly, so the Vulkan profile is recognized on supported GPUs.
+- Default memory grant lowered from 4096 MB to 3072 MB for cards with 6 GB VRAM.
+
+## v1.0.3 — 2026-11-05
+
+### Client
+- Embedded Offline Mode Fix: the game no longer blocks on a Mojang blocklist HTTPS request when playing offline, which caused 4–5 second random freezes.
+- Embedded ResourcePackCached: server resource packs are kept loaded, so rejoining a server does not re-download and re-apply its pack.
+- Keybind sync fixed: a key rebound in vanilla Controls is respected and no longer overwritten from the client config; Toggle Sprint defaults to `V`.
+- Freelook now switches the camera to third person, so the player model is visible while looking around; the previous camera type is restored on release.
+- Sprint and Sneak HUDs always show an ON/OFF chip while their module is enabled.
+- HUD prefixes normalized to Title Case (`[Time]`, `[Biome]`, `[Dim]`, `[Facing]`, `[Speed]`) while acronyms such as `[FPS]`, `[XYZ]` stay uppercase; left-edge accent stripes and the `|` separator were removed from HUD elements.
+- New Auto Text module: multiple lines, each with its own text/command and keybind (with Ctrl/Shift/Alt modifiers). Keybinds stay out of vanilla Controls; the editor is inline in the module options with a top "ADD LINE" button and a 255-line cap.
+
 ## v1.0.6.1 — 2026-10-31
 
 ### Launcher

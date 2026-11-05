@@ -49,16 +49,31 @@ public class PotionHudModule extends HudModule {
 		}
 		int shown = Math.min(MAX_LINES, effects.size());
 		int lineH = fancy ? 22 : 11;
-		String header = Hud.label("POTION");
+		String header = Hud.label("Potion");
 		int boxW = 8 + Hud.width(font, header);
+		// Build each row once: the measure pass and the draw pass used to call
+		// label()/value() twice per effect, and value() formats the duration.
+		String[] names = new String[shown];
+		String[] values = new String[shown];
+		int index = 0;
 		for (MobEffectInstance effect : effects) {
-			boxW = Math.max(boxW, (fancy ? 24 : 4) + Hud.width(font, label(effect)) + 6
-					+ Hud.width(font, value(effect)));
+			if (index == shown) {
+				break;
+			}
+			names[index] = label(effect);
+			values[index] = value(effect);
+			int nameW = Hud.width(font, names[index]);
+			int valueW = Hud.width(font, values[index]);
+			// The simple row draws name, a 3px gap, the "|" glyph, a 3px gap, then the
+			// value, so the separator width and the right padding belong in the measure.
+			boxW = Math.max(boxW, fancy
+					? 24 + nameW + 6 + valueW
+					: 4 + nameW + 3 + Hud.width(font, "|") + 3 + valueW + 4);
+			index++;
 		}
 		boxW = Math.max(boxW, 74);
 		int boxH = 15 + shown * lineH;
 		graphics.fill(x, y, x + boxW, y + boxH, Hud.BG);
-		graphics.fill(x, y, x + 1, y + boxH, Hud.color());
 		Hud.text(graphics, font, header, x + 4, y + 2);
 		graphics.fill(x + 4, y + 12, x + 4 + Hud.width(font, header), y + 13, Hud.color());
 
@@ -70,15 +85,15 @@ public class PotionHudModule extends HudModule {
 			int lineY = y + 16 + line * lineH;
 			int textX = x + 4;
 			if (fancy) {
-				Hud.text(graphics, font, label(effect), x + 23, lineY + 3);
-				Hud.text(graphics, font, value(effect), x + 23 + Hud.width(font, label(effect)) + 4, lineY + 3);
+				Hud.text(graphics, font, names[line], x + 23, lineY + 3);
+				Hud.text(graphics, font, values[line], x + 23 + Hud.width(font, names[line]) + 4, lineY + 3);
 				graphics.blitSprite(RenderPipelines.GUI_TEXTURED,
 						Gui.getMobEffectSprite(effect.getEffect()), x + 3, lineY, 18, 18);
 			} else {
-				Hud.text(graphics, font, label(effect), textX, lineY);
-				int separator = textX + Hud.width(font, label(effect)) + 3;
+				Hud.text(graphics, font, names[line], textX, lineY);
+				int separator = textX + Hud.width(font, names[line]) + 3;
 				Hud.text(graphics, font, "|", separator, lineY);
-				Hud.text(graphics, font, value(effect), separator + Hud.width(font, "|") + 3, lineY);
+				Hud.text(graphics, font, values[line], separator + Hud.width(font, "|") + 3, lineY);
 			}
 			line++;
 		}
@@ -87,8 +102,8 @@ public class PotionHudModule extends HudModule {
 	}
 
 	private static String label(MobEffectInstance effect) {
-		String name = effect.getEffect().value().getDisplayName().getString();
-		return name.length() > 14 ? name.substring(0, 14) : name;
+		// No truncation: the panel width is measured from the full name below.
+		return effect.getEffect().value().getDisplayName().getString();
 	}
 
 	private static String value(MobEffectInstance effect) {
