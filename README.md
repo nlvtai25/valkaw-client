@@ -49,7 +49,7 @@ Client, once installed:
 - JDK 21 or newer
 - Fabric 1.21.11 (`loader 0.20.1`)
 - An OpenGL 3.2 driver for the Sodium profile, a Vulkan 1.2 driver for the Vulkan profile
-- An account as offline username. Realms is not supported.
+- An account with an offline username. Realms is not supported.
 
 ## Build the client
 
