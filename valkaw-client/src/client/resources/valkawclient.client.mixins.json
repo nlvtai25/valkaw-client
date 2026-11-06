@@ -25,7 +25,8 @@
 		"LevelRendererMixin",
 		"FogRendererAccessor",
 		"WaterFogEnvironmentMixin",
-		"LavaFogEnvironmentMixin"
+		"LavaFogEnvironmentMixin",
+		"ScreenTooltipMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

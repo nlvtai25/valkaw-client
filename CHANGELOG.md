@@ -1,5 +1,18 @@
 # Changelog
 
+## v1.0.5 — 2026-11-06
+
+### Client
+- New Better Tooltips module: damaged items show a durability percentage in their tooltip, coloured green/yellow/red by how much is left.
+- Bundled Shulker Box Tooltip (MIT) as a nested jar in both profiles: hovering a shulker box shows its contents right in the tooltip (replaces the earlier hand-written Shulker Preview module).
+- New Memory Cleaner module: calls the garbage collector on a configurable interval (default 30 s, slider 5-300 s).
+- Bundled Lightweight Inventory Sorting (MIT) as a nested jar in both profiles: sort chests, shulker boxes and the player inventory with one key.
+- Bundled Chunks Fade In (GPL-3.0) as a nested jar in the Sodium profile only (it depends on Sodium, so it is not bundled in the Vulkan profile): smooth chunk fade-in on load.
+- Module options no longer show a text-style/colour panel for non-HUD modules (performance and utility); the colour picker stays for HUD modules and for Block Outline, and all other options remain unchanged.
+- Copy Coordinates is now a regular module: it has an Enable/Disable toggle, and its shortcut (F7 by default, rebindable) copies the current coordinates to the clipboard while the module is enabled.
+- The module list in Client Settings now offers sorting by name: Default, A-Z, Z-A and On-first.
+- Client Settings is now a centered, Lunar-style popup panel (opened with Right Shift) instead of a full-screen layout.
+
 ## v1.0.4 — 2026-11-05
 
 ### Client

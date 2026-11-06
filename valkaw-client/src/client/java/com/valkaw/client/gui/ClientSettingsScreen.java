@@ -5,6 +5,7 @@ import com.valkaw.client.module.Module;
 import com.valkaw.client.module.ModuleManager;
 import com.valkaw.client.module.TextStyle;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -38,6 +39,12 @@ public class ClientSettingsScreen extends Screen
 	private boolean searchFocused;
 	private boolean enabledOnly;
 	private boolean bindingEditor;
+	private int sortMode;
+	private int pX;
+	private int pY;
+	private int pW;
+	private int pH;
+	private int sortX;
 	private float scroll;
 	private float scrollTarget;
 	private List<Module> cached;
@@ -92,25 +99,31 @@ public class ClientSettingsScreen extends Screen
 
 	private void layout()
 	{
-		sX = MARGIN;
-		sY = MARGIN;
-		sW = width < 680 ? 52 : 172;
-		sH = height - MARGIN * 2;
+		pW = Math.min(900, width - 48);
+		pH = Math.min(620, height - 80);
+		pX = (width - pW) / 2;
+		pY = (height - pH) / 2;
+
+		sX = 16;
+		sY = 18;
+		sW = 160;
+		sH = pH - 36;
 		mX = sX + sW + 14;
-		mW = width - mX - MARGIN;
-		gTop = 88;
-		gH = height - gTop - 50;
+		mW = pW - mX - 16;
+		gTop = 96;
+		gH = pH - gTop - 56;
 
 		searchW = Math.min(186, Math.max(84, mW / 3));
-		searchY = 24;
+		searchY = 26;
 		searchX = mX + mW - searchW - 30;
-		chipY = 56;
+		chipY = 58;
 		onX = mX + mW - Ui.width(font, "On") - 20;
 		allX = onX - Ui.width(font, "All") - 24;
+		sortX = mX;
 		closeX = mX + mW - 12;
-		closeY = 24;
+		closeY = 26;
 
-		int footer = height - 32;
+		int footer = pH - 34;
 		btnBackW = Ui.width(font, "Back") + 20;
 		btnBackX = mX + mW - btnBackW;
 		btnKeyW = Ui.width(font, "Editor key") + 20;
@@ -135,12 +148,7 @@ public class ClientSettingsScreen extends Screen
 	public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick)
 	{
 		clock += lastDt = Ui.dt();
-		layout();
-		graphics.fillGradient(0, 0, width, height, Ui.BG_TOP, Ui.BG_BOTTOM);
-		Ui.planet(graphics, Math.round(width * 0.74F), Math.round(height * 0.60F), Math.max(40, Math.min(Math.round(width * 0.26F), Math.round(height * 0.22F))), clock);
-		graphics.fillGradient(0, 0, width, 96, 0x99000000, 0x00000000);
-		graphics.fillGradient(0, height - 110, width, height, 0x00000000, 0x88000000);
-		graphics.fillGradient(0, 0, 280, height, 0x55000000, 0x00000000);
+		graphics.fillGradient(0, 0, width, height, 0xA5000000, 0x99000000);
 	}
 
 	@Override
@@ -148,17 +156,23 @@ public class ClientSettingsScreen extends Screen
 	{
 		float dt = lastDt;
 		layout();
-		drawSidebar(graphics, mouseX, mouseY);
-		drawHeader(graphics, mouseX, mouseY);
+		int mx = mouseX - pX;
+		int my = mouseY - pY;
+		graphics.pose().pushMatrix();
+		graphics.pose().translate(pX, pY);
+		Ui.window(graphics, 0, 0, pW, pH, Ui.ACCENT);
+		drawSidebar(graphics, mx, my);
+		drawHeader(graphics, mx, my);
 		if (showGlobal)
 		{
-			drawGlobal(graphics, mouseX, mouseY, dt);
+			drawGlobal(graphics, mx, my, dt);
 		}
 		else
 		{
-			drawGrid(graphics, mouseX, mouseY, dt);
+			drawGrid(graphics, mx, my, dt);
 		}
-		drawFooter(graphics, mouseX, mouseY);
+		drawFooter(graphics, mx, my);
+		graphics.pose().popMatrix();
 		if (bindingEditor)
 		{
 			drawBindingBanner(graphics);
@@ -291,6 +305,9 @@ public class ClientSettingsScreen extends Screen
 		boolean overOn = over(mouseX, mouseY, onX - 8, chipY - 4, Ui.width(font, "On") + 22, 18);
 		if (!showGlobal)
 		{
+			String sortText = "Sort: " + sortLabel();
+			boolean overSort = over(mouseX, mouseY, sortX - 7, chipY - 4, Ui.width(font, sortText) + 22, 18);
+			chip(graphics, sortText, sortX, chipY, false, overSort);
 			chip(graphics, "All", allX, chipY, tab == null, overAll);
 			chip(graphics, "On", onX, chipY, enabledOnly, overOn);
 		}
@@ -409,7 +426,7 @@ public class ClientSettingsScreen extends Screen
 			Ui.toggle(graphics, x + cardW - 34, y + 14, on, accent);
 		}
 
-		if (hot)
+		if (hot && module.hasOptions())
 		{
 			Ui.textRight(graphics, font, "Options", x + cardW - 20, y + cardH - 14, Ui.MUTED);
 			Ui.chevron(graphics, x + cardW - 14, y + cardH - 20, Ui.MUTED, true);
@@ -420,19 +437,19 @@ public class ClientSettingsScreen extends Screen
 
 	private void drawFooter(GuiGraphics graphics, int mouseX, int mouseY)
 	{
-		Ui.divider(graphics, mX, height - 42, mW);
-		Ui.text(graphics, font, enabled() + " of " + ModuleManager.get().all().size() + " modules enabled", mX, height - 31, Ui.MUTED);
+		Ui.divider(graphics, mX, pH - 42, mW);
+		Ui.text(graphics, font, enabled() + " of " + ModuleManager.get().all().size() + " modules enabled", mX, pH - 31, Ui.MUTED);
 
-		Ui.button(graphics, font, btnHudX, height - 34, "HUD editor", Ui.ACCENT, over(mouseX, mouseY, btnHudX, height - 34, btnHudW, 22), true);
+		Ui.button(graphics, font, btnHudX, pH - 34, "HUD editor", Ui.ACCENT, over(mouseX, mouseY, btnHudX, pH - 34, btnHudW, 22), true);
 		if (btnResetX > 0)
 		{
-			Ui.button(graphics, font, btnResetX, height - 34, "Reset positions", Ui.ACCENT,
-					over(mouseX, mouseY, btnResetX, height - 34, btnResetW, 22), false);
-			Ui.button(graphics, font, btnKeyX, height - 34, "Editor key", Ui.ACCENT,
-					over(mouseX, mouseY, btnKeyX, height - 34, btnKeyW, 22), false);
+			Ui.button(graphics, font, btnResetX, pH - 34, "Reset positions", Ui.ACCENT,
+					over(mouseX, mouseY, btnResetX, pH - 34, btnResetW, 22), false);
+			Ui.button(graphics, font, btnKeyX, pH - 34, "Editor key", Ui.ACCENT,
+					over(mouseX, mouseY, btnKeyX, pH - 34, btnKeyW, 22), false);
 		}
-		Ui.button(graphics, font, btnBackX, height - 34, "Back", Ui.ACCENT,
-				over(mouseX, mouseY, btnBackX, height - 34, btnBackW, 22), false);
+		Ui.button(graphics, font, btnBackX, pH - 34, "Back", Ui.ACCENT,
+				over(mouseX, mouseY, btnBackX, pH - 34, btnBackW, 22), false);
 	}
 
 	private void drawBindingBanner(GuiGraphics graphics)
@@ -451,8 +468,8 @@ public class ClientSettingsScreen extends Screen
 	public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick)
 	{
 		layout();
-		double mx = event.x();
-		double my = event.y();
+		double mx = event.x() - pX;
+		double my = event.y() - pY;
 
 		if (over(mx, my, closeX - 4, closeY - 4, 15, 15))
 		{
@@ -501,6 +518,14 @@ public class ClientSettingsScreen extends Screen
 			click();
 			return true;
 		}
+		if (over(mx, my, sortX - 7, chipY - 4, Ui.width(font, "Sort: " + sortLabel()) + 22, 18))
+		{
+			sortMode = (sortMode + 1) % 4;
+			cached = null;
+			scroll = scrollTarget = 0;
+			click();
+			return true;
+		}
 
 		for (int index = 0; index <= TABS.length; index++)
 		{
@@ -515,25 +540,25 @@ public class ClientSettingsScreen extends Screen
 			}
 		}
 
-		if (btnHudX > 0 && over(mx, my, btnHudX, height - 34, btnHudW, 22))
+		if (btnHudX > 0 && over(mx, my, btnHudX, pH - 34, btnHudW, 22))
 		{
 			click();
 			minecraft.setScreen(new HudEditorScreen(this));
 			return true;
 		}
-		if (btnResetX > 0 && over(mx, my, btnResetX, height - 34, btnResetW, 22))
+		if (btnResetX > 0 && over(mx, my, btnResetX, pH - 34, btnResetW, 22))
 		{
 			ModuleManager.get().resetPositions();
 			click();
 			return true;
 		}
-		if (btnKeyX > 0 && over(mx, my, btnKeyX, height - 34, btnKeyW, 22))
+		if (btnKeyX > 0 && over(mx, my, btnKeyX, pH - 34, btnKeyW, 22))
 		{
 			bindingEditor = true;
 			click();
 			return true;
 		}
-		if (btnBackX > 0 && over(mx, my, btnBackX, height - 34, btnBackW, 22))
+		if (btnBackX > 0 && over(mx, my, btnBackX, pH - 34, btnBackW, 22))
 		{
 			onClose();
 			return true;
@@ -581,7 +606,7 @@ public class ClientSettingsScreen extends Screen
 				click();
 				minecraft.setScreen(new ModuleOptionsScreen(this, module));
 			}
-			else if (mx >= x + cardW - 46 && my < cardTop(index) + CARD_H - 18)
+			else if (!module.hasOptions() || (mx >= x + cardW - 46 && my < cardTop(index) + CARD_H - 18))
 			{
 				module.toggle();
 				ModuleManager.get().save();
@@ -627,7 +652,9 @@ public class ClientSettingsScreen extends Screen
 	@Override
 	public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY)
 	{
-		if (mouseX >= mX && mouseX <= mX + mW && mouseY >= gTop && mouseY <= gTop + gH)
+		double px = mouseX - pX;
+		double py = mouseY - pY;
+		if (px >= mX && px <= mX + mW && py >= gTop && py <= gTop + gH)
 		{
 			scrollTarget -= (float) scrollY * 32.0F;
 			return true;
@@ -681,7 +708,7 @@ public class ClientSettingsScreen extends Screen
 
 	private List<Module> filtered()
 	{
-		String key = (tab == null ? "ALL" : tab.name()) + '|' + enabledOnly + '|' + query;
+		String key = (tab == null ? "ALL" : tab.name()) + "|" + enabledOnly + "|" + query + "|" + sortMode;
 		if (cached != null && key.equals(cacheKey))
 		{
 			return cached;
@@ -702,6 +729,12 @@ public class ClientSettingsScreen extends Screen
 				continue;
 			}
 			list.add(module);
+		}
+		switch (sortMode)
+		{
+			case 1 -> list.sort(java.util.Comparator.comparing(Module::name, String.CASE_INSENSITIVE_ORDER));
+			case 2 -> list.sort(java.util.Comparator.comparing(Module::name, String.CASE_INSENSITIVE_ORDER).reversed());
+			case 3 -> list.sort(java.util.Comparator.comparing(module -> !module.isEnabled()));
 		}
 		cached = list;
 		cacheKey = key;
@@ -724,6 +757,17 @@ public class ClientSettingsScreen extends Screen
 	private static String title(Category category)
 	{
 		return category == Category.PERFORMANCE ? "Performance" : category == Category.UTILITY ? "Utility" : "HUD";
+	}
+
+	private String sortLabel()
+	{
+		return switch (sortMode)
+		{
+			case 1 -> "A-Z";
+			case 2 -> "Z-A";
+			case 3 -> "On first";
+			default -> "Default";
+		};
 	}
 
 	private static int accent(Category category)

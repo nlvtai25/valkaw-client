@@ -108,12 +108,26 @@ public abstract class Module {
 		return category == Category.UTILITY;
 	}
 
+	/** Modules that fire { #onKey()} on their key press instead of toggling. */
+	public boolean triggerOnKeyPress() {
+		return false;
+	}
+
 	/** Inline option label shown in the settings row (layout/format), or null when there is none. */
 	public String option() {
 		return null;
 	}
 
 	public void cycleOption() {
+	}
+
+	/**
+	 * Whether this module has a dedicated Options screen (settings, keybind or
+	 * style). Modules without any configuration skip the screen entirely and
+	 * their card simply toggles.
+	 */
+	public boolean hasOptions() {
+		return true;
 	}
 
 	/** Module-specific rows shown in its Options screen. */

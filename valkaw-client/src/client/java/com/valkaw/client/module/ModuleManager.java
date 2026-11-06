@@ -28,10 +28,12 @@ import com.valkaw.client.module.hud.TpsModule;
 import com.valkaw.client.module.performance.ClearFluidsModule;
 import com.valkaw.client.module.performance.MenuBackdropModule;
 import com.valkaw.client.module.performance.CloudsModule;
+import com.valkaw.client.module.performance.MemoryCleanerModule;
 import com.valkaw.client.module.performance.NoFogModule;
 import com.valkaw.client.module.performance.ParticlesModule;
 import com.valkaw.client.module.performance.RenderDistanceModule;
 import com.valkaw.client.module.utility.AutoTextModule;
+import com.valkaw.client.module.utility.BetterTooltipsModule;
 import com.valkaw.client.module.utility.BlockOutlineModule;
 import com.valkaw.client.module.utility.ChatTimestampsModule;
 import com.valkaw.client.module.utility.CopyChatModule;
@@ -134,6 +136,8 @@ public final class ModuleManager {
 		register(new NoFogModule());
 		register(new ClearFluidsModule());
 		register(new MenuBackdropModule());
+		register(new BetterTooltipsModule());
+		register(new MemoryCleanerModule());
 		load();
 		LOGGER.info("Valkaw modules ready: {}", modules.size());
 	}
@@ -164,7 +168,7 @@ public final class ModuleManager {
 		for (Module module : modules) {
 			boolean down = mc.screen == null && Keybinds.down(module);
 			if (module.pollPress(down)) {
-				if (module.isAction()) {
+				if (module.isAction() || module.triggerOnKeyPress()) {
 					module.onKey();
 				} else {
 					module.toggle();

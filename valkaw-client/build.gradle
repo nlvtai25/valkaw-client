@@ -97,6 +97,8 @@ def valkawExtras = (valkawVariant == "vulkan" ? [
 	"ImmediatelyFast-Fabric-1.14.3+1.21.11.jar",
 	"offlinemodefix-1.1.0+1.21.11.jar",
 	"rpc-1.2.4+1.20.3-1.21.11-fabric.jar",
+	"lightweight-inventory-sorting-1.1.4-mc1.21.11.jar",
+	"shulkerboxtooltip-5.2.16.jar",
 ] : [
 	"entityculling-fabric-1.11.3-mc1.21.11.jar",
 	"greedy-meshing-0.6.1+1.21.11.jar",
@@ -104,6 +106,9 @@ def valkawExtras = (valkawVariant == "vulkan" ? [
 	"sodiumfpscapfix-fabric-1.21.11-1.0.37.jar",
 	"offlinemodefix-1.1.0+1.21.11.jar",
 	"rpc-1.2.4+1.20.3-1.21.11-fabric.jar",
+	"lightweight-inventory-sorting-1.1.4-mc1.21.11.jar",
+	"chunksfadein-fabric-3.0.25-1.21.11.jar",
+	"shulkerboxtooltip-5.2.16.jar",
 ])
 
 tasks.named("remapJar") {

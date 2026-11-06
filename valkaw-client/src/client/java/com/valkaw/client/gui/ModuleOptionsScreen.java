@@ -13,7 +13,6 @@ import com.valkaw.client.module.utility.AutoTextModule;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.Set;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
@@ -26,9 +25,6 @@ import org.lwjgl.glfw.GLFW;
 
 /** Options for one module: text style on the left, settings on the right. */
 public class ModuleOptionsScreen extends Screen {
-	private static final Set<String> NO_STYLE = Set.of("freelook", "copy-chat", "chat-timestamps",
-			"no-bobbing", "no-hurt-cam", "copy-coords", "no-fire", "clear-water-lava", "no-pumpkin",
-			"zoom", "toggle-sprint", "toggle-sneak", "auto-text");
 	private static final int ROW_H = 32;
 	private static final int ROW_GAP = 3;
 	private static final int SEGMENT_GAP = 4;
@@ -809,7 +805,8 @@ public class ModuleOptionsScreen extends Screen {
 	}
 
 	private boolean styled() {
-		return !NO_STYLE.contains(module.id());
+		return module.category() == com.valkaw.client.module.Category.HUD
+				|| module.id().equals("block-outline");
 	}
 
 	private void save() {

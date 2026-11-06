@@ -28,3 +28,8 @@ Thumbs.db
 # stray go build output
 valkaw-launcher/valkaw-launcher
 valkaw-launcher/frontend/package.json.md5
+
+# local game-run artifacts (dev/test)
+/cache/
+/config/
+/logs/

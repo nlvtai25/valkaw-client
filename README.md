@@ -15,8 +15,8 @@ Client jars come from [Releases](https://github.com/nlvtai25/valkaw-client/relea
 
 | File | What it is |
 | --- | --- |
-| `valkawclient-1.0.3-sodium.jar` | Sodium profile client |
-| `valkawclient-1.0.3-vulkan.jar` | Vulkan profile client |
+| `valkawclient-1.0.5-sodium.jar` | Sodium profile client |
+| `valkawclient-1.0.5-vulkan.jar` | Vulkan profile client |
 
 The launcher installs the selected profile into `~/.valkaw/minecraft/<profile>/` and starts the game with tuned JVM flags.
 
@@ -25,9 +25,9 @@ The launcher installs the selected profile into `~/.valkaw/minecraft/<profile>/`
 **HUD (16).** Armor, Combo, Coordinates, CPS, Crosshair, FPS, Keystrokes, PC Info, Ping, Potion, Server IP, Sneak, Speed, Sprint, Time, TPS.
 Every HUD module can link to the left or right screen edge, and positions are dragged directly in the HUD Editor (hold `F6`).
 
-**Performance (6).** Clear Fluids, Clouds, Menu Backdrop, No Fog, Particles, Render Distance.
+**Performance (7).** Clear Fluids, Clouds, Memory Cleaner, Menu Backdrop, No Fog, Particles, Render Distance.
 
-**Utility (14).** Auto Text, Block Outline, Chat Timestamps, Copy Chat, Copy Coords, Freelook, Fullbright, No Bobbing, No Fire, No Hurt Cam, No Pumpkin, Toggle Sneak, Toggle Sprint, Zoom.
+**Utility (15).** Auto Text, Better Tooltips, Block Outline, Chat Timestamps, Copy Chat, Copy Coords, Freelook, Fullbright, No Bobbing, No Fire, No Hurt Cam, No Pumpkin, Toggle Sneak, Toggle Sprint, Zoom.
 
 Two extras sit outside the module lists. The **Custom Symbols** tab beside the chat input inserts Unicode symbols and `&` colour codes, which is handy when writing item names and lore. The **Crosshair Editor** draws a crosshair pixel by pixel on a 15x15 grid.
 

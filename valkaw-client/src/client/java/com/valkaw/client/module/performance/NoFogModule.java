@@ -16,6 +16,11 @@ public class NoFogModule extends Module {
 	}
 
 	@Override
+	public boolean hasOptions() {
+		return false;
+	}
+
+	@Override
 	public void onEnable() {
 		FogRendererAccessor.setFogEnabled(false);
 	}

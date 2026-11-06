@@ -12,4 +12,9 @@ public class NoHurtCamModule extends Module {
 	public boolean keybindable() {
 		return false;
 	}
+
+	@Override
+	public boolean hasOptions() {
+		return false;
+	}
 }
