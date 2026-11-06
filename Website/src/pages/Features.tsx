@@ -86,14 +86,14 @@ export default function Features() {
     <>
       <Seo
         title="Modules — Valkaw Client"
-        description="All 37 Valkaw Client features: 16 HUD readouts, 6 performance controls and 15 utility tools, with what each one changes and its default state."
+        description="All 40 Valkaw Client features: 16 HUD readouts, 7 performance tools and 15 utility tools plus 2 editors, with what each one changes and its default state."
         jsonLd={FEATURES_JSON_LD}
       />
       <main>
         <section className="section" data-reveal>
           <div className="container">
             <div className="page-head">
-              <h1>Thirty-six modules, no combat.</h1>
+              <h1>Thirty-eight modules, no combat.</h1>
               <p className="lead">HUD, performance and utility only. Every switch stays client-side.</p>
             </div>
 
@@ -174,7 +174,7 @@ export default function Features() {
             </div>
             <div className="actions" style={{ marginTop: 'var(--space-lg)' }}>
               <Link to="/download" className="btn">
-                Download 1.0.2.1
+                Download 1.0.5
               </Link>
               <Link to="/" className="btn btn--quiet">
                 Back to the overview

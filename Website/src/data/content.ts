@@ -12,6 +12,7 @@ import {
   Copy,
   Cpu,
   Crosshair,
+  Eraser,
   EyeOff,
   Flame,
   FlaskConical,
@@ -19,6 +20,7 @@ import {
   Gauge,
   Grid3x3,
   HeartPulse,
+  Info,
   Keyboard,
   Layers,
   MapPin,
@@ -32,6 +34,7 @@ import {
   Sun,
   Swords,
   Telescope,
+  Type,
   Waves,
   Wifi,
   Wind,
@@ -53,7 +56,7 @@ export const BRAND = {
   shortName: 'Valkaw',
   tagline: 'Light. Fast. Yours.',
   description:
-    'A lightweight Fabric client for Minecraft 1.21.11 with a Saturn-themed main menu, 16 HUD modules, six render controls and quiet quality-of-life tools. Two builds, one source tree: Sodium for OpenGL and VulkanMod for Vulkan.',
+    'A lightweight Fabric client for Minecraft 1.21.11 with a Saturn-themed main menu, 16 HUD modules, seven performance tools and 15 quality-of-life utilities. Two builds, one source tree: Sodium for OpenGL and VulkanMod for Vulkan.',
   github: 'https://github.com/nlvtai25/valkaw-client',
   issues: 'https://github.com/nlvtai25/valkaw-client/issues',
   releases: 'https://github.com/nlvtai25/valkaw-client/releases',
@@ -63,10 +66,10 @@ export const BRAND = {
 };
 
 export const STATS: StatMetric[] = [
-  { value: 37, suffix: '', label: 'Features', description: '35 modules plus 2 editors' },
+  { value: 40, suffix: '', label: 'Features', description: '38 modules plus 2 editors' },
   { value: 2, suffix: '', label: 'Renderer builds', description: 'Sodium and VulkanMod' },
-  { value: 129, suffix: '', label: 'Mods loaded', description: 'Sodium profile, out of the box' },
-  { value: 21, suffix: '', label: 'Bundled jars', description: 'Inside the Sodium build' },
+  { value: 26, suffix: '', label: 'Jar-in-jar mods', description: 'Sodium profile, out of the box' },
+  { value: 17, suffix: '', label: 'Vulkan jars', description: 'Jar-in-jar mods in the Vulkan build' },
 ];
 
 export const HERO_ROTATING = ['higher frame rates', 'a cleaner HUD', 'quick zoom', 'a Saturn menu'];
@@ -234,7 +237,7 @@ export const FEATURES: FeatureItem[] = [
     details: ['Averages over a short window.', 'Stays at 20.0 in singleplayer.'],
   },
 
-  // Performance — 5
+  // Performance — 7
   {
     id: 'perf-clear-fluids',
     name: 'Clear Fluids',
@@ -296,7 +299,38 @@ export const FEATURES: FeatureItem[] = [
     details: ['0 percent shows the world untouched.', 'Applies to every screen with a backdrop.'],
   },
 
-  // Utility — 13
+  {
+    id: 'perf-memory-cleaner',
+    name: 'Memory Cleaner',
+    category: 'performance',
+    description: 'Runs a garbage-collection sweep on an interval to keep memory usage flat.',
+    benefit: 'Steady RAM use',
+    icon: Eraser,
+    enabledByDefault: false,
+    details: ['Interval slider from 5 to 300 seconds, default 30.', 'Aimed at long sessions and big servers.'],
+  },
+
+  // Utility — 15
+  {
+    id: 'util-auto-text',
+    name: 'Auto Text',
+    category: 'utility',
+    description: 'Snippets that expand into full chat messages while you type.',
+    benefit: 'Type less',
+    icon: Type,
+    enabledByDefault: true,
+    details: ['Bind each snippet to its own keybind.', 'Runs with the same permissions as normal chat.'],
+  },
+  {
+    id: 'util-better-tooltips',
+    name: 'Better Tooltips',
+    category: 'utility',
+    description: 'Shows the remaining durability percentage directly in item tooltips.',
+    benefit: 'Read durability fast',
+    icon: Info,
+    enabledByDefault: false,
+    details: ['Green, yellow and red colours by remaining durability.', 'Works on every item that can wear out.'],
+  },
   {
     id: 'util-block-outline',
     name: 'Block Outline',
@@ -335,7 +369,7 @@ export const FEATURES: FeatureItem[] = [
     benefit: 'Share a location',
     icon: Clipboard,
     enabledByDefault: true,
-    details: ['Rounds to block coordinates.', 'Includes the dimension.'],
+    details: ['Rounds to block coordinates.', 'Includes the dimension.', 'Now a regular module with a rebindable F7 default.'],
   },
   {
     id: 'util-freelook',
@@ -461,13 +495,13 @@ export const CATEGORY_META: CategoryMeta[] = [
   {
     key: 'performance',
     label: 'Performance',
-    description: 'Five visual controls that cut GPU cost without changing game logic.',
+    description: 'Seven visual controls that cut GPU and memory cost without changing game logic.',
     icon: Gauge,
   },
   {
     key: 'utility',
     label: 'Utility',
-    description: 'Thirteen quality-of-life tools and two editors. No combat or movement modules.',
+    description: 'Fifteen quality-of-life tools and two editors. No combat or movement modules.',
     icon: Sparkles,
   },
 ];
@@ -475,38 +509,40 @@ export const CATEGORY_META: CategoryMeta[] = [
 export const DOWNLOADS: DownloadBuild[] = [
   {
     id: 'sodium',
-    version: '1.0.2.1',
+    version: '1.0.5',
     channel: 'stable',
     mcVersions: ['1.21.11'],
     loaders: ['Fabric 0.20.1'],
-    releaseDate: '2026-10-31',
-    sizeMB: 25.9,
-    file: 'valkawclient-1.0.2.1-sodium.jar',
-    sha256: '1dea9b037f7dcd6221c62c886c1194ddf38b37047ce7a3f4fde3f00ebf2a6f60',
+    releaseDate: '2026-11-06',
+    sizeMB: 26.8,
+    file: 'valkawclient-1.0.5-sodium.jar',
+    sha256: '389a7c1c433707760e63b6f0d645030b6d6c664deddc100710797f69c22aeb3f',
     changelog: [
-      { type: 'added', text: 'Saturn-based main menu with a saved account picker and an in-game username.' },
-      { type: 'added', text: 'HUD elements link by touching edges, and the HUD stays visible behind open screens.' },
-      { type: 'added', text: 'Menu Backdrop slider controls how dark the world turns behind chests and menus.' },
-      { type: 'improved', text: 'Client Settings rebuilt around a category rail, search, All and On filters and compact cards.' },
-      { type: 'improved', text: 'Inter font, new logo, window icon and a default module layout on first launch.' },
+      { type: 'added', text: 'Better Tooltips shows the durability percentage in green, yellow or red.' },
+      { type: 'added', text: 'Memory Cleaner runs a GC sweep on a slider from 5 to 300 seconds.' },
+      { type: 'added', text: 'Auto Text snippets expand into full chat messages while you type.' },
+      { type: 'added', text: 'Shulker Box Tooltip, Lightweight Inventory Sorting and Chunks Fade In bundled as jar-in-jar.' },
+      { type: 'improved', text: 'Copy Coords is a regular module now, with Enable or Disable and a rebindable F7.' },
+      { type: 'improved', text: 'Client Settings is a centered Lunar-style popup opened with Right Shift.' },
+      { type: 'improved', text: 'The module list sorts by Default, A-Z, Z-A or enabled first.' },
     ],
   },
   {
     id: 'vulkan',
-    version: '1.0.2.1',
+    version: '1.0.5',
     channel: 'stable',
     mcVersions: ['1.21.11'],
     loaders: ['Fabric 0.20.1'],
-    releaseDate: '2026-10-31',
-    sizeMB: 30.6,
-    file: 'valkawclient-1.0.2.1-vulkan.jar',
-    sha256: '1d027c7afcd2438a43b5eace3f64fcc5121c5c860779509f00f60c7f1a573e0c',
+    releaseDate: '2026-11-06',
+    sizeMB: 31.0,
+    file: 'valkawclient-1.0.5-vulkan.jar',
+    sha256: '12105483a2ef7b7b101c49ae6b1d88947c6938a7a5bd9c1090ecd2931e6bfe55',
     changelog: [
-      { type: 'added', text: 'The same main menu and Client Settings screens as the Sodium build.' },
-      { type: 'added', text: 'HUD edge linking, HUD visible behind open screens and the Menu Backdrop slider.' },
-      { type: 'improved', text: 'Module keybinds now appear under Valkaw Client in Options > Controls.' },
-      { type: 'fixed', text: 'No Bobbing cancels the camera bob without rewriting options.txt.' },
-      { type: 'improved', text: 'Inter font, new logo, window icon and a default module layout on first launch.' },
+      { type: 'added', text: 'The same Better Tooltips, Memory Cleaner and Auto Text modules as the Sodium build.' },
+      { type: 'added', text: 'Shulker Box Tooltip and Lightweight Inventory Sorting bundled as jar-in-jar.' },
+      { type: 'improved', text: 'Copy Coords is a regular module now, with Enable or Disable and a rebindable F7.' },
+      { type: 'improved', text: 'Client Settings is a centered Lunar-style popup opened with Right Shift.' },
+      { type: 'improved', text: 'The module list sorts by Default, A-Z, Z-A or enabled first.' },
     ],
   },
 ];
@@ -527,10 +563,10 @@ export const REQUIREMENTS: RequirementTier[] = [
     badge: 'Default',
     cpu: 'Quad-core, 3.0 GHz',
     gpu: 'GTX 1050 / RX 560 class',
-    ram: '4 GB allocated',
+    ram: '3 GB allocated',
     java: 'JDK 21 or newer',
     storage: '2 GB free',
-    targetFps: 'The launcher default is 4096 MB, no shader pack required.',
+    targetFps: 'The launcher default is 3072 MB, lowered for cards with 6 GB VRAM.',
   },
   {
     name: 'High refresh',
@@ -559,7 +595,7 @@ export const INSTALL_STEPS = [
   },
   {
     title: 'Open the menus',
-    description: 'Hold F6 for the HUD editor. Client Settings sits on the main menu.',
+    description: 'Hold F6 for the HUD editor. Press Right Shift for the Client Settings popup.',
   },
 ];
 
@@ -620,13 +656,6 @@ export const COMPARISONS: ComparisonRow[] = [
   { capability: 'Offline username', vanilla: 'Yes', sodium: 'Yes', valkaw: 'Yes' },
   { capability: 'Realms support', vanilla: 'Yes', sodium: 'Yes', valkaw: 'Not supported' },
   { capability: 'Open source', vanilla: 'No', sodium: 'Yes', valkaw: 'Apache 2.0' },
-];
-
-export const ECOSYSTEM_STATS = [
-  { label: 'Mods loaded — Sodium', value: 129, suffix: '' },
-  { label: 'Mods loaded — Vulkan', value: 111, suffix: '' },
-  { label: 'Bundled jars — Sodium', value: 21, suffix: '' },
-  { label: 'Bundled jars — Vulkan', value: 13, suffix: '' },
 ];
 
 export const SCREENSHOTS: Screenshot[] = [

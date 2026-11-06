@@ -45,7 +45,7 @@ function Hero() {
           <div className="hero-intro">
             <h1 style={{ '--i': 0 } as CSSProperties}>Minecraft, instrumented.</h1>
             <p className="lead" style={{ '--i': 1 } as CSSProperties}>
-              FPS, ping and memory on one HUD, six render controls and 35 client-side modules for
+              FPS, ping and memory on one HUD, seven performance tools and 38 client-side modules for
               1.21.11 — nothing about how you move ever reaches the server.
             </p>
             <div className="actions" style={{ '--i': 2 } as CSSProperties}>
@@ -59,7 +59,7 @@ function Hero() {
                 </Link>
               )}
               <Link to="/features" className="btn btn--quiet">
-                Read the 35 modules
+                Read the 38 modules
               </Link>
             </div>
             <div className="hero-meta" style={{ '--i': 3 } as CSSProperties}>
@@ -120,7 +120,7 @@ function Modules() {
       <div className="container">
         <div className="head-block" data-reveal>
           <h2>Six you will notice first</h2>
-          <p className="lead">The other thirty are on the modules page.</p>
+          <p className="lead">The other thirty-two are on the modules page.</p>
         </div>
 
         <table className="table" style={{ marginTop: 'var(--space-2xl)' }}>
@@ -152,7 +152,7 @@ function Modules() {
 
         <div style={{ marginTop: 'var(--space-xl)' }}>
           <Link to="/features" className="link">
-            All 35 modules and their defaults
+            All 38 modules and their defaults
           </Link>
         </div>
       </div>
@@ -178,19 +178,15 @@ function Builds() {
                 <dd>OpenGL</dd>
               </div>
               <div>
-                <dt>Mods loaded</dt>
-                <dd className="num">129</dd>
-              </div>
-              <div>
-                <dt>Bundled jars</dt>
-                <dd className="num">22</dd>
+                <dt>Jar-in-jar mods</dt>
+                <dd className="num">26</dd>
               </div>
               <div>
                 <dt>Best for</dt>
                 <dd>NVIDIA, AMD, Intel on stable drivers</dd>
               </div>
             </dl>
-            <p className="panel-note">Start here if unsure.</p>
+            <p className="panel-note">Start here if unsure. Chunks Fade In ships here only.</p>
           </div>
 
           <div className="panel panel--vulkan" data-reveal style={revealDelay(1)}>
@@ -201,19 +197,15 @@ function Builds() {
                 <dd>Vulkan 1.2</dd>
               </div>
               <div>
-                <dt>Mods loaded</dt>
-                <dd className="num">111</dd>
-              </div>
-              <div>
-                <dt>Bundled jars</dt>
-                <dd className="num">13</dd>
+                <dt>Jar-in-jar mods</dt>
+                <dd className="num">17</dd>
               </div>
               <div>
                 <dt>Best for</dt>
                 <dd>Drivers with solid Vulkan 1.2</dd>
               </div>
             </dl>
-            <p className="panel-note">Menu Backdrop added in 1.0.2.</p>
+            <p className="panel-note">Same modules as the Sodium build, minus Chunks Fade In.</p>
           </div>
         </div>
 
@@ -269,7 +261,7 @@ function Faq() {
 function Close() {
   const sodium = DOWNLOADS.find(b => b.id === 'sodium')!;
   const vulkan = DOWNLOADS.find(b => b.id === 'vulkan')!;
-  const url = (b: typeof sodium) => `${BRAND.releases}/download/v${b.version}/${b.file}`;
+  const url = (b: typeof sodium) => `${BRAND.releases}/latest/download/${b.file}`;
 
   return (
     <section className="band band--close">
@@ -297,7 +289,7 @@ export default function Index() {
     <>
       <Seo
         title="Valkaw Client for Minecraft 1.21.11"
-        description="A Fabric client for Minecraft 1.21.11: 16 HUD readouts, six render controls, utility tools, and separate Sodium and VulkanMod builds."
+        description="A Fabric client for Minecraft 1.21.11: 16 HUD readouts, seven performance tools, utility tools, and separate Sodium and VulkanMod builds."
         jsonLd={HOME_JSON_LD}
       />
       <main>

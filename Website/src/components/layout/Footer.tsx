@@ -12,7 +12,7 @@ const COLUMNS: { title: string; links: FooterLink[] }[] = [
   {
     title: 'Client',
     links: [
-      { label: 'All 35 modules', to: '/features' },
+      { label: 'All 38 modules', to: '/features' },
       { label: 'Download', to: '/download' },
       { label: 'Install guide', to: '/download#install' },
       { label: 'Changelog', to: '/download#changelog' },

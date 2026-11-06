@@ -20,7 +20,7 @@ export function BuildBench({ initial = 'sodium', compact = false }: { initial?: 
   const [id, setId] = useState<DownloadBuild['id']>(initial);
   const [copied, setCopied] = useState<'idle' | 'copied' | 'failed'>('idle');
   const build = DOWNLOADS.find(b => b.id === id) ?? DOWNLOADS[0];
-  const url = `${BRAND.releases}/download/v${build.version}/${build.file}`;
+  const url = `${BRAND.releases}/latest/download/${build.file}`;
 
   const copyHash = async () => {
     try {

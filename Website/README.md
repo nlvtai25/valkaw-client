@@ -26,7 +26,7 @@ npm run preview  # serve dist/
 ## What is here
 
 - `/` — hero with the build bench, the screenshot deck, six module rows, the two renderers, a statement, three questions.
-- `/features` — all 37 features (35 modules plus the HUD and crosshair editors), filterable by kind and expandable, plus a comparison table.
+- `/features` — all 40 features (38 modules plus the HUD and crosshair editors), filterable by kind and expandable, plus a comparison table.
 - `/download` — Sodium and VulkanMod jars, SHA256, install steps, launcher, requirements, changelog.
 
 Release data, module copy and screenshot captions live in `src/data/content.ts`. Change a version, file name or checksum there and every page follows.
@@ -40,6 +40,17 @@ Images in `public/shots/` were captured from the running client, not mocked up. 
 GitHub Pages builds this folder from `.github/workflows/deploy-website.yml`: any push that touches `Website/` runs `npm ci` and `npm run build`, then publishes `dist/`. The workflow sets `VITE_BASE=/valkaw-client/` so asset paths and the router prefix match the project URL, and copies `index.html` to `404.html`, because Pages has no rewrite rules and a deep link such as `/features` has to boot the app.
 
 For any other static host, upload `dist/` and rewrite unknown paths to `index.html`. `public/_redirects` covers Netlify and Cloudflare Pages.
+
+## Keeping the site in sync
+
+When a client or launcher release is published, update this site in the same pull or follow-up commit and let the workflow deploy it:
+
+1. **Client release** — bump `DOWNLOADS` in `src/data/content.ts` (version, file names, size, SHA256, release date, changelog for both builds) and the version strings in `Navbar.tsx`, `Features.tsx` and `Download.tsx`. The jar download buttons stay pointed at `releases/latest/download/`, so after the entries change no URL edit is needed.
+2. **Launcher release** — the site reads `assets/downloads/latest.json` at runtime (see `src/lib/launcher.ts`), but `FALLBACK_BUILDS` in that file still has to be bumped by hand.
+3. **Counts** — module totals live in `STATS`, `BRAND.description`, the hero strings in `Index.tsx` and the meta descriptions in `index.html`; grep for the old number before pushing.
+4. Check `CHANGELOG.md` first, then `npm run build`, then push. A push that touches anything under `Website/` redeploys automatically — run the workflow manually (Actions → Deploy website → Run workflow) if the deploy failed.
+
+So: launcher or client update → always update the site data → deploy follows on push. Do not leave the site naming an older release than the repository.
 
 ## License
 
