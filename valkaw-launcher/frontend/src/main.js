@@ -795,7 +795,7 @@ function renderResourceVersions() {
             $('resourceStatus').textContent = 'Downloading ' + name;
             $('resourceProgress').style.width = '0%';
             try {
-                await DownloadResource(url, name, resourceDestTypeForTab(resourceTab));
+                await DownloadResource(url, name, resourceDestTypeForTab(resourceTab), resourceSelectedProject?.slug || '');
                 const dest = resourceTargetDir(resourceDestTypeForTab(resourceTab));
                 $('resourceStatus').textContent = dest
                     ? `Downloaded ${name} to ${dest}`

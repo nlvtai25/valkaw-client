@@ -12,7 +12,7 @@ export function CheckVulkan():Promise<core.VulkanCheck>;
 
 export function DetectJava():Promise<string>;
 
-export function DownloadResource(arg1:string,arg2:string,arg3:string):Promise<void>;
+export function DownloadResource(arg1:string,arg2:string,arg3:string,arg4:string):Promise<void>;
 
 export function GetConfig():Promise<core.Config>;
 

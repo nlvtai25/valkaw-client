@@ -55,6 +55,27 @@ func TestHiddenModSlugs(t *testing.T) {
 	}
 }
 
+func TestIsBlockedDownload(t *testing.T) {
+	if isBlockedDownload("vk", "sodium") != true {
+		t.Error("bundled mod must be blocked on the vulkan profile")
+	}
+	if isBlockedDownload("gl", "vulkanmod") != true {
+		t.Error("bundled mod must be blocked on the sodium profile")
+	}
+	if isBlockedDownload("vk", "entityculling") != true {
+		t.Error("cross-profile renderer addon must be blocked on vulkan")
+	}
+	if isBlockedDownload("gl", "entityculling") != false {
+		t.Error("sodium-only addon must be allowed on sodium")
+	}
+	if isBlockedDownload("gl", "jei") != false {
+		t.Error("unrelated mod must not be blocked")
+	}
+	if isBlockedDownload("gl", "") != false {
+		t.Error("empty slug must not block")
+	}
+}
+
 func TestFilterSearchHitsRemovesHiddenMods(t *testing.T) {
 	payload := []byte(`{"hits":[{"slug":"sodium"},{"slug":"jei"},{"slug":"vulkanmod"}],"total_hits":3,"offset":0,"limit":20}`)
 	out, hidden, err := filterSearchHits(payload, "mod", hiddenModSlugs("vk"))

@@ -53,6 +53,17 @@ func isBundledModSlug(slug string) bool {
 	return ok
 }
 
+// isBlockedDownload reports whether a mod must not be downloaded for a profile:
+// it is bundled inside the client jar, or it belongs to the other profile's
+// renderer stack and would be useless or make the game refuse to start.
+func isBlockedDownload(profile, slug string) bool {
+	if slug == "" {
+		return false
+	}
+	_, ok := hiddenModSlugs(profile)[strings.ToLower(slug)]
+	return ok
+}
+
 // glOnlyModSlugs hook into Sodium or Iris, so they cannot run on VulkanMod.
 var glOnlyModSlugs = []string{
 	"entityculling",

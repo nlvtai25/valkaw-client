@@ -313,12 +313,15 @@ func sanitizeFileName(name string) string {
 	return name
 }
 
-func (a *App) DownloadResource(downloadUrl string, fileName string, resourceType string) error {
+func (a *App) DownloadResource(downloadUrl string, fileName string, resourceType string, slug string) error {
 	if downloadUrl == "" {
 		return errors.New("downloadUrl required")
 	}
 	if fileName == "" {
 		return errors.New("fileName required")
+	}
+	if resourceType == "mod" && isBlockedDownload(a.activeProfile(), slug) {
+		return fmt.Errorf("%s is already included in the client; it cannot be downloaded separately", slug)
 	}
 	dir, err := a.resourceDirForType(resourceType)
 	if err != nil {

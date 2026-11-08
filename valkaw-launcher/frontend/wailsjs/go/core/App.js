@@ -22,8 +22,8 @@ export function DetectJava() {
   return window['go']['core']['App']['DetectJava']();
 }
 
-export function DownloadResource(arg1, arg2, arg3) {
-  return window['go']['core']['App']['DownloadResource'](arg1, arg2, arg3);
+export function DownloadResource(arg1, arg2, arg3, arg4) {
+  return window['go']['core']['App']['DownloadResource'](arg1, arg2, arg3, arg4);
 }
 
 export function GetConfig() {
