@@ -15,7 +15,7 @@ import (
 var assets embed.FS
 
 // launcherVersion is the Linux build; the Windows shell keeps its own number.
-const launcherVersion = "v1.0.7"
+const launcherVersion = "v1.0.8"
 
 func main() {
 	app := core.NewApp(launcherVersion)

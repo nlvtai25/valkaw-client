@@ -11,6 +11,9 @@ public final class HudRenderer {
 	{
 	}
 
+	private static int lastLayoutWidth = -1;
+	private static boolean lastScreenOpen = false;
+
 	/** Positions every enabled element for the current window width. */
 	public static void layout(List<HudModule> modules, int screenWidth)
 	{
@@ -68,7 +71,18 @@ public final class HudRenderer {
 		{
 			// Only re-anchor while no screen is open: the HUD editor positions the
 			// element being dragged itself, so anchoring here would fight the mouse.
-			layout(modules, screenWidth);
+			// Positions only depend on the window width, so skip layout unless the
+			// width changed or a screen just closed (which may have moved elements).
+			if (screenWidth != lastLayoutWidth || lastScreenOpen)
+			{
+				layout(modules, screenWidth);
+				lastLayoutWidth = screenWidth;
+				lastScreenOpen = false;
+			}
+		}
+		else
+		{
+			lastScreenOpen = true;
 		}
 		for (HudModule module : modules)
 		{

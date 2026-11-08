@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"runtime"
 	"strings"
+	"sync"
 )
 
 // GPU is a graphics adapter found on this machine.
@@ -32,7 +33,19 @@ func gpuVendor(pciID string) string {
 // ListGPUs scans this machine for graphics adapters.
 func (a *App) ListGPUs() []GPU { return detectGPUs() }
 
+var (
+	gpuOnce  sync.Once
+	gpuCache []GPU
+)
+
 func detectGPUs() []GPU {
+	gpuOnce.Do(func() {
+		gpuCache = detectGPUsUncached()
+	})
+	return gpuCache
+}
+
+func detectGPUsUncached() []GPU {
 	if runtime.GOOS != "linux" {
 		return nil // shortcut: switching is Linux-only; Windows needs a per-exe registry preference instead
 	}

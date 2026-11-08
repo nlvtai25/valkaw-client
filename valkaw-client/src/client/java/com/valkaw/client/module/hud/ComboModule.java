@@ -10,6 +10,8 @@ public class ComboModule extends HudModule {
 	private static final long RESET_MS = 2000L;
 	private static int combo;
 	private static long lastHit;
+	private int cachedCombo = -1;
+	private String cachedValue = "";
 
 	public ComboModule() {
 		super("combo", "Combo", 60, 3);
@@ -45,7 +47,11 @@ public class ComboModule extends HudModule {
 			h = 0;
 			return;
 		}
-		w = Hud.chip(graphics, font, x, y, "Combo", Integer.toString(combo));
+		if (combo != cachedCombo) {
+			cachedCombo = combo;
+			cachedValue = Integer.toString(combo);
+		}
+		w = Hud.chip(graphics, font, x, y, "Combo", cachedValue);
 		h = 11;
 	}
 }

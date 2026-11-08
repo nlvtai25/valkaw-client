@@ -20,6 +20,13 @@ public final class Hud {
 	private static TextStyle effective = style;
 	private static Font cachedFont;
 	private static final java.util.HashMap<String, Integer> WIDTHS = new java.util.HashMap<>();
+	private static final java.util.HashMap<String, int[]> CUMW = new java.util.HashMap<>();
+	private static final String[] ASCII = new String[128];
+	static {
+		for (int i = 0; i < 128; i++) {
+			ASCII[i] = String.valueOf((char) i);
+		}
+	}
 
 	private Hud() {
 	}
@@ -104,7 +111,13 @@ public final class Hud {
 		}
 		if (font != cachedFont) {
 			WIDTHS.clear();
+			CUMW.clear();
 			cachedFont = font;
+		}
+		// Transient numeric strings (FPS, CPS, ping, coords) change every frame
+		// and only pollute the cache, so measure them directly instead.
+		if (isNumeric(text)) {
+			return font.width(text);
 		}
 		Integer cached = WIDTHS.get(text);
 		if (cached != null) {
@@ -132,17 +145,48 @@ public final class Hud {
 		// shortcut: per-char draw allocates a String and re-measures the glyph; only animated styles pay it.
 		if (effective.mode() == TextStyle.Mode.RAINBOW || effective.mode() == TextStyle.Mode.GRADIENT
 				|| effective.mode() == TextStyle.Mode.PULSE) {
+			int[] cw = cumWidths(font, text);
 			long now = System.currentTimeMillis();
-			int cx = x;
 			for (int i = 0; i < text.length(); i++) {
-				String ch = text.substring(i, i + 1);
+				char ch = text.charAt(i);
+				String s = ch < 128 ? ASCII[ch] : text.substring(i, i + 1);
 				int color = effective.colorAt(i, text.length(), now);
-				graphics.drawString(font, ch, cx, y, color, false);
-				cx += font.width(ch);
+				graphics.drawString(font, s, x + cw[i], y, color, false);
 			}
 			return;
 		}
 		graphics.drawString(font, text, x, y, effective.color(), false);
+	}
+
+	/** Cached per-char cumulative X offsets so animated text never re-measures glyphs. */
+	private static int[] cumWidths(Font font, String text) {
+		if (font != cachedFont) {
+			WIDTHS.clear();
+			CUMW.clear();
+			cachedFont = font;
+		}
+		int[] cw = CUMW.get(text);
+		if (cw != null) {
+			return cw;
+		}
+		cw = new int[text.length() + 1];
+		for (int i = 0; i < text.length(); i++) {
+			cw[i + 1] = cw[i] + font.width(text.substring(i, i + 1));
+		}
+		if (CUMW.size() > 256) {
+			CUMW.clear();
+		}
+		CUMW.put(text, cw);
+		return cw;
+	}
+
+	private static boolean isNumeric(String text) {
+		for (int i = 0; i < text.length(); i++) {
+			if (!Character.isDigit(text.charAt(i))) {
+				return false;
+			}
+		}
+		return true;
 	}
 
 	private static boolean hasCodes(String text) {

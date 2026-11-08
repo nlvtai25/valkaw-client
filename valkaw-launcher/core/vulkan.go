@@ -3,6 +3,8 @@ package core
 import (
 	"fmt"
 	"regexp"
+	"sync"
+	"time"
 )
 
 // VulkanMod needs Vulkan 1.3. Anything older cannot start the Vulkan profile.
@@ -50,7 +52,29 @@ type vulkanProbe struct {
 // CheckVulkan reports the Vulkan capability of this machine.
 func (a *App) CheckVulkan() VulkanCheck { return checkVulkan() }
 
+var vulkanCache struct {
+	mu      sync.Mutex
+	cached  VulkanCheck
+	expires time.Time
+}
+
 func checkVulkan() VulkanCheck {
+	vulkanCache.mu.Lock()
+	if !vulkanCache.expires.IsZero() && time.Now().Before(vulkanCache.expires) {
+		c := vulkanCache.cached
+		vulkanCache.mu.Unlock()
+		return c
+	}
+	vulkanCache.mu.Unlock()
+	c := checkVulkanUncached()
+	vulkanCache.mu.Lock()
+	vulkanCache.cached = c
+	vulkanCache.expires = time.Now().Add(5 * time.Second)
+	vulkanCache.mu.Unlock()
+	return c
+}
+
+func checkVulkanUncached() VulkanCheck {
 	p := probeVulkan()
 	c := VulkanCheck{Loader: p.Loader, Verified: p.Verified}
 	if !p.Loader {

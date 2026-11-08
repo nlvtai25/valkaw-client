@@ -33,3 +33,6 @@ valkaw-launcher/frontend/package.json.md5
 /cache/
 /config/
 /logs/
+
+# local Crush harness config
+.crushrc

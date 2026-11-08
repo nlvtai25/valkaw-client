@@ -21,6 +21,8 @@ public class PotionHudModule extends HudModule {
 	private static final int MAX_LINES = 6;
 	/** Effect display names are stable; resolved once per effect instead of per frame. */
 	private static final Map<MobEffect, String> NAMES = new HashMap<>();
+	/** Formatted durations only change once per second, so cache by effect/amplifier/seconds. */
+	private static final Map<Long, String> VALUE_CACHE = new HashMap<>();
 
 	private boolean fancy;
 
@@ -114,22 +116,36 @@ public class PotionHudModule extends HudModule {
 	}
 
 	private static String value(MobEffectInstance effect) {
-		String amplifier = switch (effect.getAmplifier()) {
+		int amp = effect.getAmplifier();
+		String amplifier = switch (amp) {
 			case 0 -> "";
 			case 1 -> "II ";
 			case 2 -> "III ";
-			default -> (effect.getAmplifier() + 1) + " ";
+			default -> (amp + 1) + " ";
 		};
-		if (effect.isInfiniteDuration()) {
-			return amplifier + "∞";
+		long seconds = effect.isInfiniteDuration() ? -1 : Math.max(0, effect.getDuration() / 20);
+		long key = (((long) effect.getEffect().value().hashCode() & 0xFFFFFFFFL) << 40)
+				| ((long) (amp & 0xFF) << 32)
+				| (seconds & 0xFFFFFFFFL);
+		String cached = VALUE_CACHE.get(key);
+		if (cached != null) {
+			return cached;
 		}
-		int seconds = Math.max(0, effect.getDuration() / 20);
-		int minutes = seconds / 60;
-		int rest = seconds % 60;
-		if (minutes >= 60) {
-			return amplifier + String.format("%02d:%02d:%02d", minutes / 60, minutes % 60, rest);
+		String out;
+		if (seconds == -1) {
+			out = amplifier + "∞";
+		} else {
+			long minutes = seconds / 60;
+			long rest = seconds % 60;
+			out = minutes >= 60
+					? amplifier + String.format("%02d:%02d:%02d", minutes / 60, minutes % 60, rest)
+					: amplifier + String.format("%02d:%02d", minutes, rest);
 		}
-		return amplifier + String.format("%02d:%02d", minutes, rest);
+		if (VALUE_CACHE.size() > 128) {
+			VALUE_CACHE.clear();
+		}
+		VALUE_CACHE.put(key, out);
+		return out;
 	}
 
 	@Override

@@ -13,6 +13,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
@@ -22,6 +23,11 @@ public class CoordinatesModule extends HudModule {
 	private static final Map<ResourceKey<Biome>, String> BIOME_NAMES = new HashMap<>();
 	private static ResourceKey<Level> cachedDimension;
 	private static String cachedDimensionName = "";
+	private static int cachedX, cachedY, cachedZ;
+	private static String cachedXyz = "";
+	private static final String[] DIRECTION_NAMES = {
+		"SOUTH", "WEST", "NORTH", "EAST"
+	};
 
 	private Layout layout = Layout.VERTICAL;
 	private boolean showDimension = true;
@@ -35,7 +41,16 @@ public class CoordinatesModule extends HudModule {
 
 	/** Same values/format the HUD shows; Copy Coordinates reuses this. */
 	public static String xyz(LocalPlayer player) {
-		return player.getBlockX() + " " + player.getBlockY() + " " + player.getBlockZ();
+		int bx = player.getBlockX();
+		int by = player.getBlockY();
+		int bz = player.getBlockZ();
+		if (bx != cachedX || by != cachedY || bz != cachedZ) {
+			cachedX = bx;
+			cachedY = by;
+			cachedZ = bz;
+			cachedXyz = bx + " " + by + " " + bz;
+		}
+		return cachedXyz;
 	}
 
 	public static String biome(LocalPlayer player) {
@@ -60,7 +75,7 @@ public class CoordinatesModule extends HudModule {
 	}
 
 	public static String direction(LocalPlayer player) {
-		return player.getDirection().getName().toUpperCase();
+		return DIRECTION_NAMES[player.getDirection().get2DDataValue()];
 	}
 
 	@Override

@@ -121,8 +121,39 @@ func filterSearchHits(payload []byte, projectType string, hidden map[string]stru
 	return out, removed, nil
 }
 
-// modFileID reads the mod id declared by a jar's fabric.mod.json.
+type jarIDEntry struct {
+	size    int64
+	modTime int64
+	id      string
+}
+
+var jarIDCache = make(map[string]jarIDEntry)
+
+const jarIDCacheMax = 256
+
+// modFileID reads the mod id declared by a jar's fabric.mod.json, caching the
+// result keyed by path + size + mtime so repeated conflict checks skip the zip I/O.
 func modFileID(path string) (string, error) {
+	fi, err := os.Stat(path)
+	if err != nil {
+		return "", err
+	}
+	key := filepath.Clean(path)
+	if e, ok := jarIDCache[key]; ok && e.size == fi.Size() && e.modTime == fi.ModTime().UnixNano() {
+		return e.id, nil
+	}
+	id, err := readModFileID(path)
+	if err != nil || id == "" {
+		return id, err
+	}
+	if len(jarIDCache) >= jarIDCacheMax {
+		jarIDCache = make(map[string]jarIDEntry)
+	}
+	jarIDCache[key] = jarIDEntry{size: fi.Size(), modTime: fi.ModTime().UnixNano(), id: id}
+	return id, nil
+}
+
+func readModFileID(path string) (string, error) {
 	reader, err := zip.OpenReader(path)
 	if err != nil {
 		return "", err

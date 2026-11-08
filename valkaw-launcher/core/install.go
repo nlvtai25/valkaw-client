@@ -39,6 +39,20 @@ const (
 
 var httpClient = &http.Client{Timeout: 30 * time.Minute}
 
+// netCtx backs all in-flight HTTP requests so they are torn down when the app
+// quits. Before Startup it is Background (uncancellable), matching old behaviour.
+var (
+	netCtx     context.Context = context.Background()
+	netCtxCancel context.CancelFunc
+)
+
+func setNetCtx(ctx context.Context) {
+	if netCtxCancel != nil {
+		netCtxCancel()
+	}
+	netCtx, netCtxCancel = context.WithCancel(ctx)
+}
+
 type versionJSON struct {
 	ID           string `json:"id"`
 	InheritsFrom string `json:"inheritsFrom"`
@@ -213,13 +227,31 @@ func findJava(configured string) (string, int, error) {
 			add(m)
 		}
 	}
-	best, bestMajor := "", 0
+	type probe struct {
+		path  string
+		major int
+	}
+	results := make(chan probe, len(candidates))
+	var wg sync.WaitGroup
 	for _, p := range candidates {
-		if fi, err := os.Stat(p); err != nil || fi.IsDir() {
-			continue
-		}
-		if major := javaMajor(p); major >= 21 && (bestMajor == 0 || major < bestMajor) {
-			best, bestMajor = p, major
+		p := p
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			if fi, err := os.Stat(p); err != nil || fi.IsDir() {
+				return
+			}
+			if major := javaMajor(p); major >= 21 {
+				results <- probe{p, major}
+			}
+		}()
+	}
+	wg.Wait()
+	close(results)
+	best, bestMajor := "", 0
+	for r := range results {
+		if bestMajor == 0 || r.major < bestMajor {
+			best, bestMajor = r.path, r.major
 		}
 	}
 	if best != "" {
@@ -328,7 +360,7 @@ func (a *App) InstallJava() string {
 
 // remoteSize returns the download size of a URL, or 0 when unknown.
 func remoteSize(rawURL string) int64 {
-	req, err := http.NewRequestWithContext(context.Background(), http.MethodHead, rawURL, nil)
+	req, err := http.NewRequestWithContext(netCtx, http.MethodHead, rawURL, nil)
 	if err != nil {
 		return 0
 	}
@@ -648,24 +680,64 @@ func (a *App) installVanilla() error {
 	}
 	var done int64
 	pt := &progressTracker{}
+	type libJob struct {
+		url  string
+		dest string
+		size int64
+		sha1 string
+	}
+	jobs := make(chan libJob)
+	errs := make(chan error, 1)
+	var wg sync.WaitGroup
+	workers := 8
+	for i := 0; i < workers; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for j := range jobs {
+				err := downloadFile(j.url, j.dest, j.size, j.sha1, func(n int64) {
+					atomic.AddInt64(&done, n)
+					a.progress(pt, "Downloading libraries...", 15, 40, atomic.LoadInt64(&done), total)
+				})
+				if err != nil {
+					select {
+					case errs <- err:
+					default:
+					}
+					return
+				}
+			}
+		}()
+	}
 	for _, l := range libs {
 		p := libraryPath(l)
 		if p == "" {
 			continue
 		}
-		dest := a.installPath("libraries", filepath.FromSlash(p))
 		libURL := l.Downloads.Artifact.URL
 		if libURL == "" {
 			libURL = strings.TrimRight(l.URL, "/") + "/" + p
 		}
-		size := l.Downloads.Artifact.Size
-		err := downloadFile(libURL, dest, size, l.Downloads.Artifact.SHA1, func(n int64) {
-			atomic.AddInt64(&done, n)
-			a.progress(pt, "Downloading libraries...", 15, 40, atomic.LoadInt64(&done), total)
-		})
-		if err != nil {
-			return err
+		job := libJob{
+			url:  libURL,
+			dest: a.installPath("libraries", filepath.FromSlash(p)),
+			size: l.Downloads.Artifact.Size,
+			sha1: l.Downloads.Artifact.SHA1,
 		}
+		select {
+		case err := <-errs:
+			close(jobs)
+			wg.Wait()
+			return err
+		case jobs <- job:
+		}
+	}
+	close(jobs)
+	wg.Wait()
+	select {
+	case err := <-errs:
+		return err
+	default:
 	}
 
 	a.emitInstall("Downloading assets...", 40)
@@ -772,10 +844,11 @@ func (a *App) installMods(profile string) error {
 	for _, prefix := range []string{"fabric-api-", "sodium-", "sodium-extra-", "VulkanMod-", "vulkanmod-"} {
 		removeByPrefix(modsDir, prefix)
 	}
-	jar, err := clientJar(version, profile)
+	src, err := os.Open(clientJarPath(version, profile))
 	if err != nil {
 		return err
 	}
+	defer src.Close()
 	// Write beside the target and rename, so a game already running keeps its
 	// open (old) jar instead of reading a half-written file.
 	dest := filepath.Join(modsDir, "valkawclient.jar")
@@ -783,7 +856,7 @@ func (a *App) installMods(profile string) error {
 	if err != nil {
 		return err
 	}
-	if _, err := tmp.Write(jar); err != nil {
+	if _, err := io.Copy(tmp, src); err != nil {
 		tmp.Close()
 		os.Remove(tmp.Name())
 		return err
@@ -970,8 +1043,40 @@ func unzipTo(archive, dest string) error {
 	return nil
 }
 
+type cachedVersion struct {
+	sig string
+	v   *versionJSON
+}
+
+var versionCache = struct {
+	sync.Mutex
+	items map[string]cachedVersion
+}{items: map[string]cachedVersion{}}
+
 func loadVersion(gameDir, id string) (*versionJSON, error) {
-	return loadVersionDepth(gameDir, id, 0)
+	path := filepath.Join(gameDir, "versions", id, id+".json")
+	fi, err := os.Stat(path)
+	if err != nil {
+		return nil, err
+	}
+	sig := fmt.Sprintf("%s|%d|%d", path, fi.ModTime().UnixNano(), fi.Size())
+	versionCache.Lock()
+	if c, ok := versionCache.items[sig]; ok {
+		versionCache.Unlock()
+		return c.v, nil
+	}
+	versionCache.Unlock()
+	v, err := loadVersionDepth(gameDir, id, 0)
+	if err != nil {
+		return nil, err
+	}
+	versionCache.Lock()
+	if len(versionCache.items) > 16 {
+		versionCache.items = map[string]cachedVersion{}
+	}
+	versionCache.items[sig] = cachedVersion{sig: sig, v: v}
+	versionCache.Unlock()
+	return v, nil
 }
 
 func loadVersionDepth(gameDir, id string, depth int) (*versionJSON, error) {
@@ -1363,7 +1468,7 @@ func removeByPrefix(dir, prefix string) {
 }
 
 func getJSON(rawURL string, out any) error {
-	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, rawURL, nil)
+	req, err := http.NewRequestWithContext(netCtx, http.MethodGet, rawURL, nil)
 	if err != nil {
 		return err
 	}
@@ -1405,7 +1510,7 @@ func downloadFile(rawURL, dest string, size int64, sha1sum string, onDelta func(
 func downloadOnce(rawURL, dest string, size int64, sha1sum string, onDelta func(int64)) error {
 	tmp := dest + ".part"
 	_ = os.Remove(tmp)
-	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, rawURL, nil)
+	req, err := http.NewRequestWithContext(netCtx, http.MethodGet, rawURL, nil)
 	if err != nil {
 		return err
 	}

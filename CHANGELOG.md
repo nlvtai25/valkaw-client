@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.0.8 — 2026-11-08
+
+### Launcher
+- Performance: libraries install in parallel (was serial), client jar copies stream instead of loading into memory, and Java version probes run concurrently.
+- Added caching: Modrinth project/version responses (60 s TTL), GPU detection per session, jar → mod-id lookups, version JSON parses, and Vulkan capability (5 s).
+- HTTP requests now share clients and carry a cancellable context, so installs stop promptly when the app quits.
+
+## v1.0.6 — 2026-11-08
+
+### Client
+- Performance: animated HUD styles (rainbow/gradient/pulse) draw without per-character allocations or glyph re-measuring; pure-numeric widths skip the cache to avoid churn.
+- Potion HUD caches formatted durations; Coordinates caches position and direction strings; Armor HUD builds durability text once per frame.
+- FPS/CPS/Speed/Ping rebuild value strings only when their number changes; HUD layout recomputes only on window resize or screen close.
+
 ## v1.0.5 — 2026-11-06
 
 ### Client

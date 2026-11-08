@@ -148,6 +148,7 @@ func (a *App) adoptGameDir() {
 
 func (a *App) Startup(ctx context.Context) {
 	a.ctx = ctx
+	setNetCtx(ctx)
 	migrateLayout()
 	installDesktopShortcut()
 	a.cfgPath = filepath.Join(launcherDir(), "config.json")
@@ -172,7 +173,7 @@ func (a *App) Startup(ctx context.Context) {
 	if a.config.JavaPath != "" && a.config.JavaPath != "java" && !fileExists(a.config.JavaPath) {
 		a.config.JavaPath = "java" // the JRE may have moved or been removed
 	}
-	if _, err := clientJar(a.config.Version, a.config.Profile); err != nil {
+	if !fileExists(clientJarPath(a.config.Version, a.config.Profile)) {
 		a.config.Version = defaultMCVersion
 	}
 	_ = os.MkdirAll(a.config.GameDir, 0755)
@@ -267,7 +268,7 @@ func (a *App) SaveConfig(c Config) string {
 	if c.Profile != "gl" && c.Profile != "vk" {
 		c.Profile = "gl"
 	}
-	if _, err := clientJar(c.Version, c.Profile); err != nil {
+	if !fileExists(clientJarPath(c.Version, c.Profile)) {
 		c.Version = defaultMCVersion
 	}
 	if c.GPU != "" && findGPU(c.GPU).ID == "" {
@@ -355,12 +356,14 @@ func (a *App) fetchDownloadDir() ([]string, error) {
 	return nil, manifestErr
 }
 
+// apiClient is shared by the small JSON fetches so connections are reused.
+var apiClient = &http.Client{Timeout: 10 * time.Second}
+
 // fetchManifest reads the small JSON index that lists the published builds.
 func fetchManifest() ([]string, error) {
-	client := &http.Client{Timeout: 10 * time.Second}
-	req, _ := http.NewRequest(http.MethodGet, repoManifest, nil)
+	req, _ := http.NewRequestWithContext(netCtx, http.MethodGet, repoManifest, nil)
 	req.Header.Set("User-Agent", "ValkawLauncher/1.0")
-	resp, err := client.Do(req)
+	resp, err := apiClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -415,11 +418,10 @@ func loadUpdateCache() []string {
 
 // fetchContentsDir lists assets/downloads through the GitHub Contents API.
 func fetchContentsDir() ([]string, error) {
-	client := &http.Client{Timeout: 10 * time.Second}
-	req, _ := http.NewRequest(http.MethodGet, repoDownloadsAPI, nil)
+	req, _ := http.NewRequestWithContext(netCtx, http.MethodGet, repoDownloadsAPI, nil)
 	req.Header.Set("User-Agent", "ValkawLauncher/1.0")
 	req.Header.Set("Accept", "application/vnd.github+json")
-	resp, err := client.Do(req)
+	resp, err := apiClient.Do(req)
 	if err != nil {
 		return nil, err
 	}

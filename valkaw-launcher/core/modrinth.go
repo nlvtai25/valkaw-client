@@ -13,6 +13,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	wailsruntime "github.com/wailsapp/wails/v2/pkg/runtime"
@@ -29,6 +30,68 @@ type modrinthSearchResult struct {
 
 // modrinthHTTP is shared so downloads and searches reuse connections.
 var modrinthHTTP = &http.Client{Timeout: 30 * time.Second}
+
+// modrinthCache caches GET responses briefly so browsing the resource list
+// does not re-hit the API on every interaction.
+type modrinthCache struct {
+	mu    sync.Mutex
+	items map[string]modrinthCacheItem
+	ttl   time.Duration
+}
+
+type modrinthCacheItem struct {
+	body    string
+	expires time.Time
+}
+
+var mrCache = &modrinthCache{items: map[string]modrinthCacheItem{}, ttl: 60 * time.Second}
+
+func (c *modrinthCache) get(key string) (string, bool) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	it, ok := c.items[key]
+	if !ok || time.Now().After(it.expires) {
+		delete(c.items, key)
+		return "", false
+	}
+	return it.body, true
+}
+
+func (c *modrinthCache) set(key, body string) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if len(c.items) > 512 {
+		c.items = map[string]modrinthCacheItem{}
+	}
+	c.items[key] = modrinthCacheItem{body: body, expires: time.Now().Add(c.ttl)}
+}
+
+func (a *App) modrinthGet(endpoint string) (string, error) {
+	if body, ok := mrCache.get(endpoint); ok {
+		return body, nil
+	}
+	req, err := http.NewRequest("GET", endpoint, nil)
+	if err != nil {
+		return "", err
+	}
+	a.modrinthHeaders(req)
+	resp, err := a.modrinthClient().Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode >= 400 {
+		body, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
+		return "", fmt.Errorf("modrinth request failed: %s %s", resp.Status, string(body))
+	}
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+	out := string(body)
+	mrCache.set(endpoint, out)
+	return out, nil
+}
 
 func (a *App) modrinthClient() *http.Client {
 	return modrinthHTTP
@@ -179,25 +242,7 @@ func (a *App) GetModrinthProject(projectId string) (string, error) {
 	if projectId == "" {
 		return "", errors.New("projectId required")
 	}
-	req, err := http.NewRequest("GET", "https://api.modrinth.com/v2/project/"+url.PathEscape(projectId), nil)
-	if err != nil {
-		return "", err
-	}
-	a.modrinthHeaders(req)
-	resp, err := a.modrinthClient().Do(req)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode >= 400 {
-		body, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
-		return "", fmt.Errorf("modrinth project failed: %s %s", resp.Status, string(body))
-	}
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return "", err
-	}
-	return string(body), nil
+	return a.modrinthGet("https://api.modrinth.com/v2/project/" + url.PathEscape(projectId))
 }
 
 func (a *App) GetModrinthProjectVersions(projectId string, gameVersion string, loader string) (string, error) {
@@ -219,25 +264,7 @@ func (a *App) GetModrinthProjectVersions(projectId string, gameVersion string, l
 	if len(params) > 0 {
 		endpoint += "?" + params.Encode()
 	}
-	req, err := http.NewRequest("GET", endpoint, nil)
-	if err != nil {
-		return "", err
-	}
-	a.modrinthHeaders(req)
-	resp, err := a.modrinthClient().Do(req)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode >= 400 {
-		body, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
-		return "", fmt.Errorf("modrinth versions failed: %s %s", resp.Status, string(body))
-	}
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return "", err
-	}
-	return string(body), nil
+	return a.modrinthGet(endpoint)
 }
 
 // activeProfile reports the profile the game will run with. Anything unknown

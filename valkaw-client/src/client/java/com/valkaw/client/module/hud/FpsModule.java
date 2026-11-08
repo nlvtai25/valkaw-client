@@ -7,6 +7,9 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 
 public class FpsModule extends HudModule {
+	private int cachedFps = -1;
+	private String cachedValue = "";
+
 	public FpsModule() {
 		super("fps", "FPS", 3, 3);
 		setEnabled(true);
@@ -14,7 +17,12 @@ public class FpsModule extends HudModule {
 
 	@Override
 	public void render(GuiGraphics graphics, Font font) {
-		w = Hud.chip(graphics, font, x, y, "FPS", Integer.toString(Minecraft.getInstance().getFps()));
+		int fps = Minecraft.getInstance().getFps();
+		if (fps != cachedFps) {
+			cachedFps = fps;
+			cachedValue = Integer.toString(fps);
+		}
+		w = Hud.chip(graphics, font, x, y, "FPS", cachedValue);
 		h = 11;
 	}
 }

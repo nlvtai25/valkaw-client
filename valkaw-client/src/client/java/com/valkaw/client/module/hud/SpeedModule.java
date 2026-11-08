@@ -12,6 +12,8 @@ public class SpeedModule extends HudModule {
 	private double lastX;
 	private double lastZ;
 	private boolean sampled;
+	private int cachedScaled = -1;
+	private String cachedValue = "";
 
 	public SpeedModule() {
 		super("speed", "Speed", 3, 56);
@@ -46,8 +48,11 @@ public class SpeedModule extends HudModule {
 	@Override
 	public void render(GuiGraphics graphics, Font font) {
 		int scaled = (int) Math.round(speed * 10.0);
-		String value = (scaled / 10) + "." + Math.abs(scaled % 10) + " b/s";
-		w = Hud.chip(graphics, font, x, y, "Speed", value);
+		if (scaled != cachedScaled) {
+			cachedScaled = scaled;
+			cachedValue = (scaled / 10) + "." + Math.abs(scaled % 10) + " b/s";
+		}
+		w = Hud.chip(graphics, font, x, y, "Speed", cachedValue);
 		h = 11;
 	}
 }

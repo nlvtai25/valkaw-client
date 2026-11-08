@@ -71,7 +71,7 @@ export function Navbar() {
             style={{ marginTop: 'var(--space-md)' }}
             onClick={() => setOpen(false)}
           >
-            Get 1.0.5
+            Get 1.0.6
           </Link>
         </div>
       </div>

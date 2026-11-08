@@ -25,6 +25,8 @@ public class ArmorHudModule extends HudModule {
 	private Layout layout = Layout.VERTICAL;
 	private boolean split;
 	private final ItemStack[] armor = new ItemStack[SLOTS.length];
+	/** Durability strings computed once per frame and shared by measure + draw. */
+	private final String[] dur = new String[SLOTS.length + 1];
 
 	public ArmorHudModule() {
 		super("armor", "Armor HUD", 120, 3);
@@ -65,14 +67,19 @@ public class ArmorHudModule extends HudModule {
 		}
 
 		// Item on the left, durability on the right; the widest pair sets the
-		// column so every number starts at the same x.
+		// column so every number starts at the same x. The durability string is
+		// built once here and reused by the draw pass.
 		int pairW = ICON;
-		if (!held.isEmpty()) {
-			pairW = Math.max(pairW, pairWidth(font, held));
+		dur[0] = durString(held);
+		if (!held.isEmpty() && dur[0] != null) {
+			pairW = Math.max(pairW, ICON + 3 + font.width(dur[0]));
 		}
-		for (ItemStack stack : armor) {
-			if (!stack.isEmpty()) {
-				pairW = Math.max(pairW, pairWidth(font, stack));
+		for (int i = 0; i < SLOTS.length; i++) {
+			if (!armor[i].isEmpty()) {
+				dur[i + 1] = durString(armor[i]);
+				if (dur[i + 1] != null) {
+					pairW = Math.max(pairW, ICON + 3 + font.width(dur[i + 1]));
+				}
 			}
 		}
 
@@ -85,7 +92,7 @@ public class ArmorHudModule extends HudModule {
 			int prefixW = Hud.prefix(graphics, font, x, y, "Armor");
 			w = Math.max(prefixW, bodyW);
 			h = 13 + bodyH;
-			drawItems(graphics, font, held, armor, bx, y + 13, pairW);
+			drawItems(graphics, font, held, armor, dur, bx, y + 13, pairW);
 		} else {
 			int headerW = Hud.width(font, Hud.label("Armor")) + PAD;
 			w = Math.max(headerW, bodyW + PAD);
@@ -93,45 +100,44 @@ public class ArmorHudModule extends HudModule {
 			graphics.fill(bx, y, bx + w, y + h, Hud.BG);
 			Hud.text(graphics, font, Hud.label("Armor"), bx + 1, y + 2);
 			graphics.fill(bx + 1, y + 12, bx + 1 + Hud.width(font, Hud.label("Armor")), y + 13, Hud.color());
-			drawItems(graphics, font, held, armor, bx + 1, y + 15, pairW);
+			drawItems(graphics, font, held, armor, dur, bx + 1, y + 15, pairW);
 		}
 	}
 
-	private static int pairWidth(Font font, ItemStack stack) {
-		if (!stack.isDamageableItem()) {
-			return ICON;
-		}
-		return ICON + 3 + font.width(Integer.toString(stack.getMaxDamage() - stack.getDamageValue()));
+	private static String durString(ItemStack stack) {
+		return stack.isDamageableItem() ? Integer.toString(stack.getMaxDamage() - stack.getDamageValue()) : null;
 	}
 
-	private void drawItems(GuiGraphics graphics, Font font, ItemStack held, ItemStack[] armor, int startX, int startY,
-			int pairW) {
+	private void drawItems(GuiGraphics graphics, Font font, ItemStack held, ItemStack[] armor, String[] dur, int startX,
+			int startY, int pairW) {
 		int index = 0;
 		if (!held.isEmpty()) {
-			piece(graphics, font, held, startX, startY, pairW);
+			piece(graphics, font, held, dur[0], startX, startY, pairW);
 			index++;
 		}
-		for (ItemStack stack : armor) {
+		for (int i = 0; i < armor.length; i++) {
+			ItemStack stack = armor[i];
 			if (stack.isEmpty()) {
 				continue;
 			}
 			int px = layout == Layout.HORIZONTAL ? startX + index * (pairW + GAP) : startX;
 			int py = layout == Layout.HORIZONTAL ? startY : startY + index * (ROW_H + GAP);
-			piece(graphics, font, stack, px, py, pairW);
+			piece(graphics, font, stack, dur[i + 1], px, py, pairW);
 			index++;
 		}
 	}
 
-	private static void piece(GuiGraphics graphics, Font font, ItemStack stack, int px, int py, int pairW) {
+	private static void piece(GuiGraphics graphics, Font font, ItemStack stack, String dur, int px, int py,
+			int pairW) {
 		graphics.renderItem(stack, px + 1, py + 1);
-		if (!stack.isDamageableItem()) {
+		if (dur == null) {
 			return;
 		}
-		int left = stack.getMaxDamage() - stack.getDamageValue();
 		int max = stack.getMaxDamage();
+		int left = max - stack.getDamageValue();
 		float ratio = max <= 0 ? 1.0F : (float) left / max;
 		int color = ratio > 0.6F ? 0xFF63F5B0 : ratio > 0.25F ? 0xFFFFD166 : 0xFFFF7A9A;
-		graphics.drawString(font, Integer.toString(left), px + ICON + 2, py + 5, color, false);
+		graphics.drawString(font, dur, px + ICON + 2, py + 5, color, false);
 	}
 
 	@Override

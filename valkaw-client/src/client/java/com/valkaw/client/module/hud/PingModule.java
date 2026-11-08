@@ -10,6 +10,9 @@ import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.client.player.LocalPlayer;
 
 public class PingModule extends HudModule {
+	private int cachedLatency = -2;
+	private String cachedValue = "";
+
 	public PingModule() {
 		super("ping", "Ping", 3, 30);
 	}
@@ -19,14 +22,18 @@ public class PingModule extends HudModule {
 		Minecraft mc = Minecraft.getInstance();
 		LocalPlayer player = mc.player;
 		ClientPacketListener connection = mc.getConnection();
-		String value = "0ms";
+		int latency = -1;
 		if (player != null && connection != null) {
 			PlayerInfo info = connection.getPlayerInfo(player.getUUID());
 			if (info != null) {
-				value = info.getLatency() + "ms";
+				latency = info.getLatency();
 			}
 		}
-		w = Hud.chip(graphics, font, x, y, "Ping", value);
+		if (latency != cachedLatency) {
+			cachedLatency = latency;
+			cachedValue = latency < 0 ? "0ms" : latency + "ms";
+		}
+		w = Hud.chip(graphics, font, x, y, "Ping", cachedValue);
 		h = 11;
 	}
 }

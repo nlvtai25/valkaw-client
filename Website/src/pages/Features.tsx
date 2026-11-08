@@ -174,7 +174,7 @@ export default function Features() {
             </div>
             <div className="actions" style={{ marginTop: 'var(--space-lg)' }}>
               <Link to="/download" className="btn">
-                Download 1.0.5
+                Download 1.0.6
               </Link>
               <Link to="/" className="btn btn--quiet">
                 Back to the overview

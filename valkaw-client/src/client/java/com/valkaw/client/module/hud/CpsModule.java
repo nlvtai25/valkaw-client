@@ -7,14 +7,24 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 
 public class CpsModule extends HudModule {
+	private int cachedLeft = -1;
+	private int cachedRight = -1;
+	private String cachedValue = "";
+
 	public CpsModule() {
 		super("cps", "CPS", 3, 17);
 	}
 
 	@Override
 	public void render(GuiGraphics graphics, Font font) {
-		String value = InputState.leftCps() + "/" + InputState.rightCps();
-		w = Hud.chip(graphics, font, x, y, "CPS", value);
+		int left = InputState.leftCps();
+		int right = InputState.rightCps();
+		if (left != cachedLeft || right != cachedRight) {
+			cachedLeft = left;
+			cachedRight = right;
+			cachedValue = left + "/" + right;
+		}
+		w = Hud.chip(graphics, font, x, y, "CPS", cachedValue);
 		h = 11;
 	}
 }
