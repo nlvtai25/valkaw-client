@@ -1167,6 +1167,18 @@ func (a *App) Launch() string {
 	if err := a.checkInstalled(); err != nil {
 		return "error: " + err.Error() + " — finish the setup first"
 	}
+	// Block the launch when mods the user installed separately duplicate mods
+	// that ship inside the client jar: Minecraft would refuse to start.
+	if conflicts, cerr := a.scanConflictingMods(profile); cerr != nil {
+		return "error: " + cerr.Error()
+	} else if len(conflicts) > 0 {
+		names := make([]string, 0, len(conflicts))
+		for _, c := range conflicts {
+			names = append(names, c.File)
+		}
+		return "error: duplicate bundled mods in mods/: " + strings.Join(names, ", ") +
+			". Remove them or the game will refuse to start."
+	}
 	versionID := a.gameVersion()
 	id := a.fabricID()
 	gameDir := a.gamePath(profile)
