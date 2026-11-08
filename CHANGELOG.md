@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.0.9 — 2026-11-08
+
+### Launcher
+- Added a "Check conflicts" button in the resource browser that scans the profile's mods folder for user-installed mods that duplicate the ones bundled inside the client jar.
+- Launch now runs that same scan automatically: if a duplicate bundled mod is found, launching is blocked with a message listing the offending jars instead of letting Minecraft fail to start on duplicate mod ids.
+- Downloading a mod that is already bundled in the client is now refused by slug, not just hidden from search.
+
 ## v1.0.8 — 2026-11-08
 
 ### Launcher

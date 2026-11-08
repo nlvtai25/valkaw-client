@@ -28,24 +28,24 @@ export interface LauncherBuilds {
 
 /** Last published release. Shown when the API is unreachable or rate limited. */
 export const FALLBACK_BUILDS: LauncherBuilds = {
-  version: '1.0.8',
+  version: '1.0.9',
   live: false,
   builds: [
     {
-      version: '1.0.8',
+      version: '1.0.9',
       os: 'linux',
       arch: 'amd64',
-      file: 'valkaw-launcher-v1.0.8-linux-amd64',
+      file: 'valkaw-launcher-v1.0.9-linux-amd64',
       sizeMB: 11.1,
-      url: `${RAW_BASE}valkaw-launcher-v1.0.8-linux-amd64`,
+      url: `${RAW_BASE}valkaw-launcher-v1.0.9-linux-amd64`,
     },
     {
-      version: '1.0.8',
+      version: '1.0.9',
       os: 'windows',
       arch: 'amd64',
-      file: 'valkaw-launcher-win-v1.0.8-windows-amd64.exe',
+      file: 'valkaw-launcher-win-v1.0.9-windows-amd64.exe',
       sizeMB: 13.9,
-      url: `${RAW_BASE}valkaw-launcher-win-v1.0.8-windows-amd64.exe`,
+      url: `${RAW_BASE}valkaw-launcher-win-v1.0.9-windows-amd64.exe`,
     },
   ],
 };
@@ -56,7 +56,7 @@ export const PLATFORM_LABEL: Record<Platform, string> = {
   darwin: 'macOS',
 };
 
-/** Matches both `valkaw-launcher-v1.0.8-linux-amd64` and the `-win-` variant. */
+/** Matches both `valkaw-launcher-v1.0.9-linux-amd64` and the `-win-` variant. */
 const FILE_NAME = /^valkaw-launcher-(?:win-)?v?(\d+(?:\.\d+)*)-(linux|windows|darwin)-([a-z0-9]+)(?:\.exe)?$/;
 
 interface ContentEntry {
