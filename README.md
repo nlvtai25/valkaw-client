@@ -63,11 +63,52 @@ Two extras sit outside the module lists. The **Custom Symbols** tab beside the c
 
 Each client jar nests its dependencies as jar-in-jar, so a single file carries everything. No resourcepacks are bundled; the client uses the vanilla textures.
 
-**Universal (both profiles).** Fabric API, Lithium, Ferrite Core, Krypton, Dynamic FPS, BadOptimizations, Clumps, C2ME, Greedy Meshing, LambDynamicLights, ImmediatelyFast, Lightweight Inventory Sorting, Shulker Box Tooltip, Offline Mode Fix, RPC (Discord presence).
+<details>
+<summary><strong>Universal</strong> — shared by both profiles</summary>
 
-**Sodium profile only.** Sodium (renderer), Sodium Extra, Reese's Sodium Options, MoreCulling, Particle Core, EntityCulling, Sodium FPS Cap Fix, Chunks Fade In, plus the Cloth Config, Fzzy Config and Fabric Language Kotlin dependencies.
+- [Fabric API](https://modrinth.com/mod/fabric-api)
+- [Lithium](https://modrinth.com/mod/lithium)
+- [Ferrite Core](https://modrinth.com/mod/ferrite-core)
+- [Krypton](https://modrinth.com/mod/krypton)
+- [Dynamic FPS](https://modrinth.com/mod/dynamic-fps)
+- [BadOptimizations](https://modrinth.com/mod/badoptimizations)
+- [Clumps](https://modrinth.com/mod/clumps)
+- [C2ME](https://modrinth.com/mod/c2me-fabric)
+- [Greedy Meshing](https://modrinth.com/mod/greedy-meshing)
+- [LambDynamicLights](https://modrinth.com/mod/lambdynamiclights)
+- [ImmediatelyFast](https://modrinth.com/mod/immediatelyfast)
+- [Lightweight Inventory Sorting](https://modrinth.com/mod/lightweight-inventory-sorting)
+- [Shulker Box Tooltip](https://modrinth.com/mod/shulkerboxtooltip)
+- [Offline Mode Fix](https://modrinth.com/mod/offline-mode-fix)
+- [ResourcePackCached](https://modrinth.com/mod/resourcepackcached)
 
-**VulkanMod profile only.** VulkanMod (renderer), Not Enough Vulkan, plus the LWJGL Vulkan bindings (VMA, shaderc).
+</details>
+
+<details>
+<summary><strong>Sodium profile</strong> — renderer and OpenGL extras</summary>
+
+- [Sodium](https://modrinth.com/mod/sodium) (renderer)
+- [Sodium Extra](https://modrinth.com/mod/sodium-extra)
+- [Reese's Sodium Options](https://modrinth.com/mod/reeses-sodium-options)
+- [MoreCulling](https://modrinth.com/mod/moreculling)
+- [Particle Core](https://modrinth.com/mod/particle-core)
+- [EntityCulling](https://modrinth.com/mod/entityculling)
+- [Sodium FPS Cap Fix](https://modrinth.com/mod/sodiumfpscapfix)
+- [Chunks Fade In](https://modrinth.com/mod/chunks-fade-in)
+- [Cloth Config](https://modrinth.com/mod/cloth-config) (dependency)
+- [Fzzy Config](https://modrinth.com/mod/fzzy-config) (dependency)
+- [Fabric Language Kotlin](https://modrinth.com/mod/fabric-language-kotlin) (dependency)
+
+</details>
+
+<details>
+<summary><strong>VulkanMod profile</strong> — renderer and Vulkan extras</summary>
+
+- [VulkanMod](https://modrinth.com/mod/vulkanmod) (renderer)
+- [Not Enough Vulkan](https://modrinth.com/mod/not-enough-vulkan)
+- LWJGL Vulkan bindings (VMA, shaderc) — bundled from the VulkanMod jars
+
+</details>
 
 ## Requirements
 
