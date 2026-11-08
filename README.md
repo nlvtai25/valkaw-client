@@ -59,6 +59,16 @@ Every HUD module can link to the left or right screen edge, and positions are dr
 
 Two extras sit outside the module lists. The **Custom Symbols** tab beside the chat input inserts Unicode symbols and `&` colour codes, handy when writing item names and lore. The **Crosshair Editor** draws a crosshair pixel by pixel on a 15×15 grid.
 
+## Bundled mods
+
+Each client jar nests its dependencies as jar-in-jar, so a single file carries everything. No resourcepacks are bundled; the client uses the vanilla textures.
+
+**Universal (both profiles).** Fabric API, Lithium, Ferrite Core, Krypton, Dynamic FPS, BadOptimizations, Clumps, C2ME, Greedy Meshing, LambDynamicLights, ImmediatelyFast, Lightweight Inventory Sorting, Shulker Box Tooltip, Offline Mode Fix, RPC (Discord presence).
+
+**Sodium profile only.** Sodium (renderer), Sodium Extra, Reese's Sodium Options, MoreCulling, Particle Core, EntityCulling, Sodium FPS Cap Fix, Chunks Fade In, plus the Cloth Config, Fzzy Config and Fabric Language Kotlin dependencies.
+
+**VulkanMod profile only.** VulkanMod (renderer), Not Enough Vulkan, plus the LWJGL Vulkan bindings (VMA, shaderc).
+
 ## Requirements
 
 **Launcher (Linux):**
