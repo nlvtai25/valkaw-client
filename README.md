@@ -28,15 +28,15 @@ Client jars come from [Releases](https://github.com/nlvtai25/valkaw-client/relea
 
 | File | Platform |
 | --- | --- |
-| `assets/downloads/valkaw-launcher-v1.0.8-linux-amd64` | Linux |
-| `assets/downloads/valkaw-launcher-win-v1.0.8-windows-amd64.exe` | Windows |
+| [valkaw-launcher-v1.0.8-linux-amd64](https://github.com/nlvtai25/valkaw-client/raw/main/assets/downloads/valkaw-launcher-v1.0.8-linux-amd64) | Linux |
+| [valkaw-launcher-win-v1.0.8-windows-amd64.exe](https://github.com/nlvtai25/valkaw-client/raw/main/assets/downloads/valkaw-launcher-win-v1.0.8-windows-amd64.exe) | Windows |
 
 Released client jars:
 
 | File | What it is |
 | --- | --- |
-| `valkawclient-1.0.6-sodium.jar` | Sodium profile client |
-| `valkawclient-1.0.6-vulkan.jar` | Vulkan profile client |
+| [valkawclient-1.0.6-sodium.jar](https://github.com/nlvtai25/valkaw-client/releases/download/v1.0.6/valkawclient-1.0.6-sodium.jar) | Sodium profile client |
+| [valkawclient-1.0.6-vulkan.jar](https://github.com/nlvtai25/valkaw-client/releases/download/v1.0.6/valkawclient-1.0.6-vulkan.jar) | Vulkan profile client |
 
 ## Preview
 
