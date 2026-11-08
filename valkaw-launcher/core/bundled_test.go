@@ -2,6 +2,7 @@ package core
 
 import (
 	"archive/zip"
+	"bytes"
 	"encoding/json"
 	"os"
 	"path/filepath"
@@ -52,6 +53,80 @@ func TestHiddenModSlugs(t *testing.T) {
 	}
 	if _, ok := gl["sodium"]; !ok {
 		t.Error("sodium is bundled and must be hidden")
+	}
+}
+
+func TestReadModFileIDFromBytes(t *testing.T) {
+	var buf bytes.Buffer
+	zw := zip.NewWriter(&buf)
+	entry, err := zw.Create("fabric.mod.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := entry.Write([]byte(`{"id":"sodium","version":"1.0.0"}`)); err != nil {
+		t.Fatal(err)
+	}
+	if err := zw.Close(); err != nil {
+		t.Fatal(err)
+	}
+	id, err := readModFileIDFromBytes(buf.Bytes())
+	if err != nil {
+		t.Fatalf("read id: %v", err)
+	}
+	if id != "sodium" {
+		t.Fatalf("id = %q, want sodium", id)
+	}
+}
+
+func TestBundledModIDs(t *testing.T) {
+	dir := t.TempDir()
+	clientJar := filepath.Join(dir, "valkawclient.jar")
+	// Build a client jar with two nested mods.
+	file, err := os.Create(clientJar)
+	if err != nil {
+		t.Fatal(err)
+	}
+	zw := zip.NewWriter(file)
+	for _, nested := range []struct{ name, id string }{
+		{"META-INF/jars/sodium.jar", "sodium"},
+		{"META-INF/jars/lithium.jar", "lithium"},
+	} {
+		entry, err := zw.Create(nested.name)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var inner bytes.Buffer
+		izw := zip.NewWriter(&inner)
+		ie, err := izw.Create("fabric.mod.json")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := ie.Write([]byte(`{"id":"` + nested.id + `","version":"1"}`)); err != nil {
+			t.Fatal(err)
+		}
+		if err := izw.Close(); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := entry.Write(inner.Bytes()); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := zw.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if err := file.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	ids, err := bundledModIDs(clientJar)
+	if err != nil {
+		t.Fatalf("bundledModIDs: %v", err)
+	}
+	if ids["sodium"] == "" {
+		t.Error("should detect nested sodium jar")
+	}
+	if ids["lithium"] == "" {
+		t.Error("should detect nested lithium jar")
 	}
 }
 

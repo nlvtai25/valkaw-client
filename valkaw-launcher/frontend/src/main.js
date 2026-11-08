@@ -1,6 +1,6 @@
 import './style.css';
 
-import { GetConfig, SaveConfig, Launch, CheckUpdate, OpenReleases, InstallClient, CheckInstalled, DetectJava, InstallUpdate, GetVersions, ListGPUs, CheckRequirements, InstallJava, SetGpuPreference, CheckVulkan, GetResourceBrowserContext, SearchModrinth, GetModrinthProject, GetModrinthProjectVersions, DownloadResource, OpenResourceDir } from '../wailsjs/go/core/App';
+import { GetConfig, SaveConfig, Launch, CheckUpdate, OpenReleases, InstallClient, CheckInstalled, DetectJava, InstallUpdate, GetVersions, ListGPUs, CheckRequirements, InstallJava, SetGpuPreference, CheckVulkan, GetResourceBrowserContext, SearchModrinth, GetModrinthProject, GetModrinthProjectVersions, DownloadResource, OpenResourceDir, ScanConflictMods } from '../wailsjs/go/core/App';
 import { EventsOn, BrowserOpenURL } from '../wailsjs/runtime/runtime';
 
 const $ = (id) => document.getElementById(id);
@@ -618,6 +618,40 @@ $('openModsFolder').addEventListener('click', async () => {
         btn.textContent = 'Failed';
     }
     setTimeout(() => { btn.textContent = label; }, 1400);
+});
+
+// Detects mods the user installed separately that duplicate mods already
+// bundled inside the client jar. Such duplicates would make Minecraft refuse
+// to start, so we list them for removal.
+$('checkModConflicts').addEventListener('click', async () => {
+    const btn = $('checkModConflicts');
+    const label = btn.textContent;
+    const statusEl = $('resourceStatus');
+    btn.disabled = true;
+    btn.textContent = 'Scanning...';
+    statusEl.textContent = '';
+    try {
+        const raw = await ScanConflictMods();
+        if (raw === 'ok') {
+            statusEl.textContent = 'No duplicate mods found. All installed mods are compatible with the bundled client.';
+        } else if (raw.startsWith('error:')) {
+            statusEl.textContent = raw;
+        } else {
+            const conflicts = JSON.parse(raw);
+            if (!conflicts.length) {
+                statusEl.textContent = 'No duplicate mods found.';
+            } else {
+                statusEl.textContent = 'Duplicate mods found (already inside the client): ' +
+                    conflicts.map(c => c.file).join(', ') +
+                    '. Remove them or Minecraft will refuse to start.';
+            }
+        }
+    } catch (e) {
+        statusEl.textContent = 'Scan failed: ' + e;
+    } finally {
+        btn.disabled = false;
+        btn.textContent = label;
+    }
 });
 
 document.querySelectorAll('.resource-tab').forEach(btn => {

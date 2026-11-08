@@ -42,6 +42,8 @@ export function OpenResourceDir(arg1:string):Promise<void>;
 
 export function SaveConfig(arg1:core.Config):Promise<string>;
 
+export function ScanConflictMods():Promise<string>;
+
 export function SearchModrinth(arg1:string,arg2:string,arg3:string,arg4:string,arg5:string,arg6:number,arg7:number,arg8:string):Promise<string>;
 
 export function SetGpuPreference(arg1:number):Promise<string>;

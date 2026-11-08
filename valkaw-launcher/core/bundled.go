@@ -2,6 +2,7 @@ package core
 
 import (
 	"archive/zip"
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -62,6 +63,140 @@ func isBlockedDownload(profile, slug string) bool {
 	}
 	_, ok := hiddenModSlugs(profile)[strings.ToLower(slug)]
 	return ok
+}
+
+// BundledMod reports a mod found both inside the client jar and installed by
+// the user as a separate file, which would make Minecraft refuse to start.
+type BundledMod struct {
+	File         string `json:"file"`         // user-installed jar file name
+	ModID        string `json:"modId"`        // the duplicated mod id
+	BundledName  string `json:"bundledName"`  // name of the nested jar inside the client
+	IsClientFile bool   `json:"isClientFile"` // true when the jar is valkawclient.jar itself
+}
+
+// readModFileIDFromZip extracts the mod id from a fabric.mod.json inside a jar
+// that is itself presented as a zip reader (a nested jar-in-jar).
+func readModFileIDFromZip(r io.Reader) (string, error) {
+	data, err := io.ReadAll(io.LimitReader(r, 64<<20))
+	if err != nil {
+		return "", err
+	}
+	return readModFileIDFromBytes(data)
+}
+
+// readModFileIDFromBytes parses a jar's bytes to find its fabric.mod.json id.
+func readModFileIDFromBytes(data []byte) (string, error) {
+	reader, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
+	if err != nil {
+		return "", err
+	}
+	for _, file := range reader.File {
+		if file.Name != "fabric.mod.json" {
+			continue
+		}
+		rc, err := file.Open()
+		if err != nil {
+			return "", err
+		}
+		defer rc.Close()
+		var meta struct {
+			ID string `json:"id"`
+		}
+		if err := json.NewDecoder(io.LimitReader(rc, 1<<20)).Decode(&meta); err != nil {
+			return "", err
+		}
+		return strings.TrimSpace(meta.ID), nil
+	}
+	return "", fmt.Errorf("no fabric.mod.json in nested jar")
+}
+
+// bundledModIDs reads the mod ids of every jar nested inside the client jar
+// (META-INF/jars/*.jar). These are the mods that ship with the client.
+func bundledModIDs(clientJar string) (map[string]string, error) {
+	ids := make(map[string]string)
+	reader, err := zip.OpenReader(clientJar)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return ids, nil
+		}
+		return ids, err
+	}
+	defer reader.Close()
+	prefix := "META-INF/jars/"
+	for _, file := range reader.File {
+		if !strings.HasPrefix(file.Name, prefix) || !strings.HasSuffix(file.Name, ".jar") {
+			continue
+		}
+		rc, err := file.Open()
+		if err != nil {
+			continue
+		}
+		id, err := readModFileIDFromZip(rc)
+		rc.Close()
+		if err == nil && id != "" {
+			ids[id] = filepath.Base(file.Name)
+		}
+	}
+	return ids, nil
+}
+
+// scanConflictingMods scans the profile's mods folder and reports mods the user
+// installed separately that are already bundles inside the client jar.
+func (a *App) scanConflictingMods(profile string) ([]BundledMod, error) {
+	modsDir := a.gamePath(profile, "mods")
+	if fi, err := os.Stat(modsDir); err != nil || !fi.IsDir() {
+		return nil, nil
+	}
+	clientJar := filepath.Join(modsDir, "valkawclient.jar")
+	ids, err := bundledModIDs(clientJar)
+	if err != nil {
+		return nil, err
+	}
+	if len(ids) == 0 {
+		return nil, nil
+	}
+	entries, err := os.ReadDir(modsDir)
+	if err != nil {
+		return nil, err
+	}
+	var conflicts []BundledMod
+	for _, entry := range entries {
+		if entry.IsDir() || !strings.HasSuffix(strings.ToLower(entry.Name()), ".jar") {
+			continue
+		}
+		path := filepath.Join(modsDir, entry.Name())
+		if filepath.Clean(path) == filepath.Clean(clientJar) {
+			continue
+		}
+		id, err := modFileID(path)
+		if err != nil || id == "" {
+			continue
+		}
+		if bundledName, ok := ids[id]; ok {
+			conflicts = append(conflicts, BundledMod{
+				File:        entry.Name(),
+				ModID:       id,
+				BundledName: bundledName,
+			})
+		}
+	}
+	return conflicts, nil
+}
+
+// ScanConflictMods exposes the conflict scan to the frontend for the active profile.
+func (a *App) ScanConflictMods() string {
+	conflicts, err := a.scanConflictingMods(a.activeProfile())
+	if err != nil {
+		return fmt.Sprintf("error: %s", err.Error())
+	}
+	if len(conflicts) == 0 {
+		return "ok"
+	}
+	out, err := json.Marshal(conflicts)
+	if err != nil {
+		return fmt.Sprintf("error: %s", err.Error())
+	}
+	return string(out)
 }
 
 // glOnlyModSlugs hook into Sodium or Iris, so they cannot run on VulkanMod.

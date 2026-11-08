@@ -82,6 +82,10 @@ export function SaveConfig(arg1) {
   return window['go']['core']['App']['SaveConfig'](arg1);
 }
 
+export function ScanConflictMods() {
+  return window['go']['core']['App']['ScanConflictMods']();
+}
+
 export function SearchModrinth(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8) {
   return window['go']['core']['App']['SearchModrinth'](arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
 }
