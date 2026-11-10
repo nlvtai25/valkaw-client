@@ -11,7 +11,7 @@ import net.minecraft.network.chat.MutableComponent;
 
 /** Shared HUD drawing primitives (sci-fi chips, no per-frame component allocation). */
 public final class Hud {
-	public static final int CYAN = 0xFF7DF9FF;
+	public static final int CYAN = 0xFF9EC7F0;
 	public static final int TEXT = 0xFFD7E3FF;
 	public static final int DIM = 0xFF7183A8;
 	public static final int BG = 0x66101828;
@@ -91,7 +91,7 @@ public final class Hud {
 	/** Draws a key cap. */
 	public static void key(GuiGraphics graphics, Font font, int x, int y, int w, String label, boolean down) {
 		graphics.fill(x, y, x + w, y + 11, down ? 0xD0122A3A : BG);
-		graphics.renderOutline(x, y, w, 11, down ? 0xFF7DF9FF : 0x557DF9FF);
+		graphics.renderOutline(x, y, w, 11, down ? 0xFF9EC7F0 : 0x559EC7F0);
 		int color = down ? 0xFFEAF6FF : color();
 		graphics.drawString(font, label, x + (w - font.width(label)) / 2, y + 2, color, false);
 	}

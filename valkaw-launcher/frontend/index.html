@@ -10,15 +10,12 @@
     <aside class="sidebar">
         <div class="brand">
             <img src="./src/assets/images/logo.png" alt="" class="logo" />
-            <div>
-                <h1>Valkaw</h1>
-                <span class="ver" id="launcherVer">Launcher</span>
-            </div>
+            <span class="ver" id="launcherVer">Launcher</span>
         </div>
         <nav>
-            <button class="nav active" data-page="play"><span class="icon">▶</span> Play</button>
-            <button class="nav" data-page="settings"><span class="icon">⚙</span> Settings</button>
-            <button class="nav" data-page="resources"><span class="icon">⬇</span> Resources</button>
+            <button class="nav active" data-page="play"><span class="icon">▶</span><span class="label">Play</span></button>
+            <button class="nav" data-page="settings"><span class="icon">⚙</span><span class="label">Settings</span></button>
+            <button class="nav" data-page="resources"><span class="icon">⬇</span><span class="label">Resources</span></button>
         </nav>
         <div class="sidebar-foot">
             <button id="updateBtn" class="btn ghost small">Check updates</button>
@@ -27,145 +24,153 @@
     </aside>
 
     <main>
-        <header class="topbar">
-            <div>
-                <p class="eyebrow" id="pageEyebrow">Ready to play</p>
-                <h2 id="pageTitle">Play</h2>
-            </div>
-            <div class="top-right">
-                <div class="wordmark">VALKAW</div>
-                <div class="userchip" id="userChip">Guest</div>
-            </div>
-        </header>
-
+        <!-- Play: Saturn fills the right panel; a light greeting sits up top and
+             a compact command dock anchors the bottom. -->
         <section id="page-play" class="page">
-            <div class="hero">
-                <div>
-                    <h3 id="welcome">Welcome back</h3>
-                    <p id="heroMeta" class="muted">Minecraft 1.21.11 • Valkaw Client</p>
+            <header class="play-greet">
+                <div class="greet-text">
+                    <h2 id="welcome">Welcome back</h2>
+                    <p id="heroMeta" class="muted small"></p>
                 </div>
-                <div class="hero-version">
-                    <label for="version">Minecraft</label>
-                    <select id="version"></select>
+                <div class="greet-profile" id="greetProfile">Sodium</div>
+            </header>
+            <div class="dock">
+                <div class="dock-body">
+                    <!-- One selector row: the two render profiles plus the
+                         Minecraft version pill, all matching in height/style. -->
+                    <div class="dock-row">
+                        <label class="profile-pill">
+                            <input type="radio" name="profile" value="gl" hidden checked>
+                            <span class="pill-icon gl">GL</span>
+                            <span class="pill-info"><strong>Sodium</strong><small>OpenGL • fast &amp; stable</small></span>
+                            <span class="check">✓</span>
+                        </label>
+                        <label class="profile-pill">
+                            <input type="radio" name="profile" value="vk" hidden>
+                            <span class="pill-icon vk">VK</span>
+                            <span class="pill-info"><strong>VulkanMod</strong><small>Vulkan • max performance</small></span>
+                            <span class="check">✓</span>
+                        </label>
+                        <div class="version-pill">
+                            <span class="pill-icon mc">MC</span>
+                            <span class="pill-info">
+                                <small>Minecraft</small>
+                                <strong id="versionValue">1.21.11</strong>
+                            </span>
+                            <span class="chev">▾</span>
+                            <!-- The native select is stretched invisibly over the
+                                 whole pill: a click anywhere on the pill lands on
+                                 the select and opens its option list natively,
+                                 which WebKitGTK does reliably (a wrapping label
+                                 only focused the select without opening it). -->
+                            <select id="version" class="version-overlay" aria-label="Minecraft version"></select>
+                        </div>
+                    </div>
+                    <!-- Centered launch cluster: action button, status, progress. -->
+                    <div class="dock-launch">
+                        <div class="action-row">
+                            <button id="installBtn" class="btn primary install-only hidden">Install</button>
+                            <button id="playBtn" class="play-btn">▶ Play</button>
+                        </div>
+                        <p id="installStage" class="muted small"></p>
+                        <pre id="status"></pre>
+                        <p id="installHint" class="muted small"></p>
+                        <div class="progress"><div id="installBar"></div></div>
+                    </div>
                 </div>
-                <button id="playBtn" class="play-btn">▶ Play</button>
-            </div>
-
-            <div class="profile-grid">
-                <label class="profile-card">
-                    <input type="radio" name="profile" value="gl" hidden>
-                    <div class="profile-icon gl">GL</div>
-                    <div class="profile-info">
-                        <strong>Sodium</strong>
-                        <span>OpenGL • fast & stable</span>
-                    </div>
-                    <span class="check">✓</span>
-                </label>
-                <label class="profile-card">
-                    <input type="radio" name="profile" value="vk" hidden>
-                    <div class="profile-icon vk">VK</div>
-                    <div class="profile-info">
-                        <strong>VulkanMod</strong>
-                        <span>Vulkan • max performance</span>
-                    </div>
-                    <span class="check">✓</span>
-                </label>
-            </div>
-
-            <div class="card">
-                <div class="install-row">
-                    <div>
-                        <strong>Game files</strong>
-                        <span id="installHint" class="muted small">Minecraft 1.21.11 + Fabric + Valkaw mods</span>
-                    </div>
-                    <button id="installBtn" class="btn ghost">Install / Repair</button>
+                <div class="launch-brand">
+                    <span class="wordmark">VALKAW</span>
+                    <span class="userchip" id="userChip">Guest</span>
                 </div>
-                <div class="progress"><div id="installBar"></div></div>
-                <p id="installStage" class="muted small"></p>
-                <pre id="status"></pre>
             </div>
         </section>
 
         <section id="page-settings" class="page hidden">
-            <div class="settings-grid">
-                <div class="card">
-                    <h3>Graphics</h3>
-                    <div id="gpuList" class="gpu-list"></div>
-                    <div id="gpuWin" class="hidden">
-                        <label>GPU preference</label>
-                        <select id="gpuPref">
-                            <option value="0">Auto (system default)</option>
-                            <option value="1">Power saving</option>
-                            <option value="2">High performance</option>
+            <div class="sheet">
+                <div class="settings-grid">
+                    <div class="card">
+                        <h3>Graphics</h3>
+                        <div id="gpuList" class="gpu-list"></div>
+                        <div id="gpuWin" class="hidden">
+                            <label>GPU preference</label>
+                            <select id="gpuPref">
+                                <option value="0">Auto (system default)</option>
+                                <option value="1">Power saving</option>
+                                <option value="2">High performance</option>
+                            </select>
+                            <p class="muted small">Windows stores this per program, so it follows the Java runtime the game starts with.</p>
+                        </div>
+                        <p id="gpuStatus" class="muted small"></p>
+                    </div>
+                    <div class="card">
+                        <h3>Java</h3>
+                        <label>Java path</label>
+                        <input id="javaPath" type="text" />
+                        <button id="detectJavaBtn" class="btn ghost small">Detect Java</button>
+                        <p id="javaStatus" class="muted small"></p>
+                        <label>Memory (MB)</label>
+                        <input id="memoryMB" type="number" />
+                    </div>
+                    <div class="card">
+                        <h3>Game</h3>
+                        <label>Game directory</label>
+                        <input id="gameDir" type="text" />
+                        <label>Window preset</label>
+                        <select id="windowPreset">
+                            <option value="1280x720">1280 × 720 (HD)</option>
+                            <option value="1600x900" selected>1600 × 900 (HD+)</option>
+                            <option value="1920x1080">1920 × 1080 (Full HD)</option>
+                            <option value="2560x1440">2560 × 1440 (2K)</option>
+                            <option value="custom">Custom</option>
                         </select>
-                        <p class="muted small">Windows stores this per program, so it follows the Java runtime the game starts with.</p>
+                        <div class="field-row">
+                            <div><label>Width</label><input id="windowWidth" type="number" min="320" max="7680" /></div>
+                            <div><label>Height</label><input id="windowHeight" type="number" min="240" max="4320" /></div>
+                        </div>
                     </div>
-                    <p id="gpuStatus" class="muted small"></p>
-                </div>
-                <div class="card">
-                    <h3>Java</h3>
-                    <label>Java path</label>
-                    <input id="javaPath" type="text" />
-                    <button id="detectJavaBtn" class="btn ghost small">Detect Java</button>
-                    <p id="javaStatus" class="muted small"></p>
-                    <label>Memory (MB)</label>
-                    <input id="memoryMB" type="number" />
-                </div>
-                <div class="card">
-                    <h3>Game</h3>
-                    <label>Game directory</label>
-                    <input id="gameDir" type="text" />
-                    <label>Window preset</label>
-                    <select id="windowPreset">
-                        <option value="1280x720">1280 × 720 (HD)</option>
-                        <option value="1600x900" selected>1600 × 900 (HD+)</option>
-                        <option value="1920x1080">1920 × 1080 (Full HD)</option>
-                        <option value="2560x1440">2560 × 1440 (2K)</option>
-                        <option value="custom">Custom</option>
-                    </select>
-                    <div class="field-row">
-                        <div><label>Width</label><input id="windowWidth" type="number" min="320" max="7680" /></div>
-                        <div><label>Height</label><input id="windowHeight" type="number" min="240" max="4320" /></div>
+                    <div class="card">
+                        <h3>Updates</h3>
+                        <label class="checkbox"><input id="autoUpdate" type="checkbox"> Auto-update</label>
+                        <button id="openReleases" class="btn ghost">Open releases</button>
+                    </div>
+                    <div class="card">
+                        <h3>Launcher</h3>
+                        <label>After run</label>
+                        <div class="segmented">
+                            <label class="seg"><input type="radio" name="afterRun" value="hide" hidden><span>Hide</span></label>
+                            <label class="seg"><input type="radio" name="afterRun" value="close" hidden><span>Close</span></label>
+                            <label class="seg"><input type="radio" name="afterRun" value="appear" hidden><span>Appear</span></label>
+                        </div>
                     </div>
                 </div>
-                <div class="card">
-                    <h3>Updates</h3>
-                    <label class="checkbox"><input id="autoUpdate" type="checkbox"> Auto-update</label>
-                    <button id="openReleases" class="btn ghost">Open releases</button>
+                <div class="actions">
+                    <button id="saveBtn" class="btn primary">Save settings</button>
+                    <pre id="saveStatus"></pre>
                 </div>
-                <div class="card">
-                    <h3>Launcher</h3>
-                    <label>After run</label>
-                    <div class="segmented">
-                        <label class="seg"><input type="radio" name="afterRun" value="hide" hidden><span>Hide</span></label>
-                        <label class="seg"><input type="radio" name="afterRun" value="close" hidden><span>Close</span></label>
-                        <label class="seg"><input type="radio" name="afterRun" value="appear" hidden><span>Appear</span></label>
-                    </div>
-                </div>
-            </div>
-            <div class="actions">
-                <button id="saveBtn" class="btn primary">Save settings</button>
-                <pre id="saveStatus"></pre>
             </div>
         </section>
 
         <section id="page-resources" class="page hidden">
-            <div class="card resource-hub">
-                <h3>Resources</h3>
-                <div class="hub-row">
-                    <div class="hub-text">
-                        <strong>Modrinth</strong>
-                        <p class="muted small">Browse and download mods and resource packs.</p>
+            <div class="sheet">
+                <div class="card resource-hub">
+                    <h3>Resources</h3>
+                    <div class="hub-row">
+                        <div class="hub-text">
+                            <strong>Modrinth</strong>
+                            <p class="muted small">Browse and download mods and resource packs.</p>
+                        </div>
+                        <button id="openResourceBrowser" class="btn primary">Browse Modrinth</button>
                     </div>
-                    <button id="openResourceBrowser" class="btn primary">Browse Modrinth</button>
-                </div>
-                <div class="hub-row">
-                    <div class="hub-text">
-                        <strong>Mods folder</strong>
-                        <p class="muted small">Add mods you downloaded elsewhere to the selected profile.</p>
+                    <div class="hub-row">
+                        <div class="hub-text">
+                            <strong>Mods folder</strong>
+                            <p class="muted small">Add mods you downloaded elsewhere to the selected profile.</p>
+                        </div>
+                        <div class="hub-actions">
+                            <button id="openModsFolder" class="btn ghost">Open folder</button>
+                            <button id="checkModConflicts" class="btn ghost">Check conflicts</button>
+                        </div>
                     </div>
-                    <button id="checkModConflicts" class="btn ghost">Check conflicts</button>
-                    <button id="openModsFolder" class="btn ghost">Open folder</button>
                 </div>
             </div>
         </section>
@@ -254,7 +259,145 @@
             <div class="progress"><div id="resourceProgress"></div></div>
         </div>
     </div>
-</div>
+    <div class="saturn-bg">
+        <div class="starfield" id="starfield"></div>
+        <div class="saturn-scene">
+            <!-- Back half of the ring plane, punched out of the globe's silhouette. -->
+            <svg class="saturn-rings-back" viewBox="0 0 780 420" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <filter id="ring-soft" x="-5%" y="-10%" width="110%" height="120%">
+                        <feGaussianBlur stdDeviation="0.6" />
+                    </filter>
+                    <filter id="ring-faint" x="-10%" y="-20%" width="120%" height="140%">
+                        <feGaussianBlur stdDeviation="2.2" />
+                    </filter>
+                    <filter id="pool" x="-30%" y="-60%" width="160%" height="220%">
+                        <feGaussianBlur stdDeviation="12" />
+                    </filter>
+                </defs>
+                <g>
+                    <g fill-rule="evenodd" filter="url(#ring-soft)">
+                        <path d="M 206 230 A 184 51.5 0 1 0 574 230 A 184 51.5 0 1 0 206 230 Z M 230 230 A 160 44.8 0 1 0 550 230 A 160 44.8 0 1 0 230 230 Z" fill="#7E7A72" opacity="0.7" />
+                        <path d="M 178 230 A 212 59.4 0 1 0 602 230 A 212 59.4 0 1 0 178 230 Z M 206 230 A 184 51.5 0 1 0 574 230 A 184 51.5 0 1 0 206 230 Z" fill="#F1EADC" opacity="1" />
+                        <path d="M 156 230 A 234 65.5 0 1 0 624 230 A 234 65.5 0 1 0 156 230 Z M 178 230 A 212 59.4 0 1 0 602 230 A 212 59.4 0 1 0 178 230 Z" fill="#151413" opacity="1" />
+                        <path d="M 120 230 A 270 75.6 0 1 0 660 230 A 270 75.6 0 1 0 120 230 Z M 156 230 A 234 65.5 0 1 0 624 230 A 234 65.5 0 1 0 156 230 Z" fill="#E3DED4" opacity="0.98" />
+                    </g>
+                    <g fill-rule="evenodd" filter="url(#ring-faint)">
+                        <path d="M 98 230 A 292 81.8 0 1 0 682 230 A 292 81.8 0 1 0 98 230 Z M 108 230 A 282 79 0 1 0 672 230 A 282 79 0 1 0 108 230 Z" fill="#9D9990" opacity="0.45" />
+                    </g>
+                    <!-- Hundreds of particles orbit at Kepler speeds — the ring's spin. -->
+                    <g class="ring-particles" id="ringParticles"></g>
+                    <ellipse cx="390" cy="224" rx="150" ry="34" stroke="#040403" stroke-width="34" opacity="0.6" fill="none" filter="url(#pool)" />
+                </g>
+            </svg>
+
+            <!-- The globe itself, drawn whole. -->
+            <svg class="saturn-planet" viewBox="0 0 780 420" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <linearGradient id="haze-bands" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="#463726" />
+                        <stop offset="12%" stop-color="#6B563E" />
+                        <stop offset="28%" stop-color="#B49A76" />
+                        <stop offset="45%" stop-color="#EBDDC6" />
+                        <stop offset="50%" stop-color="#F7EFE0" />
+                        <stop offset="55%" stop-color="#EBDDC6" />
+                        <stop offset="72%" stop-color="#B49A76" />
+                        <stop offset="88%" stop-color="#6B563E" />
+                        <stop offset="100%" stop-color="#463726" />
+                    </linearGradient>
+                    <radialGradient id="limb-shade" cx="36%" cy="28%" r="90%">
+                        <stop offset="0%" stop-color="#FFF3DF" stop-opacity="0.34" />
+                        <stop offset="38%" stop-color="#FFF3DF" stop-opacity="0.05" />
+                        <stop offset="68%" stop-color="#FFF3DF" stop-opacity="0" />
+                        <stop offset="88%" stop-color="#1C1103" stop-opacity="0.55" />
+                        <stop offset="100%" stop-color="#120B02" stop-opacity="0.82" />
+                    </radialGradient>
+                    <radialGradient id="polar-cap" cx="50%" cy="0%" r="90%">
+                        <stop offset="0%" stop-color="#544C42" stop-opacity="0.55" />
+                        <stop offset="100%" stop-color="#544C42" stop-opacity="0" />
+                    </radialGradient>
+                    <radialGradient id="atmos-glow" cx="50%" cy="50%" r="50%">
+                        <stop offset="68%" stop-color="#E8D4AC" stop-opacity="0.32" />
+                        <stop offset="100%" stop-color="#E8D4AC" stop-opacity="0" />
+                    </radialGradient>
+                    <radialGradient id="sun-glint" cx="50%" cy="50%" r="50%">
+                        <stop offset="0%" stop-color="#FFF6DD" stop-opacity="0.85" />
+                        <stop offset="55%" stop-color="#FFE9B8" stop-opacity="0.35" />
+                        <stop offset="100%" stop-color="#FFE9B8" stop-opacity="0" />
+                    </radialGradient>
+                    <linearGradient id="disc-sheen" x1="0.25" y1="0" x2="0.75" y2="1">
+                        <stop offset="0%" stop-color="#FFF3DC" stop-opacity="0" />
+                        <stop offset="40%" stop-color="#FFF3DC" stop-opacity="0.14" />
+                        <stop offset="62%" stop-color="#FFF3DC" stop-opacity="0.04" />
+                        <stop offset="100%" stop-color="#FFF3DC" stop-opacity="0" />
+                    </linearGradient>
+                    <clipPath id="globe">
+                        <ellipse cx="390" cy="210" rx="92" ry="86" />
+                    </clipPath>
+                </defs>
+
+                <!-- Soft atmospheric halo beyond the disc. -->
+                <ellipse cx="390" cy="210" rx="106" ry="100" fill="url(#atmos-glow)" />
+
+                <g clip-path="url(#globe)">
+                    <ellipse cx="390" cy="210" rx="92" ry="86" fill="url(#haze-bands)" />
+                    <!-- Axial rotation: cloud bands drift horizontally across the disc. -->
+                    <g class="planet-bands">
+                        <ellipse cx="390" cy="196" rx="100" ry="24" fill="#F0DFBC" opacity="0.16" />
+                        <ellipse cx="390" cy="232" rx="100" ry="19" fill="#A58C6C" opacity="0.1" />
+                        <ellipse cx="390" cy="212" rx="98" ry="12" fill="#F0DFBC" opacity="0.08" />
+                        <ellipse cx="390" cy="248" rx="96" ry="10" fill="#A58C6C" opacity="0.07" />
+                        <ellipse cx="390" cy="176" rx="100" ry="9" fill="#F0DFBC" opacity="0.06" />
+                        <ellipse cx="390" cy="266" rx="99" ry="9" fill="#F0DFBC" opacity="0.07" />
+                    </g>
+                    <!-- Soft specular sheen from the sunlit side of the disc. -->
+                    <ellipse cx="390" cy="210" rx="92" ry="86" fill="url(#disc-sheen)" />
+                    <!-- Subtle high-altitude streamers, tilted with the wind shear. -->
+                    <ellipse cx="390" cy="180" rx="83" ry="5" fill="#F6E9CB" opacity="0.1" transform="rotate(-8 390 210)" />
+                    <ellipse cx="390" cy="254" rx="87" ry="4" fill="#7A6140" opacity="0.12" transform="rotate(6 390 210)" />
+                    <!-- Sun glint — a bright grazing reflection near the lit limb. -->
+                    <ellipse cx="356" cy="180" rx="16" ry="9" fill="url(#sun-glint)" transform="rotate(-20 356 180)" />
+                    <ellipse cx="390" cy="142" rx="77" ry="40" fill="url(#polar-cap)" />
+                    <ellipse cx="390" cy="210" rx="92" ry="86" fill="url(#limb-shade)" />
+                </g>
+            </svg>
+
+            <!-- Near bands crossing the globe's face: B and A only. -->
+            <svg class="saturn-rings-front" viewBox="0 0 780 420" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <clipPath id="globe-strip">
+                        <ellipse cx="390" cy="210" rx="92" ry="86" />
+                    </clipPath>
+                    <clipPath id="near-strip">
+                        <rect y="230" width="780" height="190" />
+                    </clipPath>
+                    <filter id="cross-soft" x="-10%" y="-20%" width="120%" height="140%">
+                        <feGaussianBlur stdDeviation="1.4" />
+                    </filter>
+                </defs>
+                <g clip-path="url(#globe-strip)">
+                    <g clip-path="url(#near-strip)" fill-rule="evenodd" filter="url(#cross-soft)">
+                        <path d="M 178 230 A 212 59.4 0 1 0 602 230 A 212 59.4 0 1 0 178 230 Z M 206 230 A 184 51.5 0 1 0 574 230 A 184 51.5 0 1 0 206 230 Z" fill="#F1EADC" opacity="1" />
+                        <path d="M 120 230 A 270 75.6 0 1 0 660 230 A 270 75.6 0 1 0 120 230 Z M 156 230 A 234 65.5 0 1 0 624 230 A 234 65.5 0 1 0 156 230 Z" fill="#E3DED4" opacity="0.98" />
+                    </g>
+                </g>
+            </svg>
+
+            <div class="saturn-moons">
+                <span class="saturn-moon moon--small" id="moon1"></span>
+                <span class="saturn-moon moon--gold" id="moon2"></span>
+                <span class="saturn-moon moon--ice" id="moon3"></span>
+                <span class="saturn-moon moon--cream" id="moon4"></span>
+                <span class="saturn-moon moon--gold" id="moon5"></span>
+                <span class="saturn-moon moon--ice" id="moon6"></span>
+            </div>
+            <span class="saturn-star" style="width:2px;height:2px;left:16%;top:20%"></span>
+            <span class="saturn-star" style="width:3px;height:3px;left:82%;top:28%"></span>
+            <span class="saturn-star" style="width:2px;height:2px;left:24%;top:78%"></span>
+            <span class="saturn-star" style="width:1.5px;height:1.5px;left:76%;top:82%"></span>
+            <span class="saturn-star" style="width:2px;height:2px;left:8%;top:56%"></span>
+        </div>
+    </div>
 <script type="module" src="./src/main.js"></script>
 </body>
 </html>

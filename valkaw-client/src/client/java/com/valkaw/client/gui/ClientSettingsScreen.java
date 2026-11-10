@@ -84,7 +84,7 @@ public class ClientSettingsScreen extends Screen
 
 	public ClientSettingsScreen(Screen parent)
 	{
-		super(Component.literal("Client settings"));
+		super(Component.literal("Client Settings"));
 		this.parent = parent;
 	}
 
@@ -406,7 +406,7 @@ public class ClientSettingsScreen extends Screen
 		Ui.icon(graphics, iconFor(module), x + 25, y + 25, accent);
 
 		Ui.text(graphics, font, Ui.fit(font, module.name(), cardW - 96), x + 47, y + 12, Ui.TEXT);
-		Ui.text(graphics, font, Ui.fit(font, module.id(), cardW - 96), x + 47, y + 23, Ui.MUTED);
+		Ui.text(graphics, font, Ui.fit(font, Ui.categoryLabel(module.category()), cardW - 96), x + 47, y + 23, Ui.MUTED);
 		if (module.keyOnly())
 		{
 			Ui.text(graphics, font, "Hold " + keyLabel(module.key()), x + 47, y + 37, accent);

@@ -133,7 +133,7 @@ public class ModuleOptionsScreen extends Screen {
 			state = module.isEnabled() ? "ENABLED" : "DISABLED";
 		}
 		boolean switchable = !module.isAction() && !module.keyOnly();
-		String sub = module.category().name() + "  ·  " + state;
+		String sub = Ui.categoryLabel(module.category()) + "  ·  " + state;
 		graphics.drawString(font, sub, x + 28, y + 15,
 				switchable ? (module.isEnabled() ? accent() : Ui.MUTED) : Ui.MUTED, false);
 
@@ -161,8 +161,8 @@ public class ModuleOptionsScreen extends Screen {
 
 		int tabY = y + 44;
 		int tabW = (styleW - 6) / 2;
-		pick(graphics, styleX, tabY, tabW, "Colour 1", !color2, mouseX, mouseY);
-		pick(graphics, styleX + tabW + 6, tabY, tabW, "Colour 2", color2, mouseX, mouseY);
+		pick(graphics, styleX, tabY, tabW, "Color 1", !color2, mouseX, mouseY);
+		pick(graphics, styleX + tabW + 6, tabY, tabW, "Color 2", color2, mouseX, mouseY);
 
 		int paletteY = tabY + 22;
 		int cell = Math.max(14, (styleW - 7 * 3) / 8);
@@ -250,7 +250,7 @@ public class ModuleOptionsScreen extends Screen {
 		String value = setting.value();
 		if (setting.type() == Setting.Type.BUTTON) {
 			int w = Ui.width(font, value) + 20;
-			Ui.round(graphics, right - w, y + 6, w, 17, Ui.R_PILL, hot ? Ui.alpha(Ui.ACCENT, 0.8F) : 0x2A7DF9FF);
+			Ui.round(graphics, right - w, y + 6, w, 17, Ui.R_PILL, hot ? Ui.alpha(Ui.ACCENT, 0.8F) : 0x2A9EC7F0);
 			graphics.drawString(font, value, right - w + 10, y + 10, hot ? Ui.INK : Ui.ACCENT, false);
 		} else if (setting.type() == Setting.Type.SEGMENT) {
 			int x = right;

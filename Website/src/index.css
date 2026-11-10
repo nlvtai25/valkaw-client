@@ -81,30 +81,30 @@
   --z-sticky-nav: 300;
   --z-modal: 400;
 
-  /* Console, graphite colourway */
-  --color-paper: oklch(14% 0.006 70);
-  --color-paper-2: oklch(19.5% 0.011 70);
-  --color-paper-3: oklch(11% 0.005 70);
-  --color-ink: oklch(95% 0.012 85);
-  --color-ink-2: oklch(84% 0.014 82);
-  --color-muted: oklch(68% 0.016 78);
-  --color-rule: oklch(30% 0.013 70);
-  --color-rule-2: oklch(41% 0.016 72);
-  --color-accent: oklch(78% 0.11 78);
-  --color-accent-ink: oklch(18% 0.02 70);
-  --color-accent-soft: oklch(27% 0.04 76);
-  --color-focus: oklch(78% 0.11 78);
-  --color-cool: oklch(70% 0.08 55);
-  --color-cool-soft: oklch(27% 0.035 55);
-  --color-ok: oklch(76% 0.15 150);
-  --color-ok-soft: oklch(24.5% 0.03 150);
-  --color-bad: oklch(70% 0.17 25);
-  --color-bad-soft: oklch(24.5% 0.035 25);
+  /* Orbital · deep space, Saturn gold, aurora ice */
+  --color-paper: oklch(15% 0.018 264);
+  --color-paper-2: oklch(19.5% 0.022 264);
+  --color-paper-3: oklch(11.5% 0.014 264);
+  --color-ink: oklch(96% 0.012 90);
+  --color-ink-2: oklch(84% 0.015 95);
+  --color-muted: oklch(68% 0.02 100);
+  --color-rule: oklch(30% 0.03 258);
+  --color-rule-2: oklch(41% 0.04 260);
+  --color-accent: oklch(82% 0.13 85);
+  --color-accent-ink: oklch(20% 0.04 80);
+  --color-accent-soft: oklch(28% 0.06 80);
+  --color-focus: oklch(82% 0.13 85);
+  --color-cool: oklch(80% 0.07 235);
+  --color-cool-soft: oklch(27% 0.04 245);
+  --color-ok: oklch(78% 0.14 155);
+  --color-ok-soft: oklch(24.5% 0.04 155);
+  --color-bad: oklch(72% 0.16 25);
+  --color-bad-soft: oklch(24.5% 0.05 25);
   --color-error: var(--color-bad);
   --color-success: var(--color-ok);
 
-  --font-display: "Host Grotesk", ui-sans-serif, system-ui, sans-serif;
-  --font-body: var(--font-display);
+  --font-display: "Chakra Petch", ui-sans-serif, system-ui, sans-serif;
+  --font-body: "Host Grotesk", ui-sans-serif, system-ui, sans-serif;
   --font-outlier: "Atkinson Hyperlegible Mono", ui-monospace, SFMono-Regular, monospace;
 
   --radius-card: 10px;
@@ -1946,4 +1946,551 @@ textarea {
     border-left: 0;
     padding-left: 0;
   }
+}
+
+/* ================================================================
+   Orbital · deep-space dressing (v2 redesign)
+   ================================================================ */
+
+/* A fixed nebula behind the whole page: two faint colour fields and a sparse
+   starfield that fades toward the bottom. Static and cheap. */
+.page-orbital {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: clip;
+  background:
+    radial-gradient(92rem 52rem at 76% -10%, var(--color-cool-soft) 0%, transparent 56%),
+    radial-gradient(74rem 46rem at 10% 112%, color-mix(in oklab, var(--color-accent-soft) 70%, transparent) 0%, transparent 56%);
+  opacity: 0.75;
+  mask-image: linear-gradient(to bottom, var(--mask-opaque) 6%, transparent 85%);
+  -webkit-mask-image: linear-gradient(to bottom, var(--mask-opaque) 6%, transparent 85%);
+}
+
+.page-orbital::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(1.5px 1.5px at 18% 22%, rgba(255, 252, 244, 0.8) 50%, transparent 51%),
+    radial-gradient(1px 1px at 84% 12%, rgba(255, 252, 244, 0.6) 50%, transparent 51%),
+    radial-gradient(1px 1px at 64% 30%, rgba(255, 252, 244, 0.45) 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 34% 40%, rgba(255, 252, 244, 0.5) 50%, transparent 51%),
+    radial-gradient(1px 1px at 92% 34%, rgba(255, 252, 244, 0.35) 50%, transparent 51%),
+    radial-gradient(1px 1px at 8% 52%, rgba(255, 252, 244, 0.35) 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 48% 8%, rgba(255, 252, 244, 0.5) 50%, transparent 51%),
+    radial-gradient(1px 1px at 28% 16%, rgba(255, 252, 244, 0.4) 50%, transparent 51%);
+  animation: star-drift 60s linear infinite;
+}
+
+@keyframes star-drift {
+  to {
+    transform: translateY(-40px);
+  }
+}
+
+/* Generated starfield inside the intro scene (matches the launcher). */
+.starfield {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.star {
+  position: absolute;
+  border-radius: 50%;
+  background: #fff;
+  opacity: 0.5;
+  animation: starTwinkle var(--tw-dur, 4s) ease-in-out infinite alternate;
+}
+.star--gold { background: #FFE9C4; }
+@keyframes starTwinkle {
+  from { opacity: 0.12; transform: scale(0.8); }
+  to { opacity: 0.85; transform: scale(1.15); }
+}
+
+/* A fine inner frame on the screenshot: a quiet gold hairline that stays inside
+   the image, so it never overlaps text, nav or the neighbouring bench. */
+.hero-shot::after {
+  content: "";
+  position: absolute;
+  inset: 6px;
+  border: 1px solid color-mix(in oklab, var(--color-accent) 32%, transparent);
+  border-radius: calc(var(--radius-card) - 4px);
+  pointer-events: none;
+}
+
+/* Primary action: a soft gold edge, a quiet wash at rest, and a sheen sweep on
+   hover/focus. The lift applies only while interacting. */
+.btn--primary {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(180deg, color-mix(in oklab, var(--color-accent) 94%, #fff) 0%, var(--color-accent) 100%);
+  border-color: color-mix(in oklab, var(--color-accent) 88%, var(--color-ink));
+}
+
+.btn--primary::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -80%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+  transform: skewX(-20deg);
+  transition: left 520ms var(--ease-out);
+}
+
+.btn--primary:hover::after {
+  left: 120%;
+}
+
+.btn--primary:focus-visible,
+.btn--primary:hover {
+  box-shadow: 0 8px 28px -12px color-mix(in oklab, var(--color-accent) 70%, transparent);
+  transform: translateY(-1px);
+}
+
+.btn--primary:active {
+  transform: translateY(0);
+}
+
+/* Nav: the sticky bar takes on a deeper, tinted surface and the active link
+   gets a quiet gold underline instead of a filled pill. */
+.site-header[data-stuck="true"] {
+  background: color-mix(in oklab, var(--color-paper) 78%, transparent);
+  backdrop-filter: blur(18px) saturate(150%);
+}
+
+.nav-link {
+  position: relative;
+}
+
+.nav-link[aria-current="page"] {
+  background: transparent;
+  color: var(--color-ink);
+}
+
+.nav-link[aria-current="page"]::after {
+  content: "";
+  position: absolute;
+  left: var(--space-sm);
+  right: var(--space-sm);
+  bottom: 2px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--color-accent);
+}
+
+/* Surfaces get a whisper of depth: panels lift on hover and cards shade in. */
+.panel,
+.bench,
+.split-figure,
+.deck-screen {
+  transition:
+    border-color var(--dur-short) var(--ease-out),
+    transform var(--dur-short) var(--ease-out),
+    box-shadow var(--dur-short) var(--ease-out);
+}
+
+.panel:hover,
+.bench:hover,
+.split-figure:hover {
+  border-color: var(--color-rule-2);
+  transform: translateY(-3px);
+  box-shadow: 0 18px 40px -22px var(--color-paper-3);
+}
+
+.deck-screen {
+  border-radius: var(--radius-card);
+  border: var(--rule-hair) solid var(--color-rule);
+}
+
+.thumb {
+  border-radius: var(--radius-card);
+}
+
+.hero-shot {
+  border-radius: var(--radius-card);
+  border-color: color-mix(in oklab, var(--color-rule-2) 80%, var(--color-accent));
+  box-shadow: 0 24px 60px -30px var(--color-paper-3);
+}
+
+/* Silker reveal: content drifts up with a hint of blur that clears as it
+   settles. Respects reduced motion (handled below). */
+.reveal-ready [data-reveal] {
+  filter: blur(8px);
+  transition:
+    opacity var(--dur-long) var(--ease-out),
+    transform var(--dur-long) var(--ease-out),
+    filter var(--dur-long) var(--ease-out);
+}
+
+.reveal-ready [data-reveal].is-in {
+  filter: blur(0);
+}
+
+/* A thin gold keyline above section intros, tying each block to the brand. */
+.head-block h2,
+.page-head h1 {
+  position: relative;
+  padding-top: var(--space-sm);
+}
+
+.head-block h2::before,
+.page-head h1::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 44px;
+  height: 3px;
+  border-radius: 3px;
+  background: var(--color-accent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-orbital::after {
+    animation: none;
+  }
+
+  .reveal-ready [data-reveal] {
+    filter: none;
+  }
+}
+
+
+/* Orbit ring sits behind the hero shot, so the bench is the positioning parent. */
+.hero__bench {
+  position: relative;
+}
+
+/* The desktop CTA hides with the rest of the nav links on small screens. */
+@media (max-width: 60rem) {
+  .nav-cta {
+    display: none;
+  }
+}
+
+
+/* ================================================================
+   Saturn intro (preview) · full-viewport splash before the overview
+   ================================================================ */
+.intro {
+  position: relative;
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: #05070c;
+}
+
+.intro-scene {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* A soft fog band so the black field reads as depth, not a hole. */
+.intro-scene::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(90rem 46rem at 50% 58%, rgba(30, 34, 48, 0.4) 0%, rgba(30, 34, 48, 0.18) 38%, transparent 62%),
+    radial-gradient(70rem 40rem at 12% 8%, rgba(52, 46, 40, 0.16) 0%, transparent 55%);
+}
+
+/* Whole composition, landscape like the portrait: black field, rings, planet. */
+.scene {
+  position: absolute;
+  left: 50%;
+  top: 60%;
+  width: min(124vmin, 1120px);
+  aspect-ratio: 780 / 420;
+  transform: translate(-50%, -50%) rotate(-14deg);
+}
+
+.planet-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 2;
+}
+
+.rings-back,
+.rings-front {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.rings-back {
+  z-index: 1;
+}
+.rings-front {
+  z-index: 4;
+}
+
+/* Fine ring structure: static sub-band streaks (light wisps + dark gaps)
+   that give the rings texture. The rings themselves do NOT rotate — their
+   particles orbit at Kepler speeds but the band pattern reads as fixed from
+   afar. The system's spin is told by the moons orbiting outside (see
+   MoonLayer). */
+.ring-structure path {
+  stroke-linecap: round;
+}
+.wisp-c {
+  stroke: #EADFC8;
+  stroke-width: 1.2;
+  opacity: 0.3;
+  stroke-dasharray: 26 150;
+}
+.shade-c {
+  stroke: #191410;
+  stroke-width: 1.4;
+  opacity: 0.25;
+  stroke-dasharray: 34 190;
+}
+.wisp-b {
+  stroke: #F1E7D2;
+  stroke-width: 1;
+  opacity: 0.22;
+  stroke-dasharray: 20 130;
+}
+.shade-b {
+  stroke: #191410;
+  stroke-width: 1.2;
+  opacity: 0.2;
+  stroke-dasharray: 30 170;
+}
+.wisp-a {
+  stroke: #E5D9BF;
+  stroke-width: 0.9;
+  opacity: 0.18;
+  stroke-dasharray: 18 110;
+}
+.shade-a {
+  stroke: #191410;
+  stroke-width: 1;
+  opacity: 0.16;
+  stroke-dasharray: 28 150;
+}
+/* The ring's spinning particles: small ice/rock grains laid over the static
+   band texture. They are positioned by JS (RingParticles) each frame. */
+.ring-particles {
+  pointer-events: none;
+}
+.ring-particle {
+  fill: #D8CDBB;
+  opacity: 0.5;
+}
+.ring-particle--dark {
+  fill: #8E867C;
+  opacity: 0.4;
+}
+
+/* No z-index here on purpose: the layer must not create its own stacking
+   context, or the moons could never slip in front of the planet. */
+.moon-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* Axial rotation: the planet's cloud bands drift horizontally across the disc. */
+.planet-bands {
+  animation: band-drift 12s ease-in-out infinite;
+  will-change: transform;
+}
+@keyframes band-drift {
+  0%, 100% { transform: translateX(0); }
+  50%      { transform: translateX(14px); }
+}
+
+.moon {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+/* Invisible enlarged hit zone for hover; positioned by JS transform. */
+.moon-hit {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 28px;
+  height: 28px;
+  margin: -14px 0 0 -14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  cursor: pointer;
+  pointer-events: auto;
+  will-change: transform;
+}
+
+/* Hover tooltip (moons and Saturn). The scene is tilted -14deg, so the tip
+   counter-rotates to stay level. Width is fixed so the info never collapses
+   into a tall narrow column; data lines never wrap. */
+.saturn-tip {
+  position: absolute;
+  width: 220px;
+  transform: translate(-50%, -120%) rotate(14deg);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(227, 178, 75, 0.35);
+  background: rgba(10, 12, 20, 0.9);
+  color: #EDE2CC;
+  font-size: 12px;
+  line-height: 1.4;
+  pointer-events: none;
+  z-index: 20;
+  backdrop-filter: blur(6px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.45);
+  animation: tip-in 0.18s ease-out;
+}
+.tip-title { font-weight: 700; color: #E3B24B; }
+.tip-kind { font-size: 11px; opacity: 0.85; }
+.tip-line { white-space: nowrap; opacity: 0.85; }
+.tip-fact { margin-top: 2px; font-size: 11px; opacity: 0.7; }
+@keyframes tip-in {
+  from { opacity: 0; transform: translate(-50%, -120%) rotate(14deg) translateY(4px) scale(0.96); }
+  to { opacity: 1; transform: translate(-50%, -120%) rotate(14deg) translateY(0) scale(1); }
+}
+.moon--gold {
+  background:
+    radial-gradient(circle at 30% 26%, #FFFFFF 0%, rgba(255, 255, 255, 0) 40%),
+    radial-gradient(circle at 37% 36%, #F6E7BA 0%, #D8A95C 45%, #96693A 72%, #57401F 100%);
+  box-shadow: inset -1.5px -2px 3px rgba(30, 18, 6, 0.5), 0 0 12px rgba(227, 178, 75, 0.7);
+}
+.moon--ice {
+  width: 19px;
+  height: 19px;
+  margin: -9.5px 0 0 -9.5px;
+  background:
+    radial-gradient(circle at 30% 26%, #FFFFFF 0%, rgba(255, 255, 255, 0) 40%),
+    radial-gradient(circle at 37% 36%, #E8F4FF 0%, #9FC6EC 48%, #5E8FC4 78%, #2F4F78 100%);
+  box-shadow: inset -1.5px -2px 3px rgba(12, 26, 46, 0.55), 0 0 14px rgba(127, 183, 224, 0.75);
+}
+.moon--cream {
+  width: 13px;
+  height: 13px;
+  margin: -6.5px 0 0 -6.5px;
+  background:
+    radial-gradient(circle at 30% 26%, #FFFFFF 0%, rgba(255, 255, 255, 0) 42%),
+    radial-gradient(circle at 37% 36%, #F9F3E6 0%, #DCCFB4 48%, #A39276 78%, #6B604C 100%);
+  box-shadow: inset -1px -1.5px 2px rgba(40, 32, 22, 0.4), 0 0 14px rgba(255, 226, 180, 0.55);
+}
+
+/* Sparse foreground stars. */
+.intro-star {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 252, 244, 0.85);
+  box-shadow: 0 0 8px rgba(255, 252, 244, 0.5);
+}
+.intro-star--a { width: 2px; height: 2px; left: 16%; top: 20%; }
+.intro-star--b { width: 3px; height: 3px; right: 18%; top: 28%; }
+.intro-star--c { width: 2px; height: 2px; left: 24%; bottom: 22%; }
+.intro-star--d { width: 1.5px; height: 1.5px; right: 24%; bottom: 18%; }
+.intro-star--e { width: 2px; height: 2px; left: 8%; top: 56%; }
+
+/* Orbits and rings are drawn in the scene SVGs (two clipped ring halves, fixed
+   tilted moon paths, travelling moons). */
+
+/* Content stack pinned toward the top so the portrait stays fully visible. */
+.intro-content {
+  position: relative;
+  z-index: 1;
+  align-self: start;
+  width: 100%;
+  text-align: center;
+  display: grid;
+  justify-items: center;
+  padding: clamp(var(--space-xl), 9vh, var(--space-4xl)) var(--gutter) 0;
+  animation: settle 700ms var(--ease-out) both;
+}
+
+.intro-logo {
+  width: min(96px, 20vmin);
+  height: auto;
+  filter: drop-shadow(0 6px 30px color-mix(in oklab, var(--color-accent) 34%, transparent));
+}
+
+.intro-name {
+  margin: var(--space-md) 0 0;
+  font-size: clamp(2.4rem, 7vw, 5.5rem);
+  line-height: 0.95;
+  letter-spacing: var(--tracking-display);
+  text-transform: uppercase;
+  color: var(--color-ink);
+  text-shadow: 0 2px 28px var(--color-paper-3), 0 1px 2px rgba(6, 8, 16, 0.55);
+}
+
+.intro-sub {
+  margin-top: var(--space-md);
+  color: color-mix(in oklab, var(--color-ink) 82%, var(--color-cool));
+  font-size: var(--text-lead);
+  max-width: 40ch;
+  text-shadow: 0 1px 24px var(--color-paper-3), 0 1px 2px rgba(6, 8, 16, 0.6);
+}
+
+.scroll-cue {
+  position: absolute;
+  left: 50%;
+  bottom: clamp(20px, 4vh, 40px);
+  transform: translateX(-50%);
+  margin: 0;
+  display: inline-grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border: 1px solid var(--color-rule-2);
+  border-radius: 50%;
+  color: var(--color-ink-2);
+  z-index: 6;
+  transition:
+    border-color var(--dur-short) var(--ease-out),
+    color var(--dur-short) var(--ease-out),
+    transform var(--dur-short) var(--ease-out);
+}
+.scroll-cue:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+.cue-chevron {
+  width: 10px;
+  height: 10px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg);
+  margin-top: -6px;
+}
+
+@media (max-width: 40rem) {
+  .intro-name { font-size: clamp(2.4rem, 14vw, 4rem); }
+  .intro-sub { font-size: var(--text-md); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+}
+
+
+.moon--small {
+  width: 10px;
+  height: 10px;
+  margin: -5px 0 0 -5px;
+  background:
+    radial-gradient(circle at 30% 26%, #FFFFFF 0%, rgba(255, 255, 255, 0) 42%),
+    radial-gradient(circle at 37% 36%, #F1ECE0 0%, #C3B8A2 50%, #8A806C 78%, #57503F 100%);
+  box-shadow: inset -1px -1.5px 2px rgba(30, 26, 18, 0.4), 0 0 12px rgba(200, 205, 220, 0.6);
 }

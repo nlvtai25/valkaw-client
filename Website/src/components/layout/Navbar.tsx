@@ -45,6 +45,9 @@ export function Navbar() {
         </div>
 
         <div className="nav-actions">
+          <Link to="/download" className="btn nav-cta">
+            Download
+          </Link>
           <button
             type="button"
             className="nav-toggle"

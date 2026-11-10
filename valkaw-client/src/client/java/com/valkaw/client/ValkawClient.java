@@ -12,6 +12,7 @@ public class ValkawClient implements ClientModInitializer {
 		ModuleManager.get().init();
 		Keybinds.register();
 		ClientTickEvents.START_CLIENT_TICK.register(client -> ModuleManager.get().tick());
+		SnapShot.register();
 	}
 
 	/** Window title: Valkaw <profile> <version>, e.g. Valkaw Sodium v1.0.1. */

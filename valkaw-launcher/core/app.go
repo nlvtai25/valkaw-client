@@ -79,8 +79,8 @@ func NewApp(version string) *App {
 		Profile:         "gl",
 		Username:        "Player",
 		MemoryMB:        3072,
-		WindowWidth:     1280,
-		WindowHeight:    720,
+		WindowWidth:     1600,
+		WindowHeight:    900,
 		AutoUpdate:      true,
 		AfterRun:        "hide",
 	}

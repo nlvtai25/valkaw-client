@@ -22,8 +22,12 @@ func main() {
 
 	err := wails.Run(&options.App{
 		Title:  "Valkaw Launcher " + launcherVersion,
-		Width:  1024,
-		Height: 768,
+		Width:  1600,
+		Height: 900,
+		// The layout is designed for one fixed frame, so resize is disabled and
+		// the frontend measures the Saturn scene a single time instead of on
+		// every resize event.
+		DisableResize: true,
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},

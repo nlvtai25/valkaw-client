@@ -2,6 +2,7 @@ package com.valkaw.client.gui;
 
 import java.util.HashMap;
 import java.util.Map;
+import com.valkaw.client.module.Category;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -16,30 +17,30 @@ import net.minecraft.resources.Identifier;
  * Everything draws with plain fills so the Vulkan and OpenGL builds match.
  */
 public final class Ui {
-	// Surfaces, darkest to lightest. Warm charcoal, tuned for the gold accent.
-	public static final int BG_TOP = 0xFF0A0907;
-	public static final int BG_BOTTOM = 0xFF17130E;
-	public static final int SURFACE = 0xD914110D;
-	public static final int SURFACE_2 = 0xFF1D1812;
-	public static final int SURFACE_3 = 0xFF27211A;
-	public static final int TRACK = 0xFF352C22;
+	// Surfaces, darkest to lightest. Deep-space navy, tuned for the gold accent.
+	public static final int BG_TOP = 0xFF0B0F1C;
+	public static final int BG_BOTTOM = 0xFF141D33;
+	public static final int SURFACE = 0xD9131A2E;
+	public static final int SURFACE_2 = 0xFF1B2338;
+	public static final int SURFACE_3 = 0xFF252E47;
+	public static final int TRACK = 0xFF2C3652;
 
 	// Structure.
-	public static final int LINE = 0x24F3DDBA;
-	public static final int LINE_SOFT = 0x14F3DDBA;
+	public static final int LINE = 0x248A9BC4;
+	public static final int LINE_SOFT = 0x148A9BC4;
 
 	// Accents.
-	public static final int ACCENT = 0xFFE6B25C;
+	public static final int ACCENT = 0xFFE3B24B;
 	public static final int COPPER = 0xFFC98A5B;
 	public static final int GREEN = 0xFF9BC98A;
 	public static final int AMBER = 0xFFF2C879;
 	public static final int RED = 0xFFE07A6A;
 
 	// Text.
-	public static final int TEXT = 0xFFF6EFE4;
-	public static final int TEXT_2 = 0xFFD3C7B6;
-	public static final int MUTED = 0xFF93887A;
-	public static final int INK = 0xFF120E0A;
+	public static final int TEXT = 0xFFF2F1EC;
+	public static final int TEXT_2 = 0xFFCBD6E6;
+	public static final int MUTED = 0xFF8794AC;
+	public static final int INK = 0xFF0A0E1A;
 
 	// Corner radii.
 	public static final int R_WINDOW = 16;
@@ -130,6 +131,12 @@ public final class Ui {
 		return (a << 24) | (color & 0xFFFFFF);
 	}
 
+	/** Display label for a module category: "Performance", "Utility", "HUD". */
+	public static String categoryLabel(Category category) {
+		return category == Category.PERFORMANCE ? "Performance"
+				: category == Category.UTILITY ? "Utility" : "HUD";
+	}
+
 	public static int mix(int from, int to, float t) {
 		float f = clamp01(t);
 		int a = (int) lerp((from >>> 24) & 0xFF, (to >>> 24) & 0xFF, f);
@@ -137,6 +144,17 @@ public final class Ui {
 		int g = (int) lerp((from >> 8) & 0xFF, (to >> 8) & 0xFF, f);
 		int b = (int) lerp(from & 0xFF, to & 0xFF, f);
 		return (a << 24) | (r << 16) | (g << 8) | b;
+	}
+
+	/** Reduce chroma while keeping opacity and lightness: blends the colour
+	 toward its own grey value, so the "density" fades without transparency. */
+	public static int desaturate(int color, float amount) {
+		int r = (color >> 16) & 0xFF;
+		int g = (color >> 8) & 0xFF;
+		int b = color & 0xFF;
+		int gray = (int) (r * 0.299F + g * 0.587F + b * 0.114F);
+		int rgb = (gray << 16) | (gray << 8) | gray;
+		return mix(color & 0xFFFFFF, rgb, amount) | (color & 0xFF000000);
 	}
 
 	public static int lighten(int color, float amount) {
@@ -175,6 +193,31 @@ public final class Ui {
 			int inset = insets[h - 1 - row];
 			graphics.fill(x + inset, y + row, x + w - inset, y + row + 1, color);
 		}
+	}
+
+	/** Hairline outline of a rounded rect, matching round()'s corners, so a
+	 hover border does not read as a square box around a rounded fill. */
+	public static void roundOutline(GuiGraphics graphics, int x, int y, int w, int h, int radius, int color) {
+		if (w <= 0 || h <= 0 || (color >>> 24) == 0) {
+			return;
+		}
+		int r = Math.min(radius, Math.min(w / 2, h / 2));
+		if (r <= 0) {
+			graphics.renderOutline(x, y, w, h, color);
+			return;
+		}
+		int[] insets = insets(r);
+		for (int row = 0; row < r; row++) {
+			int inset = insets[row];
+			graphics.fill(x + inset, y + row, x + inset + 1, y + row + 1, color);
+			graphics.fill(x + w - 1 - inset, y + row, x + w - inset, y + row + 1, color);
+			graphics.fill(x + inset, y + h - 1 - row, x + inset + 1, y + h - row, color);
+			graphics.fill(x + w - 1 - inset, y + h - 1 - row, x + w - inset, y + h - row, color);
+		}
+		graphics.fill(x + r, y, x + w - r, y + 1, color);
+		graphics.fill(x + r, y + h - 1, x + w - r, y + h, color);
+		graphics.fill(x, y + r, x + 1, y + h - r, color);
+		graphics.fill(x + w - 1, y + r, x + w, y + h - r, color);
 	}
 
 	/** Corner inset per row for a given radius, computed once per radius. */
@@ -230,6 +273,74 @@ public final class Ui {
 			int span = spans[dy + radius];
 			graphics.fill(cx - span, cy + dy, cx + span + 1, cy + dy + 1, color);
 		}
+	}
+
+	/** A soft sphere: a base disc plus an offset highlight disc, so moons read
+	 as round 3D-shaded bodies like the web/launcher scene. */
+	public static void sphere(GuiGraphics graphics, int cx, int cy, int radius, int base, int highlight) {
+		if (radius < 1 || (base >>> 24) == 0) {
+			return;
+		}
+		circle(graphics, cx, cy, radius, base);
+		if ((highlight >>> 24) == 0 || radius < 3) {
+			return;
+		}
+		int hr = Math.max(1, Math.round(radius * 0.55F));
+		int hx = cx - Math.round(radius * 0.35F);
+		int hy = cy - Math.round(radius * 0.35F);
+		circle(graphics, hx, hy, hr, highlight);
+	}
+
+	/** Anti-aliased filled disc at a fractional centre: edge pixels get alpha
+	 proportional to how much of the pixel the disc covers, so motion along
+	 sub-pixel paths stays smooth and steady (no brightness flicker). */
+	public static void discAA(GuiGraphics graphics, float cx, float cy, float radius, int color) {
+		if ((color >>> 24) == 0 || radius < 1.0F) {
+			return;
+		}
+		int alpha = color >>> 24;
+		int rgb = color & 0xFFFFFF;
+		int minX = (int) Math.floor(cx - radius);
+		int maxX = (int) Math.floor(cx + radius);
+		int minY = (int) Math.floor(cy - radius);
+		int maxY = (int) Math.floor(cy + radius);
+		float r2 = radius * radius;
+		for (int y = minY; y <= maxY; y++) {
+			for (int x = minX; x <= maxX; x++) {
+				float dx = (x + 0.5F) - cx;
+				float dy = (y + 0.5F) - cy;
+				float d2 = dx * dx + dy * dy;
+				if (d2 > r2) {
+					continue;
+				}
+				// Pixel coverage: 1 fully inside; fractional near the edge.
+				float cov = radius - (float) Math.sqrt(d2);
+				if (cov > 1.0F) {
+					cov = 1.0F;
+				}
+				if (cov <= 0.0F) {
+					continue;
+				}
+				int a = Math.max(1, Math.round(alpha * cov));
+				graphics.fill(x, y, x + 1, y + 1, (a << 24) | rgb);
+			}
+		}
+	}
+
+	/** Soft shaded sphere with sub-pixel placement: base disc plus an offset
+	 highlight disc, both anti-aliased. Replaces sphere() for animated moons. */
+	public static void sphereAA(GuiGraphics graphics, float cx, float cy, float radius, int base, int highlight) {
+		if (radius < 1.0F || (base >>> 24) == 0) {
+			return;
+		}
+		discAA(graphics, cx, cy, radius, base);
+		if ((highlight >>> 24) == 0 || radius < 3.0F) {
+			return;
+		}
+		float hr = Math.max(1.0F, radius * 0.55F);
+		float hx = cx - radius * 0.35F;
+		float hy = cy - radius * 0.35F;
+		discAA(graphics, hx, hy, hr, highlight);
 	}
 
 	/** Half-width of each circle row, computed once per radius. */
@@ -652,10 +763,14 @@ public final class Ui {
 
 	private static final Identifier SATURN =
 			Identifier.fromNamespaceAndPath("valkawclient", "textures/gui/saturn.png");
+	/** Disc-only copy of saturn.png (alpha zeroed outside the planet sphere), used
+	 to re-occlude back moons without letting the ring bands cover them. */
+	private static final Identifier SATURN_DISC =
+			Identifier.fromNamespaceAndPath("valkawclient", "textures/gui/saturn-disc.png");
 	private static final Identifier LOGO =
 			Identifier.fromNamespaceAndPath("valkawclient", "textures/gui/logo.png");
-	private static final int SATURN_W = 1024;
-	private static final int SATURN_H = 592;
+	private static final int SATURN_W = 1180;
+	private static final int SATURN_H = 660;
 	private static final int SATURN_R = 168;
 	private static final Identifier WORDMARK =
 			Identifier.fromNamespaceAndPath("valkawclient", "textures/gui/wordmark.png");
@@ -673,6 +788,38 @@ public final class Ui {
 		int w = Math.round(SATURN_W * scale);
 		int h = Math.round(SATURN_H * scale);
 		graphics.blit(RenderPipelines.GUI_TEXTURED, SATURN, cx - w / 2, cy - h / 2, 0.0F, 0.0F,
+				w, h, SATURN_W, SATURN_H, SATURN_W, SATURN_H);
+	}
+
+	/** Redraw only the planet's disc region of the Saturn texture (source rect
+	 0,0,336,336 around the disc centre 590,341). Used to re-occlude back moons
+	 after they are drawn over the far ring band. */
+	public static void disc(GuiGraphics graphics, int cx, int cy, int radius)
+	{
+		if (radius < 8)
+		{
+			return;
+		}
+		float scale = radius / (float) SATURN_R;
+		int w = Math.round(336 * scale);
+		int h = Math.round(336 * scale);
+		graphics.blit(RenderPipelines.GUI_TEXTURED, SATURN, cx - w / 2, cy - h / 2, 422.0F, 173.0F,
+				w, h, 336, 336, SATURN_W, SATURN_H);
+	}
+
+	/** Redraw only the planet's disc (clean alpha-masked texture) on top of
+	 anything drawn since the full Saturn texture. Used to re-occlude back moons
+	 while keeping the ring bands beneath them. */
+	public static void planetDisc(GuiGraphics graphics, int cx, int cy, int radius)
+	{
+		if (radius < 8)
+		{
+			return;
+		}
+		float scale = radius / (float) SATURN_R;
+		int w = Math.round(SATURN_W * scale);
+		int h = Math.round(SATURN_H * scale);
+		graphics.blit(RenderPipelines.GUI_TEXTURED, SATURN_DISC, cx - w / 2, cy - h / 2, 0.0F, 0.0F,
 				w, h, SATURN_W, SATURN_H, SATURN_W, SATURN_H);
 	}
 

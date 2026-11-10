@@ -78,9 +78,9 @@ public class CrosshairEditorScreen extends Screen {
 
 		int center = CrosshairModule.GRID / 2;
 		graphics.fill(gridX + center * cell, gridY - 4, gridX + center * cell + cell - 1, gridY + size + 4,
-				0x157DF9FF);
+				0x159EC7F0);
 		graphics.fill(gridX - 4, gridY + center * cell, gridX + size + 4, gridY + center * cell + cell - 1,
-				0x157DF9FF);
+				0x159EC7F0);
 
 		for (int y = 0; y < CrosshairModule.GRID; y++) {
 			for (int x = 0; x < CrosshairModule.GRID; x++) {

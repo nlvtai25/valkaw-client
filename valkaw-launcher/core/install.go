@@ -37,6 +37,11 @@ const (
 	fabricInstallerURL = "https://maven.fabricmc.net/net/fabricmc/fabric-installer/1.0.1/fabric-installer-1.0.1.jar"
 )
 
+// baseVersions are always offered in the version selector, even before any
+// client build has been cached, so a fresh install has something to pick.
+// Cached builds are merged in on top of these.
+var baseVersions = []string{"1.21.11", "26.2"}
+
 var httpClient = &http.Client{Timeout: 30 * time.Minute}
 
 // netCtx backs all in-flight HTTP requests so they are torn down when the app
@@ -537,12 +542,36 @@ func availableVersions() []string {
 	return out
 }
 
-// GetVersions lists Minecraft versions that have a bundled Valkaw client build.
+// GetVersions lists selectable Minecraft versions: the always-available base
+// set plus any extra client builds already cached locally, deduped and sorted
+// newest-first.
 func (a *App) GetVersions() []string {
-	if v := availableVersions(); len(v) > 0 {
-		return v
+	seen := make(map[string]struct{}, len(baseVersions)+4)
+	out := make([]string, 0, len(baseVersions)+4)
+	add := func(list []string) {
+		for _, v := range list {
+			if v == "" {
+				continue
+			}
+			if _, dup := seen[v]; dup {
+				continue
+			}
+			seen[v] = struct{}{}
+			out = append(out, v)
+		}
 	}
-	return []string{defaultMCVersion}
+	add(baseVersions)
+	add(availableVersions())
+	sort.Slice(out, func(i, j int) bool {
+		a, b := versionParts(out[i]), versionParts(out[j])
+		for k := 0; k < len(a) && k < len(b); k++ {
+			if a[k] != b[k] {
+				return a[k] > b[k]
+			}
+		}
+		return len(a) > len(b)
+	})
+	return out
 }
 
 // InstallClient downloads the vanilla game, Fabric loader and Valkaw mods.

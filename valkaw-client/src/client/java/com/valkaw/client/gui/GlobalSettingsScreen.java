@@ -139,9 +139,9 @@ public class GlobalSettingsScreen extends Screen {
 		int tabY = y;
 		int tabW = (styleW - 6) / 2;
 		Ui.round(graphics, listX, tabY, tabW, 16, 5, !color2 ? Ui.alpha(Ui.ACCENT, 0.18F) : 0x0AFFFFFF);
-		graphics.drawString(font, "Colour 1", listX + 8, tabY + 4, !color2 ? Ui.ACCENT : Ui.MUTED, false);
+		graphics.drawString(font, "Color 1", listX + 8, tabY + 4, !color2 ? Ui.ACCENT : Ui.MUTED, false);
 		Ui.round(graphics, listX + tabW + 6, tabY, tabW, 16, 5, color2 ? Ui.alpha(Ui.ACCENT, 0.18F) : 0x0AFFFFFF);
-		graphics.drawString(font, "Colour 2", listX + tabW + 6 + 8, tabY + 4, color2 ? Ui.ACCENT : Ui.MUTED, false);
+		graphics.drawString(font, "Color 2", listX + tabW + 6 + 8, tabY + 4, color2 ? Ui.ACCENT : Ui.MUTED, false);
 
 		int paletteY = tabY + 22;
 		int cell = Math.max(14, (styleW - 9 * 3) / 10);

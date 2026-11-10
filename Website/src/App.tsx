@@ -51,6 +51,7 @@ export default function App() {
   return (
     <BrowserRouter basename={basename}>
       <ScrollManager />
+      <div className="page-orbital" aria-hidden="true" />
       <div className="page-sky" aria-hidden="true" />
       <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', minHeight: '100svh' }}>
         <Navbar />

@@ -73,7 +73,7 @@ public final class ModuleManager {
 	private final List<HudModule> hudModules = new ArrayList<>();
 	private final Map<Category, List<Module>> categorized = new EnumMap<>(Category.class);
 	private final Map<String, Module> byId = new LinkedHashMap<>();
-	private final TextStyle globalStyle = new TextStyle(0xFF7DF9FF);
+	private final TextStyle globalStyle = new TextStyle(0xFF9EC7F0);
 	private static final int SETTINGS_KEY = GLFW.GLFW_KEY_RIGHT_SHIFT;
 	private int editorKey = GLFW.GLFW_KEY_F6;
 	private String username = "";

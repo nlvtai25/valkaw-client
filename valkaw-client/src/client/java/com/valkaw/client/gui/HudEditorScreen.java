@@ -50,10 +50,10 @@ public class HudEditorScreen extends Screen {
 	public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
 		graphics.fillGradient(0, 0, width, height, 0xD2050914, 0xE60A1020);
 		for (int x = 0; x < width; x += 28) {
-			graphics.fill(x, 0, x + 1, height, 0x0E7DF9FF);
+			graphics.fill(x, 0, x + 1, height, 0x0E9EC7F0);
 		}
 		for (int y = 0; y < height; y += 28) {
-			graphics.fill(0, y, width, y + 1, 0x0E7DF9FF);
+			graphics.fill(0, y, width, y + 1, 0x0E9EC7F0);
 		}
 	}
 
@@ -90,7 +90,7 @@ public class HudEditorScreen extends Screen {
 			HudModule parent = module.parent();
 			if (parent != null) {
 				// Existing links stay visible so the player knows what follows what.
-				seam(graphics, module, opposite(module.linkSide()), 0x667DF9FF);
+				seam(graphics, module, opposite(module.linkSide()), 0x669EC7F0);
 			}
 		}
 
@@ -99,12 +99,12 @@ public class HudEditorScreen extends Screen {
 		}
 
 		if (guideX >= 0) {
-			graphics.fill(guideX, 0, guideX + 1, height, 0xAA7DF9FF);
-			graphics.fill(guideX - 1, 0, guideX + 2, height, 0x227DF9FF);
+			graphics.fill(guideX, 0, guideX + 1, height, 0xAA9EC7F0);
+			graphics.fill(guideX - 1, 0, guideX + 2, height, 0x229EC7F0);
 		}
 		if (guideY >= 0) {
-			graphics.fill(0, guideY, width, guideY + 1, 0xAA7DF9FF);
-			graphics.fill(0, guideY - 1, width, guideY + 2, 0x227DF9FF);
+			graphics.fill(0, guideY, width, guideY + 1, 0xAA9EC7F0);
+			graphics.fill(0, guideY - 1, width, guideY + 2, 0x229EC7F0);
 		}
 
 		drawEdgeZones(graphics);
@@ -160,10 +160,10 @@ public class HudEditorScreen extends Screen {
 		int y = module.y();
 		int w = width(module);
 		int h = height(module);
-		int color = active ? Ui.ACCENT : 0x557DF9FF;
+		int color = active ? Ui.ACCENT : 0x559EC7F0;
 		graphics.renderOutline(x - 1, y - 1, w + 2, h + 2, color);
 		if (active) {
-			graphics.renderOutline(x - 2, y - 2, w + 4, h + 4, 0x337DF9FF);
+			graphics.renderOutline(x - 2, y - 2, w + 4, h + 4, 0x339EC7F0);
 			corner(graphics, x - 1, y - 1, Ui.ACCENT);
 			corner(graphics, x + w + 1, y - 1, Ui.ACCENT);
 			corner(graphics, x - 1, y + h + 1, Ui.ACCENT);
@@ -189,8 +189,8 @@ public class HudEditorScreen extends Screen {
 	private void drawEdgeZones(GuiGraphics graphics) {
 		boolean nearLeft = dragging != null && dragging.x() <= LINK;
 		boolean nearRight = dragging != null && dragging.x() + width(dragging) >= width - LINK;
-		int left = nearLeft ? Ui.ACCENT : 0x337DF9FF;
-		int right = nearRight ? Ui.ACCENT : 0x337DF9FF;
+		int left = nearLeft ? Ui.ACCENT : 0x339EC7F0;
+		int right = nearRight ? Ui.ACCENT : 0x339EC7F0;
 		graphics.fill(0, 24, 2, height - 24, left);
 		graphics.fill(width - 2, 24, width, height - 24, right);
 		graphics.drawString(font, "L", 4, 10, nearLeft ? Ui.ACCENT : Ui.MUTED, false);

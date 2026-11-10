@@ -290,4 +290,11 @@ public final class ChatSymbolPanel {
 	private static int luma(int rgb) {
 		return ((rgb >> 16 & 0xFF) * 299 + (rgb >> 8 & 0xFF) * 587 + (rgb & 0xFF) * 114) / 1000;
 	}
+
+	/** Allows host-side flows (first-run tour, snapshots) to open the panel. */
+	public static void setOpen(boolean value, boolean colors) {
+		open = value;
+		colorTab = colors;
+		scrollRow = 0;
+	}
 }

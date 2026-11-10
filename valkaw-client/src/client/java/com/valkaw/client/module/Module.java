@@ -27,7 +27,7 @@ public abstract class Module {
 		this.category = category;
 		this.action = action;
 		this.style = new TextStyle(category == Category.UTILITY ? 0xFFB18CFF
-				: category == Category.PERFORMANCE ? 0xFF63F5B0 : 0xFF7DF9FF);
+				: category == Category.PERFORMANCE ? 0xFF63F5B0 : 0xFF9EC7F0);
 	}
 
 	public TextStyle style() {

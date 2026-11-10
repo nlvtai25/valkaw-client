@@ -17,8 +17,10 @@ function showPage(name) {
     if (pageEl) pageEl.classList.remove('hidden');
     document.querySelectorAll('.nav').forEach(b => b.classList.toggle('active', b.dataset.page === name));
     if (pages[name]) {
-        $('pageTitle').textContent = pages[name].title;
-        $('pageEyebrow').textContent = pages[name].eyebrow;
+        const pt = $('pageTitle');
+    if (pt) pt.textContent = pages[name].title;
+        const eb = $('pageEyebrow');
+        if (eb) eb.textContent = pages[name].eyebrow;
     }
     if (name === 'resources') {
         requestAnimationFrame(() => refreshResourceContext());
@@ -58,7 +60,8 @@ async function loadConfig() {
         || document.querySelector('input[name="afterRun"][value="hide"]');
     if (ar) ar.checked = true;
     updateUserChip();
-    $('welcome').textContent = cfg.username ? `Welcome back, ${cfg.username}` : 'Welcome back';
+    const wl = $('welcome');
+    if (wl) wl.textContent = cfg.username ? `Welcome back, ${cfg.username}` : 'Welcome back';
     refreshInstallStatus();
 }
 
@@ -68,11 +71,29 @@ async function loadVersions() {
     sel.innerHTML = versions.map(v => `<option value="${v}">${v}</option>`).join('');
     sel.value = versions.includes(cfg.version) ? cfg.version : versions[0];
     cfg.version = sel.value;
+    updateVersionValue();
     updateHeroMeta();
 }
 
+// The pill shows the selected version as plain text (the native select is an
+// invisible overlay spanning the pill), so mirror the select's value here.
+function updateVersionValue() {
+    const el = $('versionValue');
+    if (el) el.textContent = $('version').value;
+}
+
 function updateHeroMeta() {
-    $('heroMeta').textContent = `Minecraft ${$('version').value} • Valkaw Client`;
+    const meta = $('heroMeta');
+    if (meta) meta.textContent = `Minecraft ${$('version').value} • Valkaw Client`;
+}
+
+// The greeting chip mirrors the active render profile so the Play screen
+// states the current target at a glance.
+function updateGreetProfile() {
+    const chip = $('greetProfile');
+    if (!chip) return;
+    const val = document.querySelector('input[name="profile"]:checked')?.value || 'gl';
+    chip.textContent = val === 'vk' ? 'VulkanMod' : 'Sodium';
 }
 
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -88,7 +109,7 @@ async function loadGPUs() {
         <label class="seg gpu-seg">
             <input type="radio" name="gpu" value="${esc(g.id)}" hidden>
             <span>${esc(g.name)}</span>
-            <span class="muted small">${g.vendor ? esc(g.vendor.toUpperCase() + (g.address ? ' • ' + g.address : '')) : 'let the driver decide'}</span>
+            <span class="muted small">${g.vendor ? esc(g.vendor.toUpperCase() + (g.address ? ' • ' + g.address : '')) : 'Let the driver decide'}</span>
         </label>`).join('');
     const pick = (v) => document.querySelector(`input[name="gpu"][value="${v}"]`);
     (pick(cfg.gpu) || pick('')).checked = true;
@@ -147,16 +168,28 @@ async function vulkanReady(quiet) {
     return false;
 }
 
+function syncProfilePills() {
+    const val = document.querySelector('input[name="profile"]:checked')?.value || 'gl';
+    document.querySelectorAll('.profile-pill').forEach(pill => {
+        const input = pill.querySelector('input[name="profile"]');
+        pill.classList.toggle('selected', !!input && input.value === val);
+    });
+    updateGreetProfile();
+}
 document.querySelectorAll('input[name="profile"]').forEach(r => r.addEventListener('change', async (e) => {
     if (e.target.value === 'vk' && !(await vulkanReady())) {
         const back = document.querySelector(`input[name="profile"][value="${lastProfile}"]`);
         if (back) back.checked = true;
+        syncProfilePills();
         return;
     }
     lastProfile = e.target.value;
     cfg.profile = e.target.value;
     await SaveConfig(cfg);
+    syncProfilePills();
+    refreshInstallStatus();
 }));
+syncProfilePills();
 
 $('vkDriver').addEventListener('click', () => { if (vkDriverURL) BrowserOpenURL(vkDriverURL); });
 $('vkSodium').addEventListener('click', async () => {
@@ -170,16 +203,23 @@ $('vkSodium').addEventListener('click', async () => {
 $('vkClose').addEventListener('click', closeVulkan);
 
 $('version').addEventListener('change', async () => {    cfg.version = $('version').value;
+    updateVersionValue();
     updateHeroMeta();
     await SaveConfig(cfg);
     refreshInstallStatus();
 });
 
 async function refreshInstallStatus() {
-    const res = await CheckInstalled();
-    $('installHint').textContent = res === 'installed'
-        ? 'Installed — ready to play'
-        : res;
+    let res = '';
+    try {
+        res = await CheckInstalled();
+    } catch (_) {
+        res = 'not installed';
+    }
+    const installed = res === 'installed';
+    $('installHint').textContent = installed ? 'Installed — ready to play' : res;
+    $('installBtn').classList.toggle('hidden', installed);
+    $('playBtn').classList.toggle('hidden', !installed);
 }
 
 function setInstallProgress(stage, pct) {
@@ -213,7 +253,7 @@ async function refreshUpdateStatus() {
         $('updateBtn').textContent = updateReady ? 'Update now' : 'Check updates';
         el.style.color = updateReady ? 'var(--warn)' : 'var(--muted)';
     } catch (e) {
-        el.textContent = 'update check failed';
+        el.textContent = 'Update check failed';
     }
     return updateReady;
 }
@@ -268,6 +308,8 @@ $('installBtn').addEventListener('click', async () => {
 });
 
 loadConfig().then(async () => {
+    syncProfilePills();
+    refreshInstallStatus();
     const reqs = await CheckRequirements();
     if (!reqs.ready) openPrereq(reqs);
     const ready = await refreshUpdateStatus();
@@ -276,7 +318,7 @@ loadConfig().then(async () => {
         $('updateStatus').textContent = await InstallUpdate();
     }
 }).catch(err => {
-    $('status').textContent = 'config error: ' + err;
+    $('status').textContent = 'Config error: ' + err;
 });
 
 const JAVA_URL = 'https://adoptium.net/temurin/releases/?version=21&package=jre';
@@ -896,6 +938,177 @@ $('saveBtn').addEventListener('click', async () => {
     const res = await SaveConfig(cfg);
     status.textContent = res;
     updateUserChip();
-    $('welcome').textContent = cfg.username ? `Welcome back, ${cfg.username}` : 'Welcome back';
+    const wl = $('welcome');
+    if (wl) wl.textContent = cfg.username ? `Welcome back, ${cfg.username}` : 'Welcome back';
     refreshInstallStatus();
 });
+
+/* Saturn scene: drive the moons with requestAnimationFrame, matching the
+   website's MoonLayer math. Each moon sits on the ring-plane ellipse
+   (rx/ry in % of the 780×420 viewBox; vertical centre = ring plane at
+   54.76% height). Scaling and periods follow real Saturnian moons
+   (NASA/JPL): radii grow outward past the A ring, periods obey Kepler's
+   third law (T ∝ a^1.5), and phases are irregular so no two moons ever
+   line up into a symmetric pattern. Moons swap front/back layering as
+   they pass the planet. */
+/* The launcher runs in one fixed frame (DisableResize in main.go), so the
+   scene box is measured a single time by saturnSceneFit and shared here.
+   Reading clientWidth every frame forced a layout pass per frame; the moons
+   now read these cached numbers instead. */
+const saturnSize = { w: 720, h: 388 };
+
+(function saturnMoons() {
+    const MOONS = [
+        { id: 'moon1', rx: 32.9, ry: 17.1, durMs: 30000, phase: 0.6 }, // Janus
+        { id: 'moon2', rx: 36.0, ry: 18.7, durMs: 34000, phase: 1.0 }, // Mimas
+        { id: 'moon3', rx: 37.7, ry: 19.6, durMs: 37000, phase: 5.6 }, // Enceladus
+        { id: 'moon4', rx: 39.5, ry: 20.5, durMs: 39000, phase: 1.9 }, // Tethys
+        { id: 'moon5', rx: 42.2, ry: 21.9, durMs: 44000, phase: 4.0 }, // Dione
+        { id: 'moon6', rx: 47.0, ry: 24.4, durMs: 51000, phase: 0.2 }, // Rhea
+    ];
+    const RING_Y = 50 + 4.76; // ring-plane centre on the vertical axis
+    const els = MOONS.map(m => ({ m, el: document.getElementById(m.id) })).filter(o => o.el);
+    if (!els.length) return;
+    function frame(now) {
+        const sx = saturnSize.w / 100;
+        const sy = saturnSize.h / 100;
+        for (const { m, el } of els) {
+            const a = ((now % m.durMs) / m.durMs) * Math.PI * 2 + m.phase;
+            const sin = Math.sin(a);
+            const x = (50 + m.rx * Math.cos(a)) * sx;
+            const y = (RING_Y + m.ry * sin) * sy;
+            el.style.transform = `translate(${x}px, ${y}px) translate(-50%, -50%)`;
+            el.style.zIndex = sin > 0 ? '5' : '0';
+        }
+        requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+})();
+
+/* Ring particles: hundreds of ice/rock grains orbit at Kepler speeds so the
+   ring reads as a spinning disc — the same model as the website's
+   RingParticles. Angles/periods are precomputed deterministically; per-frame
+   updates write cx/cy straight to the SVG circles. */
+(function saturnRingParticles() {
+    const host = document.getElementById('ringParticles');
+    if (!host) return;
+    const COUNT = 340;
+    const R_MIN = 150;
+    const R_MAX = 292;
+    const FLAT = 0.28; // ring-plane tilt (ry/rx), matches the website and game
+    const CX = 390;
+    const CY = 230;
+    function mulberry32(seed) {
+        let a = seed >>> 0;
+        return function () {
+            a |= 0; a = (a + 0x6D2B79F5) | 0;
+            let t = Math.imul(a ^ (a >>> 15), 1 | a);
+            t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+            return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+        };
+    }
+    const rand = mulberry32(20261109);
+    const particles = [];
+    let guard = 0;
+    while (particles.length < COUNT && guard++ < 20000) {
+        const r = R_MIN + rand() * (R_MAX - R_MIN);
+        if (r > 213 && r < 233) continue; // Cassini division stays dark
+        const period = 8 * Math.pow(r / 184, 1.5); // ≈8s at C ring outer edge
+        particles.push({
+            r,
+            omega: (Math.PI * 2) / period,
+            phase: rand() * Math.PI * 2,
+            tone: rand(),
+        });
+    }
+    for (const p of particles) {
+        const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        c.setAttribute('class', p.tone > 0.75 ? 'ring-particle ring-particle--dark' : 'ring-particle');
+        c.setAttribute('cx', String(CX + p.r));
+        c.setAttribute('cy', String(CY));
+        c.setAttribute('r', String(0.9 + p.tone * 0.7));
+        host.appendChild(c);
+    }
+    function frame(now) {
+        const list = host.children;
+        for (let i = 0; i < list.length; i++) {
+            const p = particles[i];
+            const el = list[i];
+            const a = p.phase + p.omega * (now / 1000);
+            el.setAttribute('cx', String(CX + p.r * Math.cos(a)));
+            el.setAttribute('cy', String(CY + p.r * FLAT * Math.sin(a)));
+        }
+        requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+})();
+
+/* Fit the whole Saturn model (rings, moons and all) inside the area to the
+   right of the sidebar. The window is a fixed 1600×900 frame with resize
+   disabled, so this runs once at startup instead of on every resize event.
+   The sheet is rotated -14°, so we measure its rotated footprint (bounding
+   box) rather than the raw 1240×668 box — otherwise the ring tips would
+   still clip under the UI. The scale is derived from that footprint plus
+   margins, then the model is centered in the main content region. */
+(function saturnSceneFit() {
+    const scene = document.querySelector('.saturn-scene');
+    const sidebar = document.querySelector('.sidebar');
+    if (!scene) return;
+    const BASE_W = 1240;
+    const BASE_H = 668;
+    const TILT = -14 * Math.PI / 180; // same rotation as the CSS scene
+    const COS = Math.abs(Math.cos(TILT));
+    const SIN = Math.abs(Math.sin(TILT));
+    const BB_W = BASE_W * COS + BASE_H * SIN;
+    const BB_H = BASE_W * SIN + BASE_H * COS;
+    const PAD_L = 24; // gap from the sidebar
+    const PAD_R = 24; // right edge margin
+    const PAD_T = 112; // clear the greeting header at the top
+    const PAD_B = 210; // clear the bottom command dock
+    const sw = sidebar ? sidebar.getBoundingClientRect().width : 230;
+    const availW = Math.max(360, window.innerWidth - sw - PAD_L - PAD_R);
+    const availH = Math.max(360, window.innerHeight - PAD_T - PAD_B);
+    const scale = Math.min(availW / BB_W, availH / BB_H) * 0.98;
+    // Enlarge the finished fit by ~30%: the model is a decorative backdrop
+    // behind the UI, so letting it run past the padding region is fine and
+    // reads as more present. The max clamp is raised so the larger scale
+    // isn't silently capped back down.
+    const s = Math.max(0.4, Math.min(1.6, scale * 1.3));
+    const w = BASE_W * s;
+    const h = BASE_H * s;
+    const cx = sw + PAD_L + availW / 2;
+    const cy = PAD_T + availH * 0.52;
+    scene.style.width = w + 'px';
+    scene.style.height = h + 'px';
+    scene.style.marginLeft = '0px';
+    scene.style.marginTop = '0px';
+    scene.style.left = (cx - w / 2) + 'px';
+    scene.style.top = (cy - h / 2) + 'px';
+    saturnSize.w = w;
+    saturnSize.h = h;
+})();
+
+/* Starfield: scatter a dense layer of softly twinkling stars across the
+   whole window behind the Saturn scene. Sizes, brightness and twinkle timing
+   are random per star; a few are warm gold to match the scene's rim light. */
+(function saturnStarfield() {
+    const host = document.getElementById('starfield');
+    if (!host) return;
+    const count = window.innerWidth < 900 ? 60 : 120;
+    const frag = document.createDocumentFragment();
+    for (let i = 0; i < count; i++) {
+        const s = document.createElement('span');
+        const size = 1 + Math.random() * 1.6;
+        const gold = Math.random() < 0.18;
+        s.className = 'star' + (gold ? ' star--gold' : '');
+        s.style.width = size + 'px';
+        s.style.height = size + 'px';
+        s.style.left = (Math.random() * 100).toFixed(2) + '%';
+        s.style.top = (Math.random() * 100).toFixed(2) + '%';
+        s.style.opacity = (0.35 + Math.random() * 0.45).toFixed(2);
+        s.style.setProperty('--tw-dur', (3 + Math.random() * 4).toFixed(2) + 's');
+        s.style.animationDelay = (-Math.random() * 6).toFixed(2) + 's';
+        frag.appendChild(s);
+    }
+    host.appendChild(frag);
+})();

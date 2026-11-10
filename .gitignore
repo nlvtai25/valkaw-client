@@ -36,3 +36,9 @@ valkaw-launcher/frontend/package.json.md5
 
 # local Crush harness config
 .crushrc
+
+# local Crush harness DB (do not commit)
+crush.db
+crush.db-shm
+crush.db-wal
+init

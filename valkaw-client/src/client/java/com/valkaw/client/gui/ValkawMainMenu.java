@@ -31,7 +31,7 @@ public class ValkawMainMenu extends Screen
 	private final List<Nav> navs = new ArrayList<>(5);
 	private static final int ACCOUNT_ROW = 18;
 
-	private float clock;
+	private double clock;
 	private float open;
 	private boolean accountOpen;
 	private boolean accountTyping;
@@ -43,6 +43,22 @@ public class ValkawMainMenu extends Screen
 	private int panelX;
 	private int panelY;
 	private int panelW;
+
+	// Quiet starfield for the backdrop. Deterministic, tiny, animated by clock.
+	private static final int STAR_COUNT = 46;
+	private static final float[] STAR_X = new float[STAR_COUNT];
+	private static final float[] STAR_Y = new float[STAR_COUNT];
+	private static final float[] STAR_TW = new float[STAR_COUNT];
+	static
+	{
+		java.util.Random rand = new java.util.Random(11L);
+		for (int i = 0; i < STAR_COUNT; i++)
+		{
+			STAR_X[i] = rand.nextFloat();
+			STAR_Y[i] = rand.nextFloat();
+			STAR_TW[i] = rand.nextFloat() * (float) Math.PI * 2.0F;
+		}
+	}
 
 	public ValkawMainMenu()
 	{
@@ -134,15 +150,171 @@ public class ValkawMainMenu extends Screen
 	private void drawBackdrop(GuiGraphics graphics, float dt)
 	{
 		clock += dt;
-		graphics.fillGradient(0, 0, width, height, Ui.BG_TOP, Ui.BG_BOTTOM);
+		graphics.fillGradient(0, 0, width, height, Ui.BG_TOP, Ui.BG_BOTTOM);		drawStars(graphics);
 
 		int cx = rightX() + rightW() / 2;
-		int cy = Math.round(height * 0.68F);
-		int radius = Math.max(28, Math.min(Math.round(rightW() * 0.22F), Math.round(height * 0.19F)));
-		Ui.planet(graphics, cx, cy, radius, clock);
+		int cy = Math.round(height * 0.66F);
+		// Match the web's proportions: the whole 1180-wide sheet (rings, orbit
+		// paths and all) must fit the window width or the moons slip off-screen.
+		// Fit the whole ring sheet inside the area to the right of the sidebar
+		// menu at any window size (mirrors the launcher's responsive scene).
+		int radius = Math.max(96, Math.min(
+				Math.min(Math.round(width * 0.135F), Math.round(height * 0.16F)),
+				Math.round(rightW() * 0.22F)));
+		// Saturn itself is drawn slightly smaller than the orbit field, so the
+		// moons keep their current absolute size while the planet reads smaller.
+		int planetRadius = Math.max(72, Math.round(radius * 0.85F));
+		// Moons orbit at the ring field radius (which tracks the planet), but
+		// their disc size keeps the full field radius so shrinking Saturn does
+		// not also shrink the moons. This mirrors the web/launcher ratio.
+		// Layer order mirrors the web/launcher scene (far to near):
+		// 0. ring particles — orbit before the planet texture, so the disc
+		//    occludes the ones passing behind it (the rings stay beneath);
+		// 1. the full Saturn texture (disc + ring bands) — the base scene;
+		// 2. back moons — over the ring bands (they sit above the rings);
+		// 3. the clean planet disc redrawn over the back moons, so Saturn
+		//    occludes them while the rings stay beneath them;
+		// 4. front moons — over everything.
+		float ringScale = planetRadius / SATURN_TEXTURE_R;
+		drawRingParticles(graphics, cx, cy, ringScale);
+		Ui.planet(graphics, cx, cy, planetRadius, (float) clock);
+		drawMoons(graphics, cx, cy, planetRadius, radius, false);
+		Ui.planetDisc(graphics, cx, cy, planetRadius);
+		drawMoons(graphics, cx, cy, planetRadius, radius, true);
 
 		graphics.fillGradient(0, 0, width, 72, 0x66000000, 0x00000000);
 		graphics.fillGradient(0, height - 96, width, height, 0x00000000, 0x77000000);
+	}
+
+	/** Draw the spinning ring particles before the planet texture, so the disc
+	 occludes the ones passing behind it (the rings themselves stay beneath).
+	 Layout mirrors the web: x = cx + r·scale·cos(a), y = cy + r·scale·0.28·sin(a)
+	 with ω ∝ r^-1.5 (Kepler) and clock as elapsed seconds. */
+	private void drawRingParticles(GuiGraphics graphics, int cx, int cy, float scale)
+	{
+		for (float[] p : RING_PARTICLES)
+		{
+			double a = p[2] + p[1] * clock;
+			float x = cx + p[0] * scale * (float) Math.cos(a);
+			float y = cy + p[0] * scale * RING_K * (float) Math.sin(a);
+			float size = Math.max(0.9F, 0.9F + p[3] * 0.7F);
+			int rgb = p[3] > 0.75F ? 0x8E867C : 0xD8CDBB;
+			int alpha = (int) ((p[3] > 0.75F ? 0.4F : 0.5F) * 255F);
+			Ui.discAA(graphics, x, y, size, (alpha << 24) | rgb);
+		}
+	}
+
+	/** Orbit data for six real Saturnian moons (Janus, Mimas, Enceladus,
+	 Tethys, Dione, Rhea): radius (×planet), period, phase, colour. Shared
+	 with the launcher and website so all three render the same system. */
+	private static final float[][] MOON_ORBITS = {
+			{ 2.79F, 30F, 0.6F, 0x009A9AA0 }, // Janus
+			{ 3.05F, 34F, 1.0F, 0x00E3B24B }, // Mimas
+			{ 3.20F, 37F, 5.6F, 0x009CC7F0 }, // Enceladus
+			{ 3.35F, 39F, 1.9F, 0x00E8DFCB }, // Tethys
+			{ 3.58F, 44F, 4.0F, 0x00E3B24B }, // Dione
+			{ 3.99F, 51F, 0.2F, 0x009CC7F0 }, // Rhea
+	};
+
+	/** Moon disc radius as a fraction of the planet radius, mirroring the
+	 web/launcher sizes (small < cream < gold < ice). */
+	private static final float[] MOON_SIZE_FRAC = {
+			0.045F, 0.072F, 0.084F, 0.056F, 0.072F, 0.084F,
+	};
+
+	/** Highlight colour (RGB) for each moon, making it read as a 3D sphere. */
+	private static final int[] MOON_HIGHLIGHT = {
+			0xE9E2D2, 0xF6E7BA, 0xE8F4FF, 0xF6F0E3, 0xF6E7BA, 0xE8F4FF,
+	};
+
+	/** Texture-space planet radius (matches Ui.SATURN_R: 168px in the
+	 1180×660 sheet); used only to scale ring particles to the screen. */
+	private static final float SATURN_TEXTURE_R = 168F;
+
+	/** Ring particles: hundreds of ice/rock grains orbit at Kepler speeds so the
+	 ring reads as a spinning disc — the same model as the website's
+	 RingParticles and the launcher. r is in texture px, omega ∝ r^-1.5,
+	 phase random, and the Cassini division (213–233) is left empty. The seed is
+	 fixed so every launch shows the same field. */
+	private static final float[][] RING_PARTICLES = buildRingParticles();
+
+	private static float[][] buildRingParticles()
+	{
+		java.util.Random rand = new java.util.Random(20261109L);
+		float[][] out = new float[340][];
+		int n = 0;
+		int guard = 0;
+		while (n < out.length && guard++ < 20000)
+		{
+			float r = 150F + rand.nextFloat() * (292F - 150F);
+			if (r > 213F && r < 233F)
+			{
+				continue; // Cassini division stays dark
+			}
+			double period = 8.0 * Math.pow(r / 184.0, 1.5); // ≈8s at C ring outer edge
+			float omega = (float) (2.0 * Math.PI / period);
+			out[n++] = new float[] { r, omega, rand.nextFloat() * (float) (Math.PI * 2.0), rand.nextFloat() };
+		}
+		return n == out.length ? out : java.util.Arrays.copyOf(out, n);
+	}
+
+	/** The scene tilt shared with the baked texture, in radians. */
+	private static final float TILT = (float) Math.toRadians(-14.0);
+	private static final float TILT_COS = (float) Math.cos(TILT);
+	private static final float TILT_SIN = (float) Math.sin(TILT);
+	private static final float RING_K = 0.28F;
+
+	/** Six moons travel the tilted orbit plane; front halves pass in front of the planet.
+	 orbitRadius scales the orbit (tracking the planet); sizeRadius scales the disc.
+	 Keeping them separate lets Saturn shrink without shrinking the moons. */
+	private void drawMoons(GuiGraphics graphics, int cx, int cy, int orbitRadius, int sizeRadius, boolean frontHalf)
+	{
+		for (int i = 0; i < MOON_ORBITS.length; i++)
+		{
+			float[] orbit = MOON_ORBITS[i];
+			double angle = orbit[2] + clock * (2.0 * Math.PI / orbit[1]);
+			double sin = Math.sin(angle);
+			boolean front = sin > 0.0D;
+			if (front != frontHalf)
+			{
+				continue;
+			}
+			double lx = orbit[0] * orbitRadius * Math.cos(angle);
+			double ly = orbit[0] * RING_K * orbitRadius * sin;
+			// Keep exact sub-pixel position; the anti-aliased disc paints edge
+			// pixels with proportional alpha, so small per-frame steps glide
+			// smoothly without intensity flicker or pixel snapping.
+			float fx = (float) (cx + lx * TILT_COS - ly * TILT_SIN);
+			float fy = (float) (cy + 0.22F * orbitRadius + lx * TILT_SIN + ly * TILT_COS);
+			float mr = Math.max(2.0F, sizeRadius * MOON_SIZE_FRAC[i]);
+			// Back half: real occultation — the disc stays fully opaque with its
+			// normal colours; it is simply hidden where the planet/rings overlap
+			// it (drawn before the planet). No artificial dimming or fading.
+			int alpha = front ? 225 : 255;
+			int hlAlpha = front ? 170 : 255;
+			int base = (((int) orbit[3] & 0xFFFFFF) | (alpha << 24));
+			int highlight = ((MOON_HIGHLIGHT[i] & 0xFFFFFF) | (hlAlpha << 24));
+			Ui.sphereAA(graphics, fx, fy, mr, base, highlight);
+		}
+	}
+
+	/** A slow, faint starfield. Tiny fills, deterministic layout, no allocations. */
+	private void drawStars(GuiGraphics graphics)
+	{
+		for (int i = 0; i < STAR_COUNT; i++)
+		{
+			float drift = (float) (clock * (0.012F + STAR_TW[i] * 0.004F)) % 1.0F;
+			int sx = (int) (STAR_X[i] * width);
+			int sy = (int) ((STAR_Y[i] + drift) % 1.0F * height);
+			if (sy >= height)
+			{
+				continue;
+			}
+			float tw = (float) Math.sin(clock * 1.4F + STAR_TW[i]);
+			int alpha = 90 + (int) (tw * 70);
+			int size = STAR_TW[i] > 4.4F ? 2 : 1;
+			graphics.fill(sx, sy, sx + size, sy + size, (Math.max(30, Math.min(190, alpha)) << 24) | 0xFFFFFF);
+		}
 	}
 
 	private static String rendererName;
@@ -182,7 +354,7 @@ public class ValkawMainMenu extends Screen
 		boolean narrow = w < 100;
 
 		Ui.round(graphics, x, y, w, h, Ui.R_PANEL, 0x99000000);
-		graphics.renderOutline(x, y, w, h, Ui.LINE_SOFT);
+		Ui.roundOutline(graphics, x, y, w, h, Ui.R_PANEL, Ui.LINE_SOFT);
 
 		for (int i = 0; i < navs.size(); i++)
 		{
@@ -202,7 +374,7 @@ public class ValkawMainMenu extends Screen
 			Ui.round(graphics, x + 8, iy, w - 16, itemH(), Ui.R_CARD, fill);
 			if (hot && !nav.primary)
 			{
-				graphics.renderOutline(x + 8, iy, w - 16, itemH(), 0x33FFFFFF);
+				Ui.roundOutline(graphics, x + 8, iy, w - 16, itemH(), Ui.R_CARD, 0x33FFFFFF);
 			}
 
 			int iconColor = nav.primary ? Ui.INK : (hot ? Ui.TEXT : nav.accent);
@@ -274,7 +446,7 @@ public class ValkawMainMenu extends Screen
 			panelY = Math.max(8, height - 8 - panelH);
 		}
 		Ui.round(graphics, panelX, panelY, panelW, panelH, Ui.R_CARD, 0xE60C0F16);
-		graphics.renderOutline(panelX, panelY, panelW, panelH, Ui.LINE_SOFT);
+		Ui.roundOutline(graphics, panelX, panelY, panelW, panelH, Ui.R_CARD, Ui.LINE_SOFT);
 
 		String active = minecraft.getUser().getName();
 		int rowY = panelY + 5;
@@ -327,7 +499,7 @@ public class ValkawMainMenu extends Screen
 		graphics.drawString(font, left, rightX(), height - 22, Ui.MUTED, false);
 		if (width >= 760)
 		{
-			String hint = "Right Shift  ·  client settings";
+			String hint = "Right Shift  ·  Client Settings";
 			graphics.drawString(font, hint, width - sideX() - Ui.width(font, hint), height - 22, Ui.MUTED, false);
 		}
 	}

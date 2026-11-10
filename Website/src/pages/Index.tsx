@@ -2,6 +2,7 @@ import type { CSSProperties } from 'react';
 import { asset } from '@/lib/asset';
 import { Link } from 'react-router-dom';
 import { BuildBench } from '@/components/BuildBench';
+import { SaturnIntro } from '@/components/SaturnIntro';
 import { ViewportDeck } from '@/components/ViewportDeck';
 import { Seo } from '@/components/Seo';
 import { BRAND, DOWNLOADS, FAQS, FEATURES } from '@/data/content';
@@ -38,7 +39,7 @@ function Hero() {
   const primary = preferredBuild(launcher.builds, platform);
 
   return (
-    <section className="hero">
+    <section className="hero" id="overview">
       <div className="hero-sky" aria-hidden="true" />
       <div className="container">
         <div className="hero-grid">
@@ -293,6 +294,7 @@ export default function Index() {
         jsonLd={HOME_JSON_LD}
       />
       <main>
+        <SaturnIntro />
         <Hero />
         <Client />
         <Modules />
