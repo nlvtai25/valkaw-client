@@ -1,6 +1,6 @@
 import './style.css';
 
-import { GetConfig, SaveConfig, Launch, CheckUpdate, OpenReleases, InstallClient, CheckInstalled, DetectJava, InstallUpdate, GetVersions, ListGPUs, CheckRequirements, InstallJava, SetGpuPreference, CheckVulkan, GetResourceBrowserContext, SearchModrinth, GetModrinthProject, GetModrinthProjectVersions, DownloadResource, OpenResourceDir, ScanConflictMods } from '../wailsjs/go/core/App';
+import { GetConfig, SaveConfig, Launch, CheckUpdate, OpenReleases, InstallClient, CheckInstalled, DetectJava, InstallUpdate, GetVersions, ListGPUs, CheckRequirements, InstallJava, SetGpuPreference, CheckVulkan, GetResourceBrowserContext, SearchModrinth, GetModrinthProject, GetModrinthProjectVersions, DownloadResource, OpenResourceDir, ScanConflictMods, GetVersionProfiles } from '../wailsjs/go/core/App';
 import { EventsOn, BrowserOpenURL } from '../wailsjs/runtime/runtime';
 
 const $ = (id) => document.getElementById(id);
@@ -32,6 +32,7 @@ document.querySelectorAll('.nav').forEach(b => b.addEventListener('click', () =>
 let cfg = {};
 let updateReady = false;
 let lastProfile = 'gl';
+let versionProfiles = {};
 
 async function loadConfig() {
     cfg = await GetConfig();
@@ -68,11 +69,39 @@ async function loadConfig() {
 async function loadVersions() {
     const sel = $('version');
     const versions = await GetVersions();
-    sel.innerHTML = versions.map(v => `<option value="${v}">${v}</option>`).join('');
-    sel.value = versions.includes(cfg.version) ? cfg.version : versions[0];
+    sel.innerHTML = '<option value="" disabled>Select</option>' +
+        versions.map(v => `<option value="${v}">${v}</option>`).join('');
+    sel.value = versions.includes(cfg.version) ? cfg.version : '';
     cfg.version = sel.value;
+    versionProfiles = await GetVersionProfiles();
+    applyProfileAvailability();
     updateVersionValue();
     updateHeroMeta();
+}
+
+// Some game versions only ship one render profile (26.3 has no Vulkan build),
+// so that pill is disabled and the selection falls back to Sodium.
+function applyProfileAvailability() {
+    const ver = $('version').value;
+    const allowed = versionProfiles[ver] || ['gl', 'vk'];
+    const vkInput = document.querySelector('input[name="profile"][value="vk"]');
+    const blocked = !allowed.includes('vk');
+    if (vkInput) {
+        vkInput.disabled = blocked;
+        const pill = vkInput.closest('.profile-pill');
+        if (pill) {
+            pill.classList.toggle('disabled', blocked);
+            pill.title = blocked ? `No Vulkan build for Minecraft ${ver}` : '';
+        }
+    }
+    if (blocked && vkInput?.checked) {
+        const gl = document.querySelector('input[name="profile"][value="gl"]');
+        if (gl) gl.checked = true;
+        lastProfile = 'gl';
+        cfg.profile = 'gl';
+        syncProfilePills();
+        SaveConfig(cfg);
+    }
 }
 
 // The pill shows the selected version as plain text (the native select is an
@@ -203,6 +232,7 @@ $('vkSodium').addEventListener('click', async () => {
 $('vkClose').addEventListener('click', closeVulkan);
 
 $('version').addEventListener('change', async () => {    cfg.version = $('version').value;
+    applyProfileAvailability();
     updateVersionValue();
     updateHeroMeta();
     await SaveConfig(cfg);
@@ -303,7 +333,7 @@ $('installBtn').addEventListener('click', async () => {
         $('installStage').textContent = 'Install error: ' + e;
     } finally {
         btn.disabled = false;
-        btn.textContent = 'Install / Repair';
+        btn.textContent = '▶ Install';
     }
 });
 
@@ -392,7 +422,7 @@ async function installMissing() {
         stage.textContent = 'Ready';
         refreshInstallStatus();
         closePrereq();
-        launchGame();
+        // Do not auto-launch: wait for the user to press Play.
     } catch (e) {
         setupFailed('Setup error: ' + e);
     } finally {
@@ -750,6 +780,10 @@ function renderResourceResults() {
         const item = document.createElement('button');
         item.className = 'resource-card-item';
         const icon = hit.icon_url || hit.icon_url_png || '';
+        // Mods incompatible with the selected game version get a visible badge
+        // even though the backend hides them from search for that version.
+        const incompatible = (resourceCtx.incompatibleMods || [])
+            .some(s => s.toLowerCase() === (hit.slug || '').toLowerCase());
         item.innerHTML = `
             <img class="resource-icon" src="${esc(icon)}" alt="" width="56" height="56"
                  loading="lazy" decoding="async" referrerpolicy="no-referrer"
@@ -758,6 +792,7 @@ function renderResourceResults() {
                 <strong>${esc(hit.title || hit.name || hit.slug || '')}</strong>
                 <span class="muted small">${esc(hit.author || hit.team || '')}</span>
                 <span class="muted small">${hit.downloads ? hit.downloads.toLocaleString() + ' downloads' : ''}</span>
+                ${incompatible ? '<span class="resource-badge-incompatible">Incompatible</span>' : ''}
             </div>
         `;
         item.addEventListener('click', () => openResourceProject(hit));

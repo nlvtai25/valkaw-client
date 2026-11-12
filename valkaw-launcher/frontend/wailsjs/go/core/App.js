@@ -46,6 +46,10 @@ export function GetResourceBrowserContext() {
   return window['go']['core']['App']['GetResourceBrowserContext']();
 }
 
+export function GetVersionProfiles() {
+  return window['go']['core']['App']['GetVersionProfiles']();
+}
+
 export function GetVersions() {
   return window['go']['core']['App']['GetVersions']();
 }

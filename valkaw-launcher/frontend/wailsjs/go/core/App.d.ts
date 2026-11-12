@@ -24,6 +24,8 @@ export function GetModrinthProjectVersions(arg1:string,arg2:string,arg3:string):
 
 export function GetResourceBrowserContext():Promise<Record<string, any>>;
 
+export function GetVersionProfiles():Promise<Record<string, Array<string>>>;
+
 export function GetVersions():Promise<Array<string>>;
 
 export function InstallClient(arg1:string):Promise<string>;

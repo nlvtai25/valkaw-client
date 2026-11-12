@@ -162,8 +162,14 @@ func (a *App) SearchModrinth(query string, projectType string, gameVersion strin
 
 	// Mods already inside valkawclient.jar, and renderer mods for the other
 	// profile, are hidden: installing them duplicates a mod id or drags the
-	// wrong renderer into the game, and Minecraft refuses to start.
+	// wrong renderer into the game, and Minecraft refuses to start. Mods known
+	// to crash on the selected game version are hidden for that version only.
 	hidden := hiddenModSlugs(a.activeProfile())
+	if version := a.gameVersion(); version != "" {
+		for _, slug := range versionBlockedModSlugs(version) {
+			hidden[strings.ToLower(slug)] = struct{}{}
+		}
+	}
 	applyHidden := projectType == "mod" && len(hidden) > 0
 
 	collected := make([]map[string]any, 0, limit)
@@ -322,6 +328,11 @@ func (a *App) DownloadResource(downloadUrl string, fileName string, resourceType
 	}
 	if resourceType == "mod" && isBlockedDownload(a.activeProfile(), slug) {
 		return fmt.Errorf("%s is already included in the client; it cannot be downloaded separately", slug)
+	}
+	// Mods known to crash on the selected game version are refused here even
+	// though the resource browser also hides them from search results.
+	if resourceType == "mod" && isVersionBlockedDownload(a.gameVersion(), slug) {
+		return fmt.Errorf("%s is incompatible with Minecraft %s and cannot be installed", slug, a.gameVersion())
 	}
 	dir, err := a.resourceDirForType(resourceType)
 	if err != nil {

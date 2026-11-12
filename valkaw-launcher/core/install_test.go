@@ -24,6 +24,7 @@ func TestProfilePaths(t *testing.T) {
 
 func TestClientVersions(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
+	t.Setenv("VALKAW_VERSION_DIR", t.TempDir())
 	dir := filepath.Dir(clientJarPath(defaultMCVersion, "vk"))
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		t.Fatal(err)
@@ -46,6 +47,7 @@ func TestClientVersions(t *testing.T) {
 // ensureClientJar must keep the cached build when the release lookup fails.
 func TestEnsureClientJarFallsBackToCache(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
+	t.Setenv("VALKAW_VERSION_DIR", t.TempDir())
 	oldDL, oldPage := releaseDL, releasesPage
 	releaseDL = "http://127.0.0.1:1/"
 	releasesPage = "http://127.0.0.1:1/"
@@ -63,6 +65,93 @@ func TestEnsureClientJarFallsBackToCache(t *testing.T) {
 	}
 	if b, _ := os.ReadFile(p); string(b) != "cached" {
 		t.Fatal("cached build was replaced")
+	}
+}
+
+// ensureClientJar must refuse a jar built for a different Minecraft version
+// instead of shipping a mismatched client into the selected version folder.
+func TestEnsureClientJarTargetVersion(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("VALKAW_VERSION_DIR", t.TempDir())
+	oldDL, oldPage := releaseDL, releasesPage
+	releaseDL = "http://127.0.0.1:1/"
+	releasesPage = "http://127.0.0.1:1/"
+	defer func() { releaseDL, releasesPage = oldDL, oldPage }()
+
+	// A cached jar whose fabric.mod.json targets 26.2 must fail install for
+	// 26.1.2, and pass for 26.2.
+	buildJar := func(path, mc string) {
+		if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+			t.Fatal(err)
+		}
+		var buf bytes.Buffer
+		zw := zip.NewWriter(&buf)
+		f, err := zw.Create("fabric.mod.json")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := f.Write([]byte(`{"id":"valkawclient","depends":{"minecraft":"~` + mc + `"}}`)); err != nil {
+			t.Fatal(err)
+		}
+		if err := zw.Close(); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(path, buf.Bytes(), 0644); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	p := clientJarPath("26.2", "gl")
+	buildJar(p, "26.2")
+	if err := ensureClientJar("26.2", "gl"); err != nil {
+		t.Fatalf("matching build failed: %v", err)
+	}
+	if err := ensureClientJar("26.1.2", "gl"); err == nil {
+		t.Fatal("mismatched build should fail install")
+	}
+}
+
+func TestClientJarTargetVersion(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "valkaw-sodium-26.1.2-1.0.6.jar")
+	var buf bytes.Buffer
+	zw := zip.NewWriter(&buf)
+	f, err := zw.Create("fabric.mod.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := f.Write([]byte(`{"depends":{"minecraft":"~26.1.2"}}`)); err != nil {
+		t.Fatal(err)
+	}
+	if err := zw.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(path, buf.Bytes(), 0644); err != nil {
+		t.Fatal(err)
+	}
+	if got := clientJarTargetVersion(path); got != "26.1.2" {
+		t.Fatalf("target version = %q, want 26.1.2", got)
+	}
+	if clientJarTargetVersion(filepath.Join(dir, "missing.jar")) != "" {
+		t.Fatal("unreadable jar should return empty target")
+	}
+}
+
+func TestVersionEquals(t *testing.T) {
+	cases := []struct {
+		a, b string
+		want bool
+	}{
+		{"26.2", "26.2", true},
+		{"26.1.2", "26.1.2", true},
+		{"26.2", "26.1.2", false},
+		{"26.1.2", "26.1", false},
+		{"26", "26.1.2", false},
+	}
+	for _, c := range cases {
+		if got := versionEquals(c.a, c.b); got != c.want {
+			t.Fatalf("versionEquals(%q, %q) = %v, want %v", c.a, c.b, got, c.want)
+		}
 	}
 }
 
@@ -150,5 +239,29 @@ func TestInstallModsJij(t *testing.T) {
 	}
 	if !found {
 		t.Fatal("vulkanmod not nested")
+	}
+}
+
+func TestSupportedProfilesFollowAvailableBuilds(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("VALKAW_VERSION_DIR", dir)
+
+	// Published base versions always offer both render profiles.
+	if got := supportedProfiles("26.2"); len(got) != 2 {
+		t.Fatalf("base version profiles = %v, want gl and vk", got)
+	}
+	// A local version with no build of its own falls back to Sodium only.
+	if got := supportedProfiles("26.9.9"); len(got) != 1 || got[0] != "gl" {
+		t.Fatalf("unknown version profiles = %v, want [gl]", got)
+	}
+
+	// A Vulkan jar in a source folder makes the profile selectable again.
+	jar := filepath.Join(dir, artifactFileName("vk", "26.9.9", "1.0.6"))
+	if err := os.WriteFile(jar, []byte("not a real jar"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	got := supportedProfiles("26.9.9")
+	if len(got) != 2 || got[1] != "vk" {
+		t.Fatalf("profiles after adding a vulkan build = %v, want [gl vk]", got)
 	}
 }

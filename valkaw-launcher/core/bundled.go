@@ -24,17 +24,34 @@ var bundledModSlugs = []string{
 	"badoptimizations",
 	"clumps",
 	"c2me-fabric",
+	"scalablelux",
+	"vmp-fabric",
+	"modernfix-mvus",
+	"ixeris",
+	"immediatelyfast",
+	"particle-core",
+	"entityculling",
+	"fastquit",
+	"ksyxis",
+	"greedy-meshing",
+	"resourcepackcached",
+	"offline-mode-fix",
+	"lambdynamiclights",
+	"lightweight-inventory-sorting",
+	"shulkerboxtooltip",
+	"cloth-config",
+	"fzzy-config",
+	"fabric-language-kotlin",
 	// Sodium (OpenGL) build.
 	"sodium",
 	"sodium-extra",
 	"reeses-sodium-options",
 	"iris",
-	"immediatelyfast",
 	"moreculling",
-	"cloth-config",
-	"particle-core",
-	"fzzy-config",
-	"fabric-language-kotlin",
+	"chunks-fade-in",
+	"better-block-entities",
+	"nvidium",
+	"sodiumfpscapfix",
 	// VulkanMod build.
 	"vulkanmod",
 	"not-enough-vulkan",
@@ -201,11 +218,8 @@ func (a *App) ScanConflictMods() string {
 
 // glOnlyModSlugs hook into Sodium or Iris, so they cannot run on VulkanMod.
 var glOnlyModSlugs = []string{
-	"entityculling",
 	"indium",
 	"continuity",
-	"lambdynamiclights",
-	"nvidium",
 	"ok-zoomer",
 	"sodium-shadowy-path-blocks",
 	"fabricskyboxes",
@@ -234,6 +248,37 @@ func hiddenModSlugs(profile string) map[string]struct{} {
 		hidden[slug] = struct{}{}
 	}
 	return hidden
+}
+
+// versionIncompatibleMods lists mods that crash or misbehave on a specific game
+// version, so the resource browser must not offer them for that version even
+// though they are harmless on other versions.
+var versionIncompatibleMods = map[string][]string{
+	// ixeris wraps MouseHandler.grabMouse; on 26.3 the mixin reads a freed key
+	// buffer when the level-loading screen closes and crashes the world load
+	// (InputConstants.isKeyDown IndexOutOfBoundsException).
+	"26.3": {"ixeris"},
+}
+
+// isVersionBlockedDownload reports whether a mod must not be downloaded for the
+// given game version because it is known to be broken on it.
+func isVersionBlockedDownload(version, slug string) bool {
+	if slug == "" || version == "" {
+		return false
+	}
+	lower := strings.ToLower(slug)
+	for _, s := range versionIncompatibleMods[version] {
+		if strings.ToLower(s) == lower {
+			return true
+		}
+	}
+	return false
+}
+
+// versionBlockedModSlugs returns the slugs incompatible with the given game
+// version, for surfacing in the resource browser context.
+func versionBlockedModSlugs(version string) []string {
+	return versionIncompatibleMods[version]
 }
 
 // filterSearchHits removes hidden mods from a search payload. Only mod results

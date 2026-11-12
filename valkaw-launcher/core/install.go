@@ -19,6 +19,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -40,7 +41,7 @@ const (
 // baseVersions are always offered in the version selector, even before any
 // client build has been cached, so a fresh install has something to pick.
 // Cached builds are merged in on top of these.
-var baseVersions = []string{"1.21.11", "26.2"}
+var baseVersions = []string{"1.21.11", "26.1.2", "26.2"}
 
 var httpClient = &http.Client{Timeout: 30 * time.Minute}
 
@@ -446,8 +447,15 @@ func clientCacheDir() string {
 	return filepath.Join(launcherDir(), "clients")
 }
 
+// clientJarPath returns the cached jar for a game version and profile. Cached
+// builds use the artifact naming scheme (see artifact.go); the legacy flat name is
+// still checked last so an install made by an older launcher keeps working.
 func clientJarPath(version, profile string) string {
-	return filepath.Join(clientCacheDir(), version, profileDir(profile)+".jar")
+	dir := filepath.Join(clientCacheDir(), version)
+	if path, _, ok := newestArtifact(dir, profileDir(profile), version); ok {
+		return path
+	}
+	return filepath.Join(dir, profileDir(profile)+".jar")
 }
 
 func clientJar(version, profile string) ([]byte, error) {
@@ -494,42 +502,137 @@ func tagVersion(location string) string {
 	return tag
 }
 
-// ensureClientJar pulls the newest client build from GitHub releases into the local
-// cache. An existing cache copy is used when the download fails.
-func ensureClientJar(version, profile string) error {
-	path := clientJarPath(version, profile)
-	tmp := path + ".new"
-	_ = os.Remove(tmp)
-	clientVersion, err := latestClientVersion()
-	if err == nil {
-		want := fmt.Sprintf("valkawclient-%s-%s.jar", clientVersion, profileDir(profile))
-		err = downloadFile(releaseDL+want, tmp, 0, "", nil)
-	}
+// ensureClientJar puts a client build into the local cache. A jar found in one of
+// the source folders (see clientSourceDirs) wins — that is how a freshly built
+// MinecraftClient/version jar is picked up without a release. GitHub releases are
+// the fallback, and an existing cache copy survives a failed download.
+// clientJarTargetVersion reads the Minecraft version a client jar was built for
+// from its fabric.mod.json. Local builds always declare it; a stale cached jar
+// may not, in which case "" is returned.
+func clientJarTargetVersion(path string) string {
+	zr, err := zip.OpenReader(path)
 	if err != nil {
-		_ = os.Remove(tmp)
-		if _, e := os.Stat(path); e == nil {
-			return nil
+		return ""
+	}
+	defer zr.Close()
+	for _, f := range zr.File {
+		if f.Name != "fabric.mod.json" {
+			continue
 		}
-		return err
+		rc, err := f.Open()
+		if err != nil {
+			return ""
+		}
+		data, err := io.ReadAll(rc)
+		rc.Close()
+		if err != nil {
+			return ""
+		}
+		var mod struct {
+			Depends map[string]any `json:"depends"`
+		}
+		if json.Unmarshal(data, &mod) != nil {
+			return ""
+		}
+		mc, ok := mod.Depends["minecraft"].(string)
+		if !ok {
+			return ""
+		}
+		if i := strings.IndexAny(mc, "~^<>="); i >= 0 {
+			mc = strings.TrimSpace(mc[i+1:])
+		}
+		return strings.TrimSpace(mc)
 	}
-	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
-		return err
-	}
-	if err := os.Rename(tmp, path); err != nil {
-		_ = os.Remove(tmp)
-		return err
-	}
-	return nil
+	return ""
 }
 
+// versionEquals reports whether a jar's built-for Minecraft version exactly
+// matches the selected one. A sub-version (26.1.2 vs 26.1) is a distinct build
+// line and is not treated as compatible.
+func versionEquals(builtFor, selected string) bool {
+	return builtFor == selected
+}
+
+// ensureClientJar puts a client build into the local cache. A jar found in one of
+// the source folders (see clientSourceDirs) wins — that is how a freshly built
+// MinecraftClient/version jar is picked up without a release. GitHub releases are
+// the fallback, and an existing cache copy survives a failed download. Whatever
+// source provides the jar, its built-for Minecraft version must match the one
+// selected, otherwise install fails instead of shipping a mismatched client.
+func ensureClientJar(version, profile string) error {
+	if _, err := installLocalClientJar(version, profile); err == nil && fileExists(clientJarPath(version, profile)) {
+		if target := clientJarTargetVersion(clientJarPath(version, profile)); target == "" || versionEquals(target, version) {
+			return nil
+		}
+		return fmt.Errorf("local %s build for %s targets Minecraft %s, not %s", profileDir(profile), version, clientJarTargetVersion(clientJarPath(version, profile)), version)
+	}
+
+	var err error
+	clientVersion, tagErr := latestClientVersion()
+	if tagErr == nil {
+		dest := filepath.Join(clientCacheDir(), version, artifactFileName(profile, version, clientVersion))
+		want := fmt.Sprintf("valkawclient-%s-%s.jar", clientVersion, profileDir(profile))
+		err = downloadFile(releaseDL+want, dest+".new", 0, "", nil)
+		if err == nil {
+			if mkErr := os.MkdirAll(filepath.Dir(dest), 0755); mkErr != nil {
+				_ = os.Remove(dest + ".new")
+				return mkErr
+			}
+			if target := clientJarTargetVersion(dest + ".new"); target != "" && !versionEquals(target, version) {
+				_ = os.Remove(dest + ".new")
+				return fmt.Errorf("release %s client targets Minecraft %s, not %s; install it from the version folder", profileDir(profile), target, version)
+			}
+			if mvErr := os.Rename(dest+".new", dest); mvErr != nil {
+				_ = os.Remove(dest + ".new")
+				return mvErr
+			}
+			return nil
+		}
+		_ = os.Remove(dest + ".new")
+	}
+	if fileExists(clientJarPath(version, profile)) {
+		if target := clientJarTargetVersion(clientJarPath(version, profile)); target == "" || versionEquals(target, version) {
+			return nil
+		}
+		return fmt.Errorf("cached %s build for %s targets Minecraft %s, not %s; reinstall", profileDir(profile), version, clientJarTargetVersion(clientJarPath(version, profile)), version)
+	}
+	if tagErr != nil {
+		return tagErr
+	}
+	if err == nil {
+		err = fmt.Errorf("no source or cached build for %s/%s", version, profileDir(profile))
+	}
+	return err
+}
+
+// availableVersions lists game versions that can be installed right now: cache
+// folders from earlier installs plus any build sitting in a source folder, so a
+// freshly built jar is selectable before it has ever been installed once.
 func availableVersions() []string {
+	seen := make(map[string]struct{}, 8)
+	out := make([]string, 0, 8)
+	add := func(v string) {
+		v = strings.TrimSpace(v)
+		if v == "" {
+			return
+		}
+		if _, dup := seen[v]; dup {
+			return
+		}
+		seen[v] = struct{}{}
+		out = append(out, v)
+	}
+
 	dirs, _ := os.ReadDir(clientCacheDir())
-	out := make([]string, 0, len(dirs))
 	for _, d := range dirs {
 		if d.IsDir() {
-			out = append(out, d.Name())
+			add(d.Name())
 		}
 	}
+	for _, v := range builtGameVersions() {
+		add(v)
+	}
+
 	sort.Slice(out, func(i, j int) bool {
 		a, b := versionParts(out[i]), versionParts(out[j])
 		for k := 0; k < len(a) && k < len(b); k++ {
@@ -539,6 +642,43 @@ func availableVersions() []string {
 		}
 		return len(a) > len(b)
 	})
+	return out
+}
+
+// hasClientBuild reports whether a build exists for this game version and
+// profile: a jar in a source folder, or one already installed.
+func hasClientBuild(gameVer, profile string) bool {
+	if _, _, ok := findSourceClientJar(gameVer, profile); ok {
+		return true
+	}
+	_, _, ok := newestArtifact(filepath.Join(clientCacheDir(), gameVer), profileDir(profile), gameVer)
+	return ok
+}
+
+// supportedProfiles lists the render profiles a game version can install. A
+// published base version always offers both; anything else is a local build and
+// only offers the profiles that were actually built (26.3 ships no Vulkan build).
+func supportedProfiles(gameVer string) []string {
+	for _, base := range baseVersions {
+		if base == gameVer {
+			return []string{"gl", "vk"}
+		}
+	}
+	profiles := []string{"gl"}
+	if hasClientBuild(gameVer, "vk") {
+		profiles = append(profiles, "vk")
+	}
+	return profiles
+}
+
+// GetVersionProfiles maps every selectable version to the render profiles that
+// can be installed for it, so the UI can disable the ones without a build.
+func (a *App) GetVersionProfiles() map[string][]string {
+	versions := a.GetVersions()
+	out := make(map[string][]string, len(versions))
+	for _, version := range versions {
+		out[version] = supportedProfiles(version)
+	}
 	return out
 }
 
@@ -591,6 +731,9 @@ func (a *App) InstallClient(profile string) string {
 
 	if profile != "gl" && profile != "vk" {
 		profile = "gl"
+	}
+	if !slices.Contains(supportedProfiles(a.gameVersion()), profile) {
+		return fmt.Sprintf("error: no %s build for %s", profileDir(profile), a.gameVersion())
 	}
 	a.emitInstall("Fetching Valkaw client...", 1)
 	if err := ensureClientJar(a.gameVersion(), profile); err != nil {
@@ -1363,6 +1506,16 @@ func (a *App) checkInstalled() error {
 	}
 	if !fileExists(a.gamePath(profile, "mods", "valkawclient.jar")) {
 		return errors.New("client mod missing")
+	}
+	// The deployed client jar must target the selected game version. A jar left
+	// over from another MC version is unusable here. If no build for the selected
+	// version exists yet this is a first install; otherwise it is a reinstall.
+	if target := clientJarTargetVersion(a.gamePath(profile, "mods", "valkawclient.jar")); !versionEquals(target, versionID) {
+		verb := "reinstall"
+		if !hasClientBuild(versionID, profile) {
+			verb = "install"
+		}
+		return fmt.Errorf("client mod targets Minecraft %s, not %s; %s", target, versionID, verb)
 	}
 	v, err := loadVersion(a.baseDir(), id)
 	if err != nil {

@@ -35,7 +35,7 @@ func writeTestJar(t *testing.T, dir string, name string, modID string) string {
 
 func TestHiddenModSlugs(t *testing.T) {
 	vk := hiddenModSlugs("vk")
-	for _, slug := range []string{"sodium", "iris", "vulkanmod", "entityculling"} {
+	for _, slug := range []string{"sodium", "iris", "vulkanmod", "indium"} {
 		if _, ok := vk[slug]; !ok {
 			t.Errorf("vulkan profile should hide %s", slug)
 		}
@@ -45,7 +45,7 @@ func TestHiddenModSlugs(t *testing.T) {
 	}
 
 	gl := hiddenModSlugs("gl")
-	if _, ok := gl["entityculling"]; ok {
+	if _, ok := gl["indium"]; ok {
 		t.Error("sodium profile should allow sodium-only addons")
 	}
 	if _, ok := gl["vulkanmod"]; !ok {
@@ -137,10 +137,10 @@ func TestIsBlockedDownload(t *testing.T) {
 	if isBlockedDownload("gl", "vulkanmod") != true {
 		t.Error("bundled mod must be blocked on the sodium profile")
 	}
-	if isBlockedDownload("vk", "entityculling") != true {
+	if isBlockedDownload("vk", "indium") != true {
 		t.Error("cross-profile renderer addon must be blocked on vulkan")
 	}
-	if isBlockedDownload("gl", "entityculling") != false {
+	if isBlockedDownload("gl", "indium") != false {
 		t.Error("sodium-only addon must be allowed on sodium")
 	}
 	if isBlockedDownload("gl", "jei") != false {

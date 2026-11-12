@@ -224,6 +224,7 @@ func (a *App) GetResourceBrowserContext() map[string]any {
 		"rpDir":        a.gamePath(profile, "resourcepacks"),
 		"shaderDir":    a.gamePath(profile, "shaderpacks"),
 		"profileLabel": map[string]string{"gl": "Sodium", "vk": "VulkanMod"}[profile],
+		"incompatibleMods": versionBlockedModSlugs(a.gameVersion()),
 	}
 }
 
@@ -268,7 +269,10 @@ func (a *App) SaveConfig(c Config) string {
 	if c.Profile != "gl" && c.Profile != "vk" {
 		c.Profile = "gl"
 	}
-	if !fileExists(clientJarPath(c.Version, c.Profile)) {
+	// Keep the selected version only if a client build for it exists (in a source
+	// folder or already cached). Checking the cache alone would reset a freshly
+	// built-but-not-yet-installed version back to the default.
+	if !hasClientBuild(c.Version, c.Profile) {
 		c.Version = defaultMCVersion
 	}
 	if c.GPU != "" && findGPU(c.GPU).ID == "" {
