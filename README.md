@@ -4,12 +4,18 @@
 
 # Valkaw Client
 
-**A lightweight Fabric client for Minecraft Java 1.21.11 — plus the launcher that installs it.**
+**A lightweight Fabric client for Minecraft Java — plus the launcher that installs it.**
 
-Two profiles ship from one source tree: **Sodium** for OpenGL and **VulkanMod** for Vulkan.
-Modules cover HUD, performance and utility only — there is no combat, movement or server-side cheat.
+One project, one source tree. The Fabric client ships as four version snapshots
+(**1.21.11**, **26.1.2**, **26.2**, **26.3**), each with **Sodium** (OpenGL) and
+**VulkanMod** (Vulkan) render profiles where the game version supports it. The
+launcher builds as two binaries — **Linux** and **Windows** — from a shared Go
+core and frontend, and installs whichever profile you pick.
 
-[Releases](https://github.com/nlvtai25/valkaw-client/releases) · [Website](https://nlvtai25.github.io/valkaw-client/) · [License](LICENSE)
+Modules cover HUD, performance and utility only — there is no combat, movement
+or server-side cheat.
+
+[Releases](https://github.com/Confiactai25/valkaw-client/releases) · [Website](https://nlvtai25.github.io/valkaw-client/) · [License](LICENSE)
 
 </div>
 
@@ -17,26 +23,34 @@ Modules cover HUD, performance and utility only — there is no combat, movement
 
 ## Why Valkaw
 
-- **One tree, two builds.** `src/` is shared; `build.gradle` decides which renderer and which optimisation mods are bundled. The Sodium and Vulkan jars are built from the same code.
-- **Clean HUD, cheap to render.** 16 HUD modules, a 15×15 pixel Crosshair Editor, and the HUD editor (open by holding `F6`). No per-frame garbage in the render loop.
+- **One project.** Client and launcher live in the same repository and are versioned together.
+- **Four client snapshots.** `1.21.11/` (sodium + vulkan), `26.1.2/` (sodium + vulkan), `26.2/` (sodium + vulkan), `26.3/` (sodium only). Each snapshot is a standalone source copy you can build with `scripts/build-version.sh`.
+- **Two render profiles.** Sodium for OpenGL, VulkanMod for Vulkan — built from the same `src/` tree via `-Pvalkaw_variant=sodium|vulkan`.
+- **Clean HUD, cheap to render.** 16 HUD modules, a 15×15 pixel Crosshair Editor, and the HUD editor (hold `F6`). No per-frame garbage in the render loop.
 - **No cheat module.** Everything is HUD, performance or utility. No combat, movement or server-side hooks.
-- **A launcher that handles the boring parts.** Installs the profile into `~/.valkaw/minecraft/<profile>/`, downloads a Java 21 runtime, and starts the game with tuned JVM flags.
+- **A launcher that handles the boring parts.** Installs the profile into `~/.valkaw/minecraft/<profile>/`, downloads a Java 21 runtime, and starts the game with tuned JVM flags. Builds for Linux and Windows from the same code.
+
+---
 
 ## Download
 
-Client jars come from [Releases](https://github.com/nlvtai25/valkaw-client/releases). Launcher binaries live in this repository:
+Client jars come from [Releases](https://github.com/Confiactai25/valkaw-client/releases). Launcher binaries ship as release assets:
 
 | File | Platform |
 | --- | --- |
-| [valkaw-launcher-v1.0.8-linux-amd64](https://github.com/nlvtai25/valkaw-client/raw/main/assets/downloads/valkaw-launcher-v1.0.8-linux-amd64) | Linux |
-| [valkaw-launcher-win-v1.0.8-windows-amd64.exe](https://github.com/nlvtai25/valkaw-client/raw/main/assets/downloads/valkaw-launcher-win-v1.0.8-windows-amd64.exe) | Windows |
+| valkaw-launcher-v1.0.9-linux-amd64 | Linux |
+| valkaw-launcher-win-v1.0.9-windows-amd64.exe | Windows |
 
 Released client jars:
 
 | File | What it is |
 | --- | --- |
-| [valkawclient-1.0.6-sodium.jar](https://github.com/nlvtai25/valkaw-client/releases/download/v1.0.6/valkawclient-1.0.6-sodium.jar) | Sodium profile client |
-| [valkawclient-1.0.6-vulkan.jar](https://github.com/nlvtai25/valkaw-client/releases/download/v1.0.6/valkawclient-1.0.6-vulkan.jar) | Vulkan profile client |
+| valkawclient-1.0.6-sodium.jar | Sodium profile client (MC 1.21.11) |
+| valkawclient-1.0.6-vulkan.jar | Vulkan profile client (MC 1.21.11) |
+
+Artifacts are named `valkaw-<profile>-<game-ver>-<client-ver>.jar` — see `version/README.md` for the full naming grammar and how the launcher resolves local builds.
+
+---
 
 ## Preview
 
@@ -48,9 +62,12 @@ Released client jars:
 
 </div>
 
+---
+
 ## Modules
 
 **HUD (16).** Armor, Combo, Coordinates, CPS, Crosshair, FPS, Keystrokes, PC Info, Ping, Potion, Server IP, Sneak, Speed, Sprint, Time, TPS.
+
 Every HUD module can link to the left or right screen edge, and positions are dragged directly in the HUD Editor (hold `F6`).
 
 **Performance (7).** Clear Fluids, Clouds, Memory Cleaner, Menu Backdrop, No Fog, Particles, Render Distance.
@@ -58,6 +75,8 @@ Every HUD module can link to the left or right screen edge, and positions are dr
 **Utility (15).** Auto Text, Better Tooltips, Block Outline, Chat Timestamps, Copy Chat, Copy Coords, Freelook, Fullbright, No Bobbing, No Fire, No Hurt Cam, No Pumpkin, Toggle Sneak, Toggle Sprint, Zoom.
 
 Two extras sit outside the module lists. The **Custom Symbols** tab beside the chat input inserts Unicode symbols and `&` colour codes, handy when writing item names and lore. The **Crosshair Editor** draws a crosshair pixel by pixel on a 15×15 grid.
+
+---
 
 ## Bundled mods
 
@@ -117,6 +136,8 @@ Each client jar nests its dependencies as jar-in-jar, so a single file carries e
 
 </details>
 
+---
+
 ## Requirements
 
 **Launcher (Linux):**
@@ -133,19 +154,25 @@ Each client jar nests its dependencies as jar-in-jar, so a single file carries e
 **Client, once installed:**
 
 - JDK 21 or newer
-- Fabric 1.21.11 (`loader 0.20.1`)
+- Fabric loader for the target game version (`0.20.1` for 1.21.11)
 - An OpenGL 3.2 driver for the Sodium profile, a Vulkan 1.2 driver for the Vulkan profile
 - An account with an offline username. Realms is not supported.
 
+---
+
 ## Build the client
 
+Client source lives in per-version snapshots: `1.21.11/valkaw-client/`, `26.1.2/valkaw-client/`, `26.2/valkaw-client/`, `26.3/valkaw-client/`. Build any snapshot with `scripts/build-version.sh` — artifacts land in `version/`:
+
 ```sh
-cd valkaw-client
-./gradlew remapJar -Pvalkaw_variant=sodium
-./gradlew remapJar -Pvalkaw_variant=vulkan
+./scripts/build-version.sh 1.21.11                    # sodium only
+./scripts/build-version.sh 26.2 --profiles sodium vulkan
+./scripts/build-version.sh 1.21.11 --profiles all --clean
 ```
 
-Output lands in `valkaw-client/build/libs/`. Both variants read the same `src/` tree, and `build.gradle` decides which renderer and which optimisation mods are bundled.
+The script reads `version=` from the snapshot's `gradle.properties`, picks `remapJar` (1.21.x) or `jar` (26.x), and copies the result to `version/valkaw-<profile>-<game-ver>-<client-ver>.jar`.
+
+---
 
 ## Build the launcher
 
@@ -157,20 +184,32 @@ cd valkaw-launcher
 # or, without the Wails toolchain: go build -o build/bin/valkaw-launcher .
 
 cd ../valkaw-launcher-win
-./build.sh                  # Windows exe in build/bin/, built on any OS
+./build.sh                  # Windows exe in build/bin/, cross-compiled from any OS
 ```
 
 `valkaw-launcher-win/build.sh` rebuilds the frontend in `valkaw-launcher/frontend`, copies the bundle, then cross-compiles with `wails build -platform windows/amd64`. Nothing else is needed on the machine: no Windows, no mingw.
 
+---
+
 ## Layout
 
 ```
-valkaw-client/       Fabric mod source, one tree, two build variants
-valkaw-launcher/     Go + Wails launcher (Linux), shared core in core/
-valkaw-launcher-win/ Windows shell: window, icon, build script
-Website/              Vite + React marketing site, auto-deploys to GitHub Pages
+valkaw-client/            (root symlink — see below)
+valkaw-launcher/          Go + Wails launcher, shared core in core/
+valkaw-launcher-win/      Windows shell: window, icon, build script
+1.21.11/valkaw-client/    client source snapshot for MC 1.21.11
+26.1.2/valkaw-client/     client source snapshot for MC 26.1.2
+26.2/valkaw-client/       client source snapshot for MC 26.2
+26.3/valkaw-client/       client source snapshot for MC 26.3 (sodium only)
+version/                  built client jars (gitignored, see version/README.md)
+Website/                  Vite + React marketing site, auto-deploys to GitHub Pages
+scripts/build-version.sh  builds a client snapshot into version/
 ```
+
+`valkaw-client/` at the repository root is a convenience link to the active client snapshot (currently `1.21.11/valkaw-client/`). Version-specific builds should use the numbered snapshot folders directly.
+
+---
 
 ## License
 
-Apache License 2.0 — see [`LICENSE`](LICENSE). Bundled third-party mods keep their own licenses.
+Apache License 2.0 — see [`LICENSE`](LICENSE). Copyright 2026 Confiac1563. Bundled third-party mods keep their own licenses.

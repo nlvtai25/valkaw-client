@@ -49,5 +49,13 @@ init
 /26.2/
 /26.3/
 
+# generated assets (not source)
+graphify-out/
+
 # built client artifacts (see version/README.md)
 version/*.jar
+
+# stray launcher binaries and frontend bundles
+valkaw-launcher/valkaw-launcher
+valkaw-launcher-win/valkaw-launcher-win.exe
+valkaw-launcher-win/frontend/dist/
