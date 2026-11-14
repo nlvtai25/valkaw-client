@@ -72,12 +72,12 @@ echo "==> $GAME_VER · client $CLIENT_VER · task $TASK · profiles ${PROFILES[*
 
 for profile in "${PROFILES[@]}"; do
 	if [[ $CLEAN -eq 1 ]]; then
-		( cd "$PROJECT" && JAVA_HOME="$JDK" ./gradlew clean --no-configuration-cache --no-parallel >/dev/null )
+		( cd "$PROJECT" && JAVA_HOME="$JDK" ./gradlew clean >/dev/null )
 	fi
 
 	echo "==> building $profile"
 	( cd "$PROJECT" && JAVA_HOME="$JDK" ./gradlew "$TASK" \
-		-Pvalkaw_variant="$profile" --no-configuration-cache --no-parallel )
+		-Pvalkaw_variant="$profile" )
 
 	src="$PROJECT/build/libs/valkawclient-$CLIENT_VER-$profile.jar"
 	if [[ ! -f "$src" ]]; then

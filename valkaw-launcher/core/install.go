@@ -48,7 +48,7 @@ var httpClient = &http.Client{Timeout: 30 * time.Minute}
 // netCtx backs all in-flight HTTP requests so they are torn down when the app
 // quits. Before Startup it is Background (uncancellable), matching old behaviour.
 var (
-	netCtx     context.Context = context.Background()
+	netCtx       context.Context = context.Background()
 	netCtxCancel context.CancelFunc
 )
 
@@ -167,13 +167,15 @@ func (a *App) progress(p *progressTracker, stage string, lo, hi int, done, total
 	a.emitInstall(stage, pct)
 }
 
-// DetectJava finds a Java 21+ runtime and saves it.
+// DetectJava finds a Java 21+ runtime and saves it. It always re-probes,
+// because the user asked for a fresh detection.
 func (a *App) DetectJava() string {
 	path, major, err := findJava(a.config.JavaPath)
 	if err != nil {
 		return "error: " + err.Error()
 	}
 	a.config.JavaPath = path
+	a.javaChecked = false // refresh the session cache with the new result
 	_ = a.saveConfig()
 	return fmt.Sprintf("%s (Java %d)", path, major)
 }
@@ -299,7 +301,7 @@ type Prereq struct {
 // CheckRequirements inspects Java, the installed game files and the GPU driver.
 func (a *App) CheckRequirements() Prereq {
 	p := Prereq{Java: true, Files: true, Graphics: true}
-	if _, _, err := findJava(a.config.JavaPath); err != nil {
+	if _, _, err := a.resolvedJava(); err != nil {
 		p.Java, p.JavaText = false, err.Error()
 	}
 	if err := a.checkInstalled(); err != nil {
@@ -355,6 +357,7 @@ func (a *App) InstallJava() string {
 		for _, m := range matches {
 			if major := javaMajor(m); major >= 21 {
 				a.config.JavaPath = m
+				a.javaChecked = false // re-probe on next use
 				_ = a.saveConfig()
 				a.emitInstall("Java 21 ready", 100)
 				return "ok"
@@ -739,7 +742,7 @@ func (a *App) InstallClient(profile string) string {
 	if err := ensureClientJar(a.gameVersion(), profile); err != nil {
 		return "error: " + err.Error()
 	}
-	java, major, err := findJava(a.config.JavaPath)
+	java, major, err := a.resolvedJava()
 	if err != nil {
 		return "error: " + err.Error()
 	}
@@ -1309,7 +1312,7 @@ func fullscreenEnabled(gameDir string) bool {
 }
 
 func (a *App) Launch() string {
-	java, major, err := findJava(a.config.JavaPath)
+	java, major, err := a.resolvedJava()
 	if err != nil {
 		return "error: " + err.Error()
 	}

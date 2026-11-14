@@ -3,6 +3,7 @@ package core
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -61,12 +62,16 @@ type Config struct {
 }
 
 type App struct {
-	ctx        context.Context
-	config     Config
-	cfgPath    string
-	version    string // identifies the running binary, not the saved config
-	installMu  sync.Mutex
-	installing bool
+	ctx              context.Context
+	config           Config
+	cfgPath          string
+	version          string // identifies the running binary, not the saved config
+	installMu        sync.Mutex
+	installing       bool
+	javaChecked      bool // Java probe cached this session
+	cachedJavaPath   string
+	cachedJavaMajor  int
+	desktopInstalled bool // desktop shortcut written this session
 }
 
 func NewApp(version string) *App {
@@ -150,7 +155,10 @@ func (a *App) Startup(ctx context.Context) {
 	a.ctx = ctx
 	setNetCtx(ctx)
 	migrateLayout()
-	installDesktopShortcut()
+	if !a.desktopInstalled {
+		installDesktopShortcut()
+		a.desktopInstalled = true
+	}
 	a.cfgPath = filepath.Join(launcherDir(), "config.json")
 	if data, err := os.ReadFile(a.cfgPath); err == nil {
 		_ = json.Unmarshal(data, &a.config)
@@ -191,6 +199,28 @@ func (a *App) Startup(ctx context.Context) {
 	_ = a.saveConfig()
 }
 
+// resolvedJava returns a valid Java 21+ path. A successful probe is cached
+// for the session; failures are never cached, so installing Java later in the
+// same session is picked up on the next call.
+func (a *App) resolvedJava() (string, int, error) {
+	if a.javaChecked && a.cachedJavaPath != "" {
+		return a.cachedJavaPath, a.cachedJavaMajor, nil
+	}
+	path, major, err := findJava(a.config.JavaPath)
+	if err != nil {
+		return "", 0, err
+	}
+	if major < 21 {
+		return "", 0, errors.New("Java below 21")
+	}
+	a.config.JavaPath = path
+	a.javaChecked = true
+	a.cachedJavaPath = path
+	a.cachedJavaMajor = major
+	_ = a.saveConfig()
+	return path, major, nil
+}
+
 // syncUsername picks up the name saved from the in-game account menu so the
 // launcher chip matches what the player actually sees in game.
 func (a *App) syncUsername() {
@@ -215,15 +245,15 @@ func (a *App) syncUsername() {
 func (a *App) GetResourceBrowserContext() map[string]any {
 	profile := a.activeProfile()
 	return map[string]any{
-		"gameVersion":  a.config.Version,
-		"profile":      profile,
-		"loader":       "fabric",
-		"gameDir":      a.gamePath(profile),
-		"platform":     a.config.Platform,
-		"modsDir":      a.gamePath(profile, "mods"),
-		"rpDir":        a.gamePath(profile, "resourcepacks"),
-		"shaderDir":    a.gamePath(profile, "shaderpacks"),
-		"profileLabel": map[string]string{"gl": "Sodium", "vk": "VulkanMod"}[profile],
+		"gameVersion":      a.config.Version,
+		"profile":          profile,
+		"loader":           "fabric",
+		"gameDir":          a.gamePath(profile),
+		"platform":         a.config.Platform,
+		"modsDir":          a.gamePath(profile, "mods"),
+		"rpDir":            a.gamePath(profile, "resourcepacks"),
+		"shaderDir":        a.gamePath(profile, "shaderpacks"),
+		"profileLabel":     map[string]string{"gl": "Sodium", "vk": "VulkanMod"}[profile],
 		"incompatibleMods": versionBlockedModSlugs(a.gameVersion()),
 	}
 }
@@ -296,7 +326,7 @@ func (a *App) SetGpuPreference(pref int) string {
 	if runtime.GOOS != "windows" {
 		return "error: GPU preference is Windows only"
 	}
-	java, _, err := findJava(a.config.JavaPath)
+	java, _, err := a.resolvedJava()
 	if err != nil || !fileExists(java) {
 		return "error: install Java 21 first"
 	}
