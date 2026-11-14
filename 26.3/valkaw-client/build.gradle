@@ -1,0 +1,159 @@
+plugins {
+	id 'net.fabricmc.fabric-loom' version "${loom_version}"
+	id 'maven-publish'
+}
+
+repositories {
+	maven {
+		url = "https://api.modrinth.com/maven"
+		content { includeGroup "maven.modrinth" }
+	}
+}
+
+// 26.3 ships the Sodium (OpenGL) profile only: VulkanMod has no 26.3 build on
+// Modrinth and Not Enough Vulkan stops at 26.1.x, so there is no Vulkan branch
+// to select here. `-Pvalkaw_variant=sodium` is the only valid value.
+def valkawVariant = (project.findProperty("valkaw_variant") ?: "sodium").toString()
+if (valkawVariant != "sodium") {
+	throw new GradleException("26.3 supports the sodium variant only (got '" + valkawVariant + "')")
+}
+
+loom {
+	splitEnvironmentSourceSets()
+
+	runs {
+		client {
+			programArgs '--width', '1280', '--height', '720'
+		}
+	}
+	enableTransitiveAccessWideners = false
+
+	mods {
+		"valkawclient" {
+			sourceSet sourceSets.main
+			sourceSet sourceSets.client
+		}
+	}
+}
+
+dependencies {
+	// To change the versions see the gradle.properties file
+	minecraft "com.mojang:minecraft:${project.minecraft_version}"
+	// 26.x client jars ship unobfuscated (Mojang dropped client_mappings), so
+	// there is no mojang mappings layer to apply — compiling directly against
+	// the named jar. Do NOT re-add officialMojangMappings() here.
+	implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+
+	// Fabric API. This is technically optional, but you probably want it anyway.
+	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+
+	// Jar-in-jar: one client jar carries its own dependencies.
+	include "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+
+	// Shared optimization mods. Tick/network/RAM only; no renderer conflicts.
+	// Modrinth version IDs are used where the human version string is shared across MC/loader builds.
+	[
+		"maven.modrinth:dynamic-fps:Jwq069rR",
+		"maven.modrinth:lithium:fWv5bnZk",
+		"maven.modrinth:ferrite-core:d5ddUdiB",
+		"maven.modrinth:krypton:UugdIYJw",
+		"maven.modrinth:badoptimizations:Sp0ctspw",
+		"maven.modrinth:clumps:J4I1wxJZ",
+		"maven.modrinth:c2me-fabric:aOP6eqZA",
+		"maven.modrinth:scalablelux:g4eqNSKd",
+		"maven.modrinth:vmp-fabric:2TFDVjDf",
+		"maven.modrinth:modernfix-mvus:pa9cAfYg",
+		// ixeris omitted: its grabMouse mixin reads a freed key buffer on 26.3 and
+		// crashes the world load (InputConstants.isKeyDown IndexOutOfBounds).
+		"maven.modrinth:immediatelyfast:3MP9UR23",
+		"maven.modrinth:particle-core:NPLw1nMG",
+		"maven.modrinth:fastquit:ZZ5dfboC",
+		"maven.modrinth:ksyxis:kzLBJQLn",
+		"maven.modrinth:resourcepackcached:IM1rEA8n",
+		"maven.modrinth:offline-mode-fix:HIjfyw7e",
+		"maven.modrinth:cloth-config:fg2uyxOW",
+		"maven.modrinth:fzzy-config:YkOumqzV",
+		"maven.modrinth:fabric-language-kotlin:SKW1BTL3",
+	].each { include it }
+
+	// `include` nests a mod inside the shipped jar. Only the core renderer also goes on
+	// the dev runtime classpath: the satellite mods (sodium-extra, fzzy-config, ...)
+	// pull dependencies that the dev runtime cannot resolve, so `runClient` would crash
+	// before it ever draws a frame.
+	[
+		"maven.modrinth:sodium:2MZWfUts",
+		"maven.modrinth:sodium-extra:FNQGqNhl",
+		"maven.modrinth:reeses-sodium-options:FlHcdgXM",
+		"maven.modrinth:moreculling:loquqFkT",
+		"maven.modrinth:chunks-fade-in:ANQgilrG",
+		"maven.modrinth:better-block-entities:wORq9rW6",
+		"maven.modrinth:nvidium:8mVK1zbk",
+	].each { include it }
+	implementation "maven.modrinth:sodium:2MZWfUts"
+}
+
+// Mods Modrinth's Maven can't serve (bad metadata) or that ship outside the Maven list.
+// Nested into the client jar so one jar carries everything.
+def valkawExtras = [
+	"entityculling-fabric-1.11.3-mc26.3.jar",
+	"lambdynamiclights-4.13.0+26.3.jar",
+	"sodiumfpscapfix-fabric-26.3-1.0.37.jar",
+	"lightweight-inventory-sorting-1.1.7+26.3.jar",
+	"shulkerboxtooltip-fabric-5.4.3+26.3.jar",
+]
+
+// 26.x client jars ship unobfuscated, so there is no remap step and no
+// `remapJar` task — the plain `jar` task produces the shippable artifact. The
+// nested-mod logic therefore attaches to `jar` instead.
+tasks.named("jar") {
+	archiveClassifier = valkawVariant
+	notCompatibleWithConfigurationCache("Loom nested jar generation")
+	doLast {
+		def out = archiveFile.get().asFile
+		def extras = valkawExtras.collect { new File(projectDir, "libs/" + it) }
+		extras.each { if (!it.exists()) throw new GradleException("missing nested mod: " + it) }
+		def tmp = new File(out.parentFile, out.name + ".tmp")
+		def zin = new java.util.zip.ZipInputStream(new FileInputStream(out))
+		def zout = new java.util.zip.ZipOutputStream(new FileOutputStream(tmp))
+		def entry
+		while ((entry = zin.nextEntry) != null) {
+			byte[] data = zin.readAllBytes()
+			if (entry.name == "fabric.mod.json") {
+				def json = new groovy.json.JsonSlurper().parseText(new String(data, "UTF-8"))
+				json.jars = (json.jars ?: []) + extras.collect { [file: "META-INF/jars/" + it.name] }
+				data = new groovy.json.JsonOutput().toJson(json).getBytes("UTF-8")
+			}
+			zout.putNextEntry(new java.util.zip.ZipEntry(entry.name))
+			zout.write(data)
+			zout.closeEntry()
+		}
+		extras.each {
+			zout.putNextEntry(new java.util.zip.ZipEntry("META-INF/jars/" + it.name))
+			zout.write(it.bytes)
+			zout.closeEntry()
+		}
+		zin.close()
+		zout.close()
+		if (!tmp.renameTo(out)) {
+			out.delete()
+			tmp.renameTo(out)
+		}
+	}
+}
+
+tasks.withType(JavaCompile).configureEach {
+	it.options.release = 21
+}
+
+def modVersion = project.version
+processResources {
+	inputs.property "version", modVersion
+	filesMatching("fabric.mod.json") {
+		expand "version": modVersion
+	}
+}
+
+java {
+	sourceCompatibility = JavaVersion.VERSION_21
+	targetCompatibility = JavaVersion.VERSION_21
+}

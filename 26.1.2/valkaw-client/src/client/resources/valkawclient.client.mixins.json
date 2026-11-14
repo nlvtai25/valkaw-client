@@ -1,0 +1,38 @@
+{
+	"required": true,
+	"package": "com.valkaw.client.mixin",
+	"compatibilityLevel": "JAVA_21",
+	"client": [
+		"MinecraftScreenMixin",
+		"MinecraftAccountMixin",
+		"GuiHudMixin",
+		"GuiCrosshairMixin",
+		"GameRendererMixin",
+		"ScreenEffectRendererMixin",
+		"ScreenBackdropMixin",
+		"IconSetMixin",
+		"FramerateLimitTrackerMixin",
+		"ChatComponentMixin",
+		"ChatSymbolMixin",
+		"ChatScreenMixin",
+		"ChatGraphicsAccessMixin",
+		"ChatBackgroundGraphicsAccessMixin",
+		"MouseHandlerMixin",
+		"CameraMixin",
+		"ItemInHandRendererMixin",
+		"LightTextureMixin",
+		"MultiPlayerGameModeMixin",
+		"LevelRendererMixin",
+		"FogRendererAccessor",
+		"KeyMappingAccessor",
+		"WaterFogEnvironmentMixin",
+		"LavaFogEnvironmentMixin",
+		"ScreenTooltipMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	},
+	"overwrites": {
+		"requireAnnotations": true
+	}
+}
