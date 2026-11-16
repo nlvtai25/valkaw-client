@@ -31,6 +31,11 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: 1.26
+      - name: Build frontend
+        run: |
+          npm ci
+          npm run build
+        working-directory: valkaw-launcher/frontend
       - name: go vet
         run: go vet ./...
         working-directory: valkaw-launcher
