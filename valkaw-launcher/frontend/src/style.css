@@ -1212,3 +1212,24 @@ main { display: flex; flex-direction: column; padding: 0; }
     from { opacity: 0.12; transform: scale(0.8); }
     to { opacity: 0.85; transform: scale(1.15); }
 }
+
+
+/* Small hamburger button next to Install for offline jar install. */
+.icon-btn {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.18);
+  color: #e8e4da;
+  border-radius: 999px;
+  width: 42px;
+  height: 42px;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease;
+}
+.icon-btn:hover {
+  background: rgba(255,255,255,0.16);
+}
