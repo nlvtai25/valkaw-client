@@ -1,6 +1,6 @@
 import './style.css';
 
-import { GetConfig, SaveConfig, Launch, CheckUpdate, OpenReleases, InstallClient, CheckInstalled, DetectJava, InstallUpdate, GetVersions, ListGPUs, CheckRequirements, InstallJava, SetGpuPreference, CheckVulkan, GetResourceBrowserContext, SearchModrinth, GetModrinthProject, GetModrinthProjectVersions, DownloadResource, OpenResourceDir, ScanConflictMods, GetVersionProfiles } from '../wailsjs/go/core/App';
+import { GetConfig, SaveConfig, Launch, CheckUpdate, OpenReleases, InstallClient, CheckInstalled, DetectJava, InstallUpdate, InstallOffline, GetVersions, ListGPUs, CheckRequirements, InstallJava, SetGpuPreference, CheckVulkan, GetResourceBrowserContext, SearchModrinth, GetModrinthProject, GetModrinthProjectVersions, DownloadResource, OpenResourceDir, ScanConflictMods, GetVersionProfiles } from '../wailsjs/go/core/App';
 import { EventsOn, BrowserOpenURL } from '../wailsjs/runtime/runtime';
 
 const $ = (id) => document.getElementById(id);
@@ -306,6 +306,24 @@ $('detectJavaBtn').addEventListener('click', async () => {
     if (!res.startsWith('error')) {
         const c = await GetConfig();
         $('javaPath').value = c.javaPath;
+    }
+});
+
+$('offlineBtn').addEventListener('click', async () => {
+    const profile = document.querySelector('input[name="profile"]:checked').value;
+    $('installStage').textContent = 'Selecting jar...';
+    const res = await InstallOffline(profile);
+    if (res === 'canceled') {
+        $('installStage').textContent = 'Offline install canceled';
+        $('installBar').style.width = '0%';
+    } else if (res.startsWith('error')) {
+        $('installStage').textContent = res;
+        $('installBar').style.width = '0%';
+        $('installHint').textContent = 'Please re-download from the official source (GitHub release).';
+    } else {
+        setInstallProgress('Installed (offline)', 100);
+        refreshInstallStatus();
+        $('installHint').textContent = 'Installed from offline jar — ready to play';
     }
 });
 

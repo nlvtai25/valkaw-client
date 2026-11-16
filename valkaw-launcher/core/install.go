@@ -719,31 +719,26 @@ func (a *App) GetVersions() []string {
 	return out
 }
 
-// InstallClient downloads the vanilla game, Fabric loader and Valkaw mods.
-func (a *App) InstallClient(profile string) string {
+// acquireInstallLock serialises installs so two cannot run at once.
+func (a *App) acquireInstallLock() bool {
 	a.installMu.Lock()
+	defer a.installMu.Unlock()
 	if a.installing {
-		a.installMu.Unlock()
-		return "error: install already running"
+		return false
 	}
 	a.installing = true
-	a.installMu.Unlock()
-	defer func() {
-		a.installMu.Lock()
-		a.installing = false
-		a.installMu.Unlock()
-	}()
+	return true
+}
 
-	if profile != "gl" && profile != "vk" {
-		profile = "gl"
-	}
-	if !slices.Contains(supportedProfiles(a.gameVersion()), profile) {
-		return fmt.Sprintf("error: no %s build for %s", profileDir(profile), a.gameVersion())
-	}
-	a.emitInstall("Fetching Valkaw client...", 1)
-	if err := ensureClientJar(a.gameVersion(), profile); err != nil {
-		return "error: " + err.Error()
-	}
+func (a *App) releaseInstallLock() {
+	a.installMu.Lock()
+	a.installing = false
+	a.installMu.Unlock()
+}
+
+// installPipeline runs every step after the client jar itself is in place:
+// Java check, Fabric loader, vanilla game files and mods.
+func (a *App) installPipeline(profile string) string {
 	java, major, err := a.resolvedJava()
 	if err != nil {
 		return "error: " + err.Error()
@@ -765,6 +760,26 @@ func (a *App) InstallClient(profile string) string {
 	}
 	a.emitInstall("Ready", 100)
 	return "ok"
+}
+
+// InstallClient downloads the vanilla game, Fabric loader and Valkaw mods.
+func (a *App) InstallClient(profile string) string {
+	if !a.acquireInstallLock() {
+		return "error: install already running"
+	}
+	defer a.releaseInstallLock()
+
+	if profile != "gl" && profile != "vk" {
+		profile = "gl"
+	}
+	if !slices.Contains(supportedProfiles(a.gameVersion()), profile) {
+		return fmt.Sprintf("error: no %s build for %s", profileDir(profile), a.gameVersion())
+	}
+	a.emitInstall("Fetching Valkaw client...", 1)
+	if err := ensureClientJar(a.gameVersion(), profile); err != nil {
+		return "error: " + err.Error()
+	}
+	return a.installPipeline(profile)
 }
 
 func (a *App) installFabric(java string) error {
