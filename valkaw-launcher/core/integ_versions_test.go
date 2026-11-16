@@ -9,8 +9,8 @@ import (
 func TestGetVersionsIncludesLocalBuilds(t *testing.T) {
 	repo := filepath.Join("..", "..", "version")
 	abs, err := filepath.Abs(repo)
-	if err != nil || !dirExists(abs) {
-		t.Skip("repo version folder not present")
+	if err != nil || !fileExists(filepath.Join(abs, "valkaw-sodium-26.3-1.0.6.jar")) {
+		t.Skip("repo version folder holds no 26.3 build")
 	}
 	t.Setenv("HOME", t.TempDir())
 	t.Setenv("VALKAW_VERSION_DIR", abs)

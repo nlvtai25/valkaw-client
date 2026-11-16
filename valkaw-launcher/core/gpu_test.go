@@ -33,9 +33,13 @@ func TestGPUEnv(t *testing.T) {
 	if env := gpuEnv(nv, "gl"); len(env) == 0 || env[0] != "__NV_PRIME_RENDER_OFFLOAD=1" {
 		t.Errorf("nvidia gl env = %v", env)
 	}
-	if env := gpuEnv(nv, "vk"); len(env) != 1 || len(env[0]) < len("VK_ICD_FILENAMES=") ||
-		env[0][:len("VK_ICD_FILENAMES=")] != "VK_ICD_FILENAMES=" {
-		t.Errorf("nvidia vk env = %v", env)
+	if icd := nvidiaICD(); icd != "" {
+		if env := gpuEnv(nv, "vk"); len(env) != 1 || len(env[0]) < len("VK_ICD_FILENAMES=") ||
+			env[0][:len("VK_ICD_FILENAMES=")] != "VK_ICD_FILENAMES=" {
+			t.Errorf("nvidia vk env = %v", env)
+		}
+	} else {
+		t.Log("skip nvidia vk assert: no NVIDIA Vulkan ICD present")
 	}
 	amd := GPU{ID: "1002:1681", Vendor: "amd", Address: "74:00.0"}
 	if env := gpuEnv(amd, "gl"); len(env) != 1 || env[0] != "DRI_PRIME=pci-0000_74_00_0" {
