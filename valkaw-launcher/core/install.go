@@ -556,20 +556,14 @@ func versionEquals(builtFor, selected string) bool {
 	return builtFor == selected
 }
 
-// ensureClientJar puts a client build into the local cache. A jar found in one of
-// the source folders (see clientSourceDirs) wins — that is how a freshly built
-// MinecraftClient/version jar is picked up without a release. GitHub releases are
-// the fallback, and an existing cache copy survives a failed download. Whatever
-// source provides the jar, its built-for Minecraft version must match the one
-// selected, otherwise install fails instead of shipping a mismatched client.
+// ensureClientJar puts a client build into the local cache. The latest GitHub
+// release is the primary source: it downloads the matching valkawclient jar and
+// verifies its built-for Minecraft version. A jar in a source folder (see
+// clientSourceDirs) or an existing cache copy is the fallback, and that copy
+// survives a failed download. Whatever source provides the jar, its built-for
+// Minecraft version must match the selected one, otherwise install fails instead
+// of shipping a mismatched client.
 func ensureClientJar(version, profile string) error {
-	if _, err := installLocalClientJar(version, profile); err == nil && fileExists(clientJarPath(version, profile)) {
-		if target := clientJarTargetVersion(clientJarPath(version, profile)); target == "" || versionEquals(target, version) {
-			return nil
-		}
-		return fmt.Errorf("local %s build for %s targets Minecraft %s, not %s", profileDir(profile), version, clientJarTargetVersion(clientJarPath(version, profile)), version)
-	}
-
 	var err error
 	clientVersion, tagErr := latestClientVersion()
 	if tagErr == nil {
@@ -592,6 +586,14 @@ func ensureClientJar(version, profile string) error {
 			return nil
 		}
 		_ = os.Remove(dest + ".new")
+	}
+
+	// Fallback: a jar in one of the source folders, then a surviving cache copy.
+	if _, err := installLocalClientJar(version, profile); err == nil && fileExists(clientJarPath(version, profile)) {
+		if target := clientJarTargetVersion(clientJarPath(version, profile)); target == "" || versionEquals(target, version) {
+			return nil
+		}
+		return fmt.Errorf("local %s build for %s targets Minecraft %s, not %s", profileDir(profile), version, clientJarTargetVersion(clientJarPath(version, profile)), version)
 	}
 	if fileExists(clientJarPath(version, profile)) {
 		if target := clientJarTargetVersion(clientJarPath(version, profile)); target == "" || versionEquals(target, version) {
