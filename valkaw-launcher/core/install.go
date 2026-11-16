@@ -568,7 +568,7 @@ func ensureClientJar(version, profile string) error {
 	clientVersion, tagErr := latestClientVersion()
 	if tagErr == nil {
 		dest := filepath.Join(clientCacheDir(), version, artifactFileName(profile, version, clientVersion))
-		want := fmt.Sprintf("valkawclient-%s-%s.jar", clientVersion, profileDir(profile))
+		want := fmt.Sprintf("valkaw-%s-%s-%s.jar", profileDir(profile), version, clientVersion)
 		err = downloadFile(releaseDL+want, dest+".new", 0, "", nil)
 		if err == nil {
 			if mkErr := os.MkdirAll(filepath.Dir(dest), 0755); mkErr != nil {
