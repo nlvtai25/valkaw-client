@@ -64,3 +64,4 @@ version/*.jar
 valkaw-launcher/valkaw-launcher
 valkaw-launcher-win/valkaw-launcher-win.exe
 valkaw-launcher-win/frontend/dist/
+valkaw-launcher-win/build/
