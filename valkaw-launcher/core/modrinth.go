@@ -105,7 +105,7 @@ func (a *App) modrinthHeaders(req *http.Request) {
 // SearchModrinth queries the Modrinth search API.
 // filters is a JSON array of arrays: each inner array is a group of category
 // slugs joined with OR, groups are combined with AND.
-func (a *App) SearchModrinth(query string, projectType string, gameVersion string, loader string, sort string, offset int, limit int, filters string) (string, error) {
+func (a *App) SearchModrinth(query string, projectType string, gameVersion string, loader string, sort string, offset int, limit int, filters string, hideBundled bool) (string, error) {
 	if limit <= 0 {
 		limit = 20
 	}
@@ -160,14 +160,19 @@ func (a *App) SearchModrinth(query string, projectType string, gameVersion strin
 		params.Set("facets", string(facetBytes))
 	}
 
-	// Mods already inside valkawclient.jar, and renderer mods for the other
-	// profile, are hidden: installing them duplicates a mod id or drags the
-	// wrong renderer into the game, and Minecraft refuses to start. Mods known
-	// to crash on the selected game version are hidden for that version only.
-	hidden := hiddenModSlugs(a.activeProfile())
-	if version := a.gameVersion(); version != "" {
-		for _, slug := range versionBlockedModSlugs(version) {
-			hidden[strings.ToLower(slug)] = struct{}{}
+	// Mods already inside valkawclient.jar, renderer mods for the other profile,
+	// and mods known to crash on the selected game version are hidden for Valkaw
+	// mode. Modrinth-mode instances are independent and user-controlled, so they
+	// opt out of this filtering via hideBundled=false.
+	hidden := map[string]struct{}{}
+	if hideBundled {
+		for slug := range hiddenModSlugs(a.activeProfile()) {
+			hidden[slug] = struct{}{}
+		}
+		if version := a.gameVersion(); version != "" {
+			for _, slug := range versionBlockedModSlugs(version) {
+				hidden[strings.ToLower(slug)] = struct{}{}
+			}
 		}
 	}
 	applyHidden := projectType == "mod" && len(hidden) > 0

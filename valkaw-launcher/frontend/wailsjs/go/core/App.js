@@ -150,8 +150,8 @@ export function ScanConflictMods() {
   return window['go']['core']['App']['ScanConflictMods']();
 }
 
-export function SearchModrinth(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8) {
-  return window['go']['core']['App']['SearchModrinth'](arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
+export function SearchModrinth(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9) {
+  return window['go']['core']['App']['SearchModrinth'](arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9);
 }
 
 export function SetGpuPreference(arg1) {

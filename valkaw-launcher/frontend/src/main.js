@@ -836,7 +836,8 @@ async function searchResources(offset) {
             'relevance',
             offset,
             resourceLimit,
-            buildResourceFilterPayload()
+            buildResourceFilterPayload(),
+            true
         );
         const data = JSON.parse(res);
         resourceResults = data.hits || [];
@@ -1377,7 +1378,7 @@ function searchNiPacks() {
     const q = $('niPackQuery').value || '';
     $('niPackResults').innerHTML = '<p class="muted small">Searching…</p>';
     $('niPackVersions').innerHTML = '';
-    SearchModrinth(q, 'modpack', '', '', 'relevance', 0, 12, '').then(raw => {
+    SearchModrinth(q, 'modpack', '', '', 'relevance', 0, 12, '', false).then(raw => {
         const data = JSON.parse(raw);
         renderNiPackResults(data.hits || []);
     }).catch(e => { $('niPackStatus').textContent = 'Search failed: ' + e; });
@@ -1535,7 +1536,7 @@ function instSearch() {
     const loader = type === 'mod' ? (instCtx.loader || 'fabric') : '';
     $('instContentStatus').textContent = 'Searching…';
     $('instContentVersions').innerHTML = '';
-    SearchModrinth(q, type, instCtx.gameVersion, loader, 'relevance', 0, 12, '').then(raw => {
+    SearchModrinth(q, type, instCtx.gameVersion, loader, 'relevance', 0, 12, '', false).then(raw => {
         const data = JSON.parse(raw);
         renderInstResults(data.hits || []);
         $('instContentStatus').textContent = (data.hits && data.hits.length) ? '' : 'No results found.';
