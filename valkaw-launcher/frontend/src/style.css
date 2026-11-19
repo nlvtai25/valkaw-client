@@ -1362,6 +1362,7 @@ main { display: flex; flex-direction: column; padding: 0; }
 
 /* New instance dialog body */
 .ni-body { display: flex; flex-direction: column; gap: 12px; min-height: 220px; }
+.ni-body.hidden { display: none; }
 .ni-body label { font-size: 12px; color: var(--muted); }
 .ni-body input[type="text"], .ni-body select {
   width: 100%;
