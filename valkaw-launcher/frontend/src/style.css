@@ -1497,6 +1497,7 @@ main { display: flex; flex-direction: column; padding: 0; }
 .inst-top-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
 
 .inst-tab-body { display: flex; flex-direction: column; gap: 14px; }
+.inst-tab-body.hidden { display: none; }
 
 /* Manage list rows */
 .inst-manage-list { display: flex; flex-direction: column; gap: 8px; }
