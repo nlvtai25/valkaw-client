@@ -58,12 +58,12 @@ export function InstallClient(arg1) {
   return window['go']['core']['App']['InstallClient'](arg1);
 }
 
-export function InstallOffline(arg1) {
-  return window['go']['core']['App']['InstallOffline'](arg1);
-}
-
 export function InstallJava() {
   return window['go']['core']['App']['InstallJava']();
+}
+
+export function InstallOffline(arg1) {
+  return window['go']['core']['App']['InstallOffline'](arg1);
 }
 
 export function InstallUpdate() {

@@ -30,9 +30,9 @@ export function GetVersions():Promise<Array<string>>;
 
 export function InstallClient(arg1:string):Promise<string>;
 
-export function InstallOffline(arg1:string):Promise<string>;
-
 export function InstallJava():Promise<string>;
+
+export function InstallOffline(arg1:string):Promise<string>;
 
 export function InstallUpdate():Promise<string>;
 
