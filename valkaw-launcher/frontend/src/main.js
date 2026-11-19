@@ -1629,7 +1629,7 @@ function mrProjectType(t) {
     return t === 'shaderpack' ? 'shader' : t;
 }
 
-const INST_PAGE = 24; // 4 cols × 6 rows per load
+const INST_PAGE = 18; // 3 cols × 6 rows per load
 let instOffset = 0;
 let instTotal = 0;
 let instLoading = false;
