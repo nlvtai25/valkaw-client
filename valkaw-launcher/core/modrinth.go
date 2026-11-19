@@ -256,6 +256,14 @@ func (a *App) GetModrinthProject(projectId string) (string, error) {
 	return a.modrinthGet("https://api.modrinth.com/v2/project/" + url.PathEscape(projectId))
 }
 
+func (a *App) GetModrinthVersion(versionID string) (string, error) {
+	if versionID == "" {
+		return "", errors.New("versionId required")
+	}
+	endpoint := "https://api.modrinth.com/v2/version/" + url.PathEscape(versionID)
+	return a.modrinthGet(endpoint)
+}
+
 func (a *App) GetModrinthProjectVersions(projectId string, gameVersion string, loader string) (string, error) {
 	if projectId == "" {
 		return "", errors.New("projectId required")

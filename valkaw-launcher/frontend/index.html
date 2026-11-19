@@ -227,8 +227,24 @@
                         <button id="instSearchBtn" class="btn ghost small">Search</button>
                     </div>
                     <div id="instContentResults" class="resource-grid inst-grid"></div>
+                    <div id="instDetail" class="hidden inst-detail">
+                        <div class="resource-detail-header">
+                            <button id="instDetailBack" class="btn ghost small">← Back to results</button>
+                            <div id="instDetailMeta" class="muted small"></div>
+                        </div>
+                        <div class="inst-detail-title-row">
+                            <img id="instDetailIcon" class="resource-icon" alt="" width="56" height="56" />
+                            <div>
+                                <h4 id="instDetailTitle"></h4>
+                                <span id="instDetailSub" class="muted small"></span>
+                            </div>
+                        </div>
+                        <p id="instDetailDesc" class="muted small inst-detail-desc"></p>
+                        <div id="instDetailChangelog" class="inst-changelog"></div>
+                        <h4 class="resource-versions-title">Versions</h4>
+                        <div id="instDetailVersions" class="resource-versions"></div>
+                    </div>
                     <p id="instContentStatus" class="muted small"></p>
-                    <div id="instContentVersions" class="resource-versions"></div>
                 </div>
 
                 <!-- Settings: RAM, JRE, Java args, behavior -->

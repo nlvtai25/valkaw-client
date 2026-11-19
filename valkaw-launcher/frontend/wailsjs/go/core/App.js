@@ -74,6 +74,10 @@ export function GetModrinthProjectVersions(arg1, arg2, arg3) {
   return window['go']['core']['App']['GetModrinthProjectVersions'](arg1, arg2, arg3);
 }
 
+export function GetModrinthVersion(arg1) {
+  return window['go']['core']['App']['GetModrinthVersion'](arg1);
+}
+
 export function GetResourceBrowserContext() {
   return window['go']['core']['App']['GetResourceBrowserContext']();
 }

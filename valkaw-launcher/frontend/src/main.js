@@ -1,6 +1,6 @@
 import './style.css';
 
-import { GetConfig, SaveConfig, Launch, CheckUpdate, OpenReleases, InstallClient, CheckInstalled, DetectJava, InstallUpdate, InstallOffline, GetVersions, ListGPUs, CheckRequirements, InstallJava, SetGpuPreference, CheckVulkan, GetResourceBrowserContext, SearchModrinth, GetModrinthProject, GetModrinthProjectVersions, DownloadResource, OpenResourceDir, ScanConflictMods, GetVersionProfiles, ListModpackInstances, CreateInstance, InstallModpack, DeleteInstance, LaunchInstance, OpenInstanceFolder, GetInstance, SaveInstanceSettings, GetMinecraftVersions, GetLoaderVersions, ListInstalledJavaMajors, InstallTemurin, GetInstanceContentContext, DownloadResourceToInstance, ListInstanceContent, DeleteInstanceFile, OpenInstanceCategoryFolder } from '../wailsjs/go/core/App';
+import { GetConfig, SaveConfig, Launch, CheckUpdate, OpenReleases, InstallClient, CheckInstalled, DetectJava, InstallUpdate, InstallOffline, GetVersions, ListGPUs, CheckRequirements, InstallJava, SetGpuPreference, CheckVulkan, GetResourceBrowserContext, SearchModrinth, GetModrinthProject, GetModrinthProjectVersions, GetModrinthVersion, DownloadResource, OpenResourceDir, ScanConflictMods, GetVersionProfiles, ListModpackInstances, CreateInstance, InstallModpack, DeleteInstance, LaunchInstance, OpenInstanceFolder, GetInstance, SaveInstanceSettings, GetMinecraftVersions, GetLoaderVersions, ListInstalledJavaMajors, InstallTemurin, GetInstanceContentContext, DownloadResourceToInstance, ListInstanceContent, DeleteInstanceFile, OpenInstanceCategoryFolder } from '../wailsjs/go/core/App';
 import { EventsOn, BrowserOpenURL } from '../wailsjs/runtime/runtime';
 
 const $ = (id) => document.getElementById(id);
@@ -1643,6 +1643,9 @@ function instSearch() {
     const type = mrProjectType(instCType);
     const loader = type === 'mod' ? (instCtx.loader || 'fabric') : '';
     instOffset = 0; instTotal = 0;
+    // Leave any open detail page and show the results grid.
+    $('instDetail').classList.add('hidden');
+    $('instContentResults').classList.remove('hidden');
     $('instContentStatus').textContent = 'Searching…';
     $('instContentVersions').innerHTML = '';
     $('instContentResults').innerHTML = '';
@@ -1706,49 +1709,98 @@ if (instPageEl) {
 }
 
 function instSelectVersion(hit) {
+    // Deprecated inline version list; replaced by openInstDetail below.
+    // Left as a no-op to avoid breaking callers.
+    openInstDetail(hit);
+}
+
+async function openInstDetail(hit) {
     const slug = hit.slug || hit.project_id || hit.id;
     const type = instCType;
     const loader = type === 'mod' ? (instCtx.loader || 'fabric') : '';
-    $('instContentStatus').textContent = 'Loading versions…';
-    GetModrinthProjectVersions(slug, instCtx.gameVersion, loader).then(raw => {
-        const vers = JSON.parse(raw) || [];
-        const box = $('instContentVersions');
-        box.innerHTML = '<h4 class="resource-versions-title">Versions</h4>';
-        if (!vers.length) {
-            box.innerHTML = '<p class="muted small">No versions match this instance&#39;s Minecraft version / loader.</p>';
-            return;
-        }
-        for (const v of vers) {
-            const file = (v.files || []).find(f => f.primary) || (v.files || [])[0];
-            const url = file ? file.url : '';
-            const name = file ? file.filename : (v.version_number || v.name);
-            const row = document.createElement('div');
-            row.className = 'resource-version';
-            row.innerHTML = `
-                <div class="resource-version-info">
-                    <strong>${esc(v.version_number || v.name || '')}</strong>
-                    <div class="resource-version-meta">
-                        <span>${(v.game_versions || []).join(', ')}</span>
-                        <span>•</span><span>${esc(name)}</span>
-                    </div>
-                </div>
-                <button class="btn ghost small">Install</button>`;
-            row.querySelector('button').addEventListener('click', async () => {
-                const b = row.querySelector('button');
-                b.disabled = true; b.textContent = 'Installing…';
-                try {
-                    await DownloadResourceToInstance(url, name, type, currentInstance.id);
-                    $('instContentStatus').textContent = 'Installed ' + name + ' ✅';
-                } catch (e) {
-                    $('instContentStatus').textContent = 'Error: ' + e;
-                    b.disabled = false; b.textContent = 'Install';
-                }
-            });
-            box.appendChild(row);
-        }
-        $('instContentStatus').textContent = '';
-    }).catch(e => $('instContentStatus').textContent = 'Error: ' + e);
+    $('instContentResults').classList.add('hidden');
+    $('instDetail').classList.remove('hidden');
+    $('instDetailVersions').innerHTML = '';
+    $('instDetailChangelog').innerHTML = '<p class="muted small">Loading…</p>';
+    $('instContentStatus').textContent = '';
+    try {
+        const proj = JSON.parse(await GetModrinthProject(slug));
+        $('instDetailTitle').textContent = proj.title || hit.title || slug;
+        $('instDetailDesc').textContent = proj.description || '';
+        const icon = proj.icon_url || proj.icon_url_png || hit.icon_url || '';
+        $('instDetailIcon').src = icon;
+        $('instDetailIcon').style.display = icon ? '' : 'none';
+        const author = proj.author || proj.team || '';
+        const downloads = proj.downloads != null ? proj.downloads.toLocaleString() + ' downloads' : '';
+        $('instDetailSub').textContent = [author, downloads].filter(Boolean).join(' • ');
+        $('instDetailMeta').textContent = `Minecraft ${instCtx.gameVersion} • ${loaderLabel(instCtx.loader)}`;
+
+        const vers = JSON.parse(await GetModrinthProjectVersions(slug, instCtx.gameVersion, loader)) || [];
+        renderInstDetailVersions(vers, type);
+        if (vers.length) loadInstChangelog(vers[0].id);
+    } catch (e) {
+        $('instDetailChangelog').innerHTML = '<p class="muted small">Failed to load project: ' + esc(e) + '</p>';
+    }
 }
+
+function renderInstDetailVersions(vers, type) {
+    const box = $('instDetailVersions');
+    box.innerHTML = '';
+    if (!vers.length) {
+        box.innerHTML = '<p class="muted small">No versions match this instance&#39;s Minecraft version / loader.</p>';
+        return;
+    }
+    for (const v of vers) {
+        const file = (v.files || []).find(f => f.primary) || (v.files || [])[0];
+        const url = file ? file.url : '';
+        const name = file ? file.filename : (v.version_number || v.name);
+        const row = document.createElement('div');
+        row.className = 'resource-version';
+        row.innerHTML = `
+            <div class="resource-version-info">
+                <strong>${esc(v.version_number || v.name || '')}</strong>
+                <div class="resource-version-meta">
+                    <span>${(v.game_versions || []).join(', ')}</span>
+                    <span>•</span><span>${(v.loaders || []).join(', ')}</span>
+                    <span>•</span><span>${esc(name)}</span>
+                </div>
+            </div>
+            <div class="hub-actions">
+                <button class="btn ghost small inst-cl">Changelog</button>
+                <button class="btn ghost small inst-install">Install</button>
+            </div>`;
+        row.querySelector('.inst-cl').addEventListener('click', () => loadInstChangelog(v.id));
+        row.querySelector('.inst-install').addEventListener('click', async () => {
+            const b = row.querySelector('.inst-install');
+            b.disabled = true; b.textContent = 'Installing…';
+            try {
+                await DownloadResourceToInstance(url, name, type, currentInstance.id);
+                $('instContentStatus').textContent = 'Installed ' + name + ' ✅';
+            } catch (e) {
+                $('instContentStatus').textContent = 'Error: ' + e;
+                b.disabled = false; b.textContent = 'Install';
+            }
+        });
+        box.appendChild(row);
+    }
+}
+
+async function loadInstChangelog(versionID) {
+    const el = $('instDetailChangelog');
+    el.innerHTML = '<p class="muted small">Loading changelog…</p>';
+    try {
+        const v = JSON.parse(await GetModrinthVersion(versionID));
+        el.innerHTML = '<h4 class="resource-versions-title">Changelog</h4><div class="inst-changelog-body">' +
+            (esc(v.changelog || '(no changelog)').replace(/\n/g, '<br>')) + '</div>';
+    } catch (e) {
+        el.innerHTML = '<p class="muted small">Could not load changelog: ' + esc(e) + '</p>';
+    }
+}
+
+$('instDetailBack').addEventListener('click', () => {
+    $('instDetail').classList.add('hidden');
+    $('instContentResults').classList.remove('hidden');
+});
 
 document.querySelectorAll('#instDownload .inst-content-tab').forEach(b =>
     b.addEventListener('click', () => {

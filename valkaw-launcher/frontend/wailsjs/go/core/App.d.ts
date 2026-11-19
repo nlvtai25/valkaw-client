@@ -38,6 +38,8 @@ export function GetModrinthProject(arg1:string):Promise<string>;
 
 export function GetModrinthProjectVersions(arg1:string,arg2:string,arg3:string):Promise<string>;
 
+export function GetModrinthVersion(arg1:string):Promise<string>;
+
 export function GetResourceBrowserContext():Promise<Record<string, any>>;
 
 export function GetVersionProfiles():Promise<Record<string, Array<string>>>;
