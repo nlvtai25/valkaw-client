@@ -26,6 +26,10 @@ export function DeleteInstance(arg1) {
   return window['go']['core']['App']['DeleteInstance'](arg1);
 }
 
+export function DeleteInstanceFile(arg1, arg2, arg3) {
+  return window['go']['core']['App']['DeleteInstanceFile'](arg1, arg2, arg3);
+}
+
 export function DetectJava() {
   return window['go']['core']['App']['DetectJava']();
 }
@@ -122,8 +126,16 @@ export function ListInstalledJavaMajors() {
   return window['go']['core']['App']['ListInstalledJavaMajors']();
 }
 
+export function ListInstanceContent(arg1, arg2) {
+  return window['go']['core']['App']['ListInstanceContent'](arg1, arg2);
+}
+
 export function ListModpackInstances() {
   return window['go']['core']['App']['ListModpackInstances']();
+}
+
+export function OpenInstanceCategoryFolder(arg1, arg2) {
+  return window['go']['core']['App']['OpenInstanceCategoryFolder'](arg1, arg2);
 }
 
 export function OpenInstanceFolder(arg1) {
@@ -142,8 +154,8 @@ export function SaveConfig(arg1) {
   return window['go']['core']['App']['SaveConfig'](arg1);
 }
 
-export function SaveInstanceSettings(arg1, arg2, arg3) {
-  return window['go']['core']['App']['SaveInstanceSettings'](arg1, arg2, arg3);
+export function SaveInstanceSettings(arg1, arg2, arg3, arg4, arg5) {
+  return window['go']['core']['App']['SaveInstanceSettings'](arg1, arg2, arg3, arg4, arg5);
 }
 
 export function ScanConflictMods() {

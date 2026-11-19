@@ -1468,3 +1468,36 @@ main { display: flex; flex-direction: column; padding: 0; }
 .inst-grid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
 .resource-versions { width: 100%; min-width: 0; }
 .resource-version { flex-wrap: wrap; }
+
+/* 15px gap between the instance UI and the window borders (sidebar untouched). */
+.mode-modrinth #page-instances,
+.mode-modrinth #page-instance {
+  padding: 15px;
+}
+
+/* Instance top-level tabs (Manage / Download / Settings) */
+.inst-top-tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 14px;
+}
+.inst-top-tab {
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+.inst-top-tab:hover { color: var(--text); }
+.inst-top-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+.inst-tab-body { display: flex; flex-direction: column; gap: 14px; }
+
+/* Manage list rows */
+.inst-manage-list { display: flex; flex-direction: column; gap: 8px; }
+.manage-row { padding: 10px 14px; }

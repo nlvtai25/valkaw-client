@@ -33,6 +33,8 @@ type Instance struct {
 	Loader       string    `json:"loader"` // "vanilla" | "fabric" | "neoforge"
 	LoaderVersion string   `json:"loaderVersion"`
 	JavaOverride  string    `json:"javaOverride"` // "" = auto; "17" = Temurin 17; else a path
+	JavaArgs     string    `json:"javaArgs"`     // extra JVM args, space-separated
+	AfterRun     string    `json:"afterRun"`     // "" = inherit global; hide|close|appear
 	MemoryMB     int       `json:"memoryMB"`     // 0 = inherit global setting
 	Created      time.Time `json:"created"`
 	ModpackSlug  string    `json:"modpackSlug,omitempty"`
@@ -153,14 +155,22 @@ func (a *App) saveInstance(in Instance) error {
 	return saveRegistry(list)
 }
 
-// SaveInstanceSettings updates the mutable fields (RAM, Java) of an instance.
-func (a *App) SaveInstanceSettings(id string, memoryMB int, javaOverride string) error {
+// SaveInstanceSettings updates the mutable runtime settings of an instance
+// (RAM, Java override, extra JVM args, after-run behaviour).
+func (a *App) SaveInstanceSettings(id string, memoryMB int, javaOverride, javaArgs, afterRun string) error {
 	in, err := a.findInstance(id)
 	if err != nil {
 		return err
 	}
 	in.MemoryMB = memoryMB
 	in.JavaOverride = javaOverride
+	in.JavaArgs = javaArgs
+	switch afterRun {
+	case "hide", "close", "appear":
+		in.AfterRun = afterRun
+	default:
+		in.AfterRun = ""
+	}
 	return a.saveInstance(*in)
 }
 

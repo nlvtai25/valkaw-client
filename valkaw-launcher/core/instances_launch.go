@@ -11,6 +11,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"sort"
 	"strconv"
 	"strings"
 	"sync/atomic"
@@ -307,6 +308,10 @@ func (a *App) LaunchInstance(id string) string {
 		gameArgs = append(gameArgs, "--fullscreen")
 	}
 	jvmArgs = append(jvmArgs, gameArgs...)
+	// Extra user-supplied JVM args for this instance, e.g. -Dfoo=bar.
+	if args := strings.Fields(in.JavaArgs); len(args) > 0 {
+		jvmArgs = append(jvmArgs, args...)
+	}
 
 	cmd := exec.Command(runJava, jvmArgs...)
 	cmd.Dir = gameDir
@@ -321,6 +326,9 @@ func (a *App) LaunchInstance(id string) string {
 		return "error: " + err.Error()
 	}
 	afterRun := a.config.AfterRun
+	if in.AfterRun != "" {
+		afterRun = in.AfterRun
+	}
 	go func() {
 		_ = cmd.Wait()
 		if afterRun == "hide" {
@@ -685,4 +693,79 @@ func copyFile(src, dest string) error {
 		return err
 	}
 	return os.WriteFile(dest, data, 0644)
+}
+
+// ---------------------------------------------------------------------------
+// Installed-content management (the Manage tab)
+// ---------------------------------------------------------------------------
+
+// instanceCategoryDir maps a Manage sub-tab to its folder inside the game dir.
+func instanceCategoryDir(root, category string) string {
+	switch category {
+	case "mod":
+		return filepath.Join(root, "mods")
+	case "shaderpack":
+		return filepath.Join(root, "shaderpacks")
+	case "resourcepack":
+		return filepath.Join(root, "resourcepacks")
+	case "images":
+		return filepath.Join(root, "screenshots")
+	case "worlds":
+		return filepath.Join(root, "saves")
+	case "servers":
+		return filepath.Join(root, "servers")
+	}
+	return filepath.Join(root, category)
+}
+
+// ListInstanceContent returns the names of items installed in an instance
+// folder for a Manage category (mods, shaderpacks, resourcepacks, screenshots,
+// saves, servers).
+func (a *App) ListInstanceContent(id, category string) ([]string, error) {
+	in, err := a.findInstance(id)
+	if err != nil {
+		return nil, err
+	}
+	dir := instanceCategoryDir(instanceDir(in.ID), category)
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return nil, err
+	}
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return nil, err
+	}
+	names := make([]string, 0, len(entries))
+	for _, e := range entries {
+		names = append(names, e.Name())
+	}
+	sort.Strings(names)
+	return names, nil
+}
+
+// DeleteInstanceFile removes one installed item (file or folder) from an
+// instance category folder.
+// OpenInstanceCategoryFolder opens a Manage category folder of an instance in
+// the system file manager.
+func (a *App) OpenInstanceCategoryFolder(id, category string) error {
+	in, err := a.findInstance(id)
+	if err != nil {
+		return err
+	}
+	return openFolder(instanceCategoryDir(instanceDir(in.ID), category))
+}
+
+func (a *App) DeleteInstanceFile(id, category, name string) error {
+	in, err := a.findInstance(id)
+	if err != nil {
+		return err
+	}
+	dir := instanceCategoryDir(instanceDir(in.ID), category)
+	target := filepath.Join(dir, filepath.Base(name))
+	if !strings.HasPrefix(target, filepath.Clean(dir)+string(os.PathSeparator)) {
+		return errors.New("invalid filename")
+	}
+	if !fileExists(target) && !dirExists(target) {
+		return errors.New("file not found")
+	}
+	return os.RemoveAll(target)
 }

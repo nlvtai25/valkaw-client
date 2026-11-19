@@ -1,6 +1,6 @@
 import './style.css';
 
-import { GetConfig, SaveConfig, Launch, CheckUpdate, OpenReleases, InstallClient, CheckInstalled, DetectJava, InstallUpdate, InstallOffline, GetVersions, ListGPUs, CheckRequirements, InstallJava, SetGpuPreference, CheckVulkan, GetResourceBrowserContext, SearchModrinth, GetModrinthProject, GetModrinthProjectVersions, DownloadResource, OpenResourceDir, ScanConflictMods, GetVersionProfiles, ListModpackInstances, CreateInstance, InstallModpack, DeleteInstance, LaunchInstance, OpenInstanceFolder, GetInstance, SaveInstanceSettings, GetMinecraftVersions, GetLoaderVersions, ListInstalledJavaMajors, InstallTemurin, GetInstanceContentContext, DownloadResourceToInstance } from '../wailsjs/go/core/App';
+import { GetConfig, SaveConfig, Launch, CheckUpdate, OpenReleases, InstallClient, CheckInstalled, DetectJava, InstallUpdate, InstallOffline, GetVersions, ListGPUs, CheckRequirements, InstallJava, SetGpuPreference, CheckVulkan, GetResourceBrowserContext, SearchModrinth, GetModrinthProject, GetModrinthProjectVersions, DownloadResource, OpenResourceDir, ScanConflictMods, GetVersionProfiles, ListModpackInstances, CreateInstance, InstallModpack, DeleteInstance, LaunchInstance, OpenInstanceFolder, GetInstance, SaveInstanceSettings, GetMinecraftVersions, GetLoaderVersions, ListInstalledJavaMajors, InstallTemurin, GetInstanceContentContext, DownloadResourceToInstance, ListInstanceContent, DeleteInstanceFile, OpenInstanceCategoryFolder } from '../wailsjs/go/core/App';
 import { EventsOn, BrowserOpenURL } from '../wailsjs/runtime/runtime';
 
 const $ = (id) => document.getElementById(id);
@@ -1460,6 +1460,22 @@ $('niPackSearch').addEventListener('click', () => { $('niPackVersions').innerHTM
 $('niPackQuery').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('niPackVersions').innerHTML = ''; searchNiPacks(); } });
 
 /* ----- Instance detail ----- */
+let instTopTab = 'manage';
+let instManageTab = 'mod';
+const MANAGE_CATEGORIES = {
+    mod: 'mods', shaderpack: 'shaderpacks', resourcepack: 'resourcepacks',
+    images: 'screenshots', worlds: 'saves', servers: 'servers',
+};
+
+function showInstanceTab(tab) {
+    instTopTab = tab;
+    document.querySelectorAll('.inst-top-tab').forEach(b => b.classList.toggle('active', b.dataset.itab === tab));
+    $('instManage').classList.toggle('hidden', tab !== 'manage');
+    $('instDownload').classList.toggle('hidden', tab !== 'download');
+    $('instSettings').classList.toggle('hidden', tab !== 'settings');
+    if (tab === 'manage') refreshManageList();
+}
+
 async function openInstanceDetail(id) {
     try {
         currentInstance = await GetInstance(id);
@@ -1473,17 +1489,17 @@ async function openInstanceDetail(id) {
         `${currentInstance.mcVersion} • ${loaderLabel(currentInstance.loader)}` +
         (currentInstance.loaderVersion && currentInstance.loader !== 'vanilla' ? ' • ' + currentInstance.loaderVersion : '');
     $('instMemory').value = currentInstance.memoryMB || '';
+    $('instJavaArgs').value = currentInstance.javaArgs || '';
+    const ar = document.querySelector(`input[name="instAfterRun"][value="${currentInstance.afterRun || ''}"]`)
+        || document.querySelector('input[name="instAfterRun"][value=""]');
+    if (ar) ar.checked = true;
     $('instSettingsStatus').textContent = '';
     $('instContentStatus').textContent = '';
     $('instContentVersions').innerHTML = '';
     $('instJavaPath').value = '';
     populateJavaSel();
-    try {
-        instCtx = await GetInstanceContentContext(id);
-        instSearch();
-    } catch (e) {
-        $('instContentStatus').textContent = 'Error loading instance context: ' + e;
-    }
+    try { instCtx = await GetInstanceContentContext(id); } catch (_) {}
+    showInstanceTab('manage');
 }
 
 function populateJavaSel() {
@@ -1509,25 +1525,87 @@ function populateJavaSel() {
 }
 
 function syncJavaSel() {
-    const custom = $('instJavaSel').value === 'custom';
+    const v = $('instJavaSel').value;
+    const custom = v === 'custom';
     $('instJavaCustomRow').classList.toggle('hidden', !custom);
+    $('instJavaHint').textContent = custom
+        ? 'Enter the full path to a java binary.'
+        : (v ? 'Uses installed Temurin ' + v + '.' : 'Auto: chosen from the Minecraft version.');
 }
 $('instJavaSel').addEventListener('change', syncJavaSel);
 $('instSaveSettings').addEventListener('click', async () => {
     let javaOverride = $('instJavaSel').value;
     if (javaOverride === 'custom') javaOverride = $('instJavaPath').value.trim();
     const mem = parseInt($('instMemory').value) || 0;
+    const javaArgs = $('instJavaArgs').value.trim();
+    const afterRun = document.querySelector('input[name="instAfterRun"]:checked')?.value || '';
+    $('instSaveSettings').disabled = true;
     try {
-        await SaveInstanceSettings(currentInstance.id, mem, javaOverride);
+        await SaveInstanceSettings(currentInstance.id, mem, javaOverride, javaArgs, afterRun);
         $('instSettingsStatus').textContent = 'Saved.';
         currentInstance = await GetInstance(currentInstance.id);
     } catch (e) {
         $('instSettingsStatus').textContent = 'Error: ' + e;
+    } finally {
+        $('instSaveSettings').disabled = false;
     }
 });
-$('instOpenFolder').addEventListener('click', () => OpenInstanceFolder(currentInstance.id));
+document.querySelectorAll('.inst-top-tab').forEach(b =>
+    b.addEventListener('click', () => showInstanceTab(b.dataset.itab))
+);
 $('instBack').addEventListener('click', () => { showPage('instances'); refreshInstances(); });
 $('instPlayBtn').addEventListener('click', () => launchInstance(currentInstance.id));
+
+/* ----- Manage tab: installed content ----- */
+async function refreshManageList() {
+    const el = $('instManageList');
+    el.innerHTML = '<p class="muted small">Loading…</p>';
+    let names = [];
+    try {
+        names = await ListInstanceContent(currentInstance.id, instManageTab);
+    } catch (e) {
+        $('instManageStatus').textContent = 'Error: ' + e;
+        el.innerHTML = '';
+        return;
+    }
+    if (!names.length) {
+        el.innerHTML = '<div class="inst-empty"><p class="muted small">Nothing here yet.</p></div>';
+        $('instManageStatus').textContent = '';
+        return;
+    }
+    el.innerHTML = '';
+    for (const name of names) {
+        const row = document.createElement('div');
+        row.className = 'instance-row manage-row';
+        row.innerHTML = `
+            <div class="instance-icon">${esc((name[0] || '?').toUpperCase())}</div>
+            <div class="instance-info"><strong>${esc(name)}</strong></div>
+            <div class="hub-actions">
+                <button class="btn danger small manage-del">Remove</button>
+            </div>`;
+        row.querySelector('.manage-del').addEventListener('click', async () => {
+            row.querySelector('.manage-del').disabled = true;
+            try {
+                await DeleteInstanceFile(currentInstance.id, instManageTab, name);
+                refreshManageList();
+            } catch (e) {
+                $('instManageStatus').textContent = 'Error: ' + e;
+            }
+        });
+        el.appendChild(row);
+    }
+    $('instManageStatus').textContent = '';
+}
+
+document.querySelectorAll('#instManage .inst-content-tab').forEach(b =>
+    b.addEventListener('click', () => {
+        document.querySelectorAll('#instManage .inst-content-tab').forEach(x => x.classList.toggle('active', x === b));
+        instManageTab = b.dataset.mtab;
+        $('instManageStatus').textContent = '';
+        refreshManageList();
+    })
+);
+$('instManageOpenFolder').addEventListener('click', () => OpenInstanceCategoryFolder(currentInstance.id, instManageTab));
 
 /* ----- Instance content browser ----- */
 // Map our tab keys to Modrinth's search project_type tokens. Shaders are
@@ -1615,9 +1693,9 @@ function instSelectVersion(hit) {
     }).catch(e => $('instContentStatus').textContent = 'Error: ' + e);
 }
 
-document.querySelectorAll('.inst-content-tab').forEach(b =>
+document.querySelectorAll('#instDownload .inst-content-tab').forEach(b =>
     b.addEventListener('click', () => {
-        document.querySelectorAll('.inst-content-tab').forEach(x => x.classList.toggle('active', x === b));
+        document.querySelectorAll('#instDownload .inst-content-tab').forEach(x => x.classList.toggle('active', x === b));
         instCType = b.dataset.ctype;
         $('instContentVersions').innerHTML = '';
         if (currentInstance) instSearch();

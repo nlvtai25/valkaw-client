@@ -63,6 +63,8 @@ export namespace core {
 	    loader: string;
 	    loaderVersion: string;
 	    javaOverride: string;
+	    javaArgs: string;
+	    afterRun: string;
 	    memoryMB: number;
 	    // Go type: time
 	    created: any;
@@ -81,6 +83,8 @@ export namespace core {
 	        this.loader = source["loader"];
 	        this.loaderVersion = source["loaderVersion"];
 	        this.javaOverride = source["javaOverride"];
+	        this.javaArgs = source["javaArgs"];
+	        this.afterRun = source["afterRun"];
 	        this.memoryMB = source["memoryMB"];
 	        this.created = this.convertValues(source["created"], null);
 	        this.modpackSlug = source["modpackSlug"];

@@ -14,6 +14,8 @@ export function CreateInstance(arg1:string,arg2:string,arg3:string,arg4:string):
 
 export function DeleteInstance(arg1:string):Promise<void>;
 
+export function DeleteInstanceFile(arg1:string,arg2:string,arg3:string):Promise<void>;
+
 export function DetectJava():Promise<string>;
 
 export function DownloadResource(arg1:string,arg2:string,arg3:string,arg4:string):Promise<void>;
@@ -62,7 +64,11 @@ export function ListGPUs():Promise<Array<core.GPU>>;
 
 export function ListInstalledJavaMajors():Promise<Array<number>>;
 
+export function ListInstanceContent(arg1:string,arg2:string):Promise<Array<string>>;
+
 export function ListModpackInstances():Promise<Array<core.Instance>>;
+
+export function OpenInstanceCategoryFolder(arg1:string,arg2:string):Promise<void>;
 
 export function OpenInstanceFolder(arg1:string):Promise<void>;
 
@@ -72,7 +78,7 @@ export function OpenResourceDir(arg1:string):Promise<void>;
 
 export function SaveConfig(arg1:core.Config):Promise<string>;
 
-export function SaveInstanceSettings(arg1:string,arg2:number,arg3:string):Promise<void>;
+export function SaveInstanceSettings(arg1:string,arg2:number,arg3:string,arg4:string,arg5:string):Promise<void>;
 
 export function ScanConflictMods():Promise<string>;
 

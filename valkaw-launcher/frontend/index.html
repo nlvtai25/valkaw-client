@@ -185,29 +185,40 @@
                         <h3 id="instDetailName"></h3>
                         <p id="instDetailMeta" class="muted small"></p>
                     </div>
-                    <button id="instPlayBtn" class="play-btn">▶ Play</button>
-                </div>
-                <div class="card">
-                    <h4>Instance settings</h4>
-                    <div class="field-row">
-                        <div><label>Memory (MB)</label><input id="instMemory" type="number" min="512" step="256" /></div>
-                        <div><label>Java</label><select id="instJavaSel"></select></div>
+                    <div class="hub-actions">
+                        <button id="instOpenFolder" class="btn ghost small">Open folder</button>
+                        <button id="instDeleteBtn" class="btn danger small">Delete</button>
+                        <button id="instPlayBtn" class="play-btn">▶ Play</button>
                     </div>
-                    <div id="instJavaCustomRow" class="hidden">
-                        <label>Java path</label>
-                        <input id="instJavaPath" type="text" />
+                </div>
+
+                <div class="inst-top-tabs">
+                    <button class="inst-top-tab active" data-itab="manage">Manage</button>
+                    <button class="inst-top-tab" data-itab="download">Download</button>
+                    <button class="inst-top-tab" data-itab="settings">Settings</button>
+                </div>
+
+                <!-- Manage: items already installed in the game folder -->
+                <div id="instManage" class="inst-tab-body">
+                    <div class="inst-content-tabs">
+                        <button class="inst-content-tab active" data-mtab="mod">Mods</button>
+                        <button class="inst-content-tab" data-mtab="shaderpack">Shaderpacks</button>
+                        <button class="inst-content-tab" data-mtab="resourcepack">Resourcepacks</button>
+                        <button class="inst-content-tab" data-mtab="images">Images</button>
+                        <button class="inst-content-tab" data-mtab="worlds">Worlds</button>
+                        <button class="inst-content-tab" data-mtab="servers">Servers</button>
                     </div>
                     <div class="hub-actions">
-                        <button id="instSaveSettings" class="btn ghost small">Save</button>
-                        <button id="instOpenFolder" class="btn ghost small">Open folder</button>
+                        <button id="instManageOpenFolder" class="btn ghost small">Open folder</button>
                     </div>
-                    <p id="instSettingsStatus" class="muted small"></p>
+                    <div id="instManageList" class="inst-manage-list"></div>
+                    <p id="instManageStatus" class="muted small"></p>
                 </div>
-                <div class="card">
-                    <h4>Content</h4>
+
+                <!-- Download: browse Modrinth into the instance -->
+                <div id="instDownload" class="inst-tab-body hidden">
                     <div class="inst-content-tabs">
                         <button class="inst-content-tab active" data-ctype="mod">Mods</button>
-                        <button class="inst-content-tab" data-ctype="datapack">Datapacks</button>
                         <button class="inst-content-tab" data-ctype="shaderpack">Shaderpacks</button>
                         <button class="inst-content-tab" data-ctype="resourcepack">Resourcepacks</button>
                     </div>
@@ -219,9 +230,45 @@
                     <p id="instContentStatus" class="muted small"></p>
                     <div id="instContentVersions" class="resource-versions"></div>
                 </div>
-                <div class="card inst-danger">
-                    <button id="instDeleteBtn" class="btn danger">Delete instance</button>
-                    <p class="muted small">Deletes the whole instance folder permanently, including its saves.</p>
+
+                <!-- Settings: RAM, JRE, Java args, behavior -->
+                <div id="instSettings" class="inst-tab-body hidden">
+                    <div class="card">
+                        <h4>Memory</h4>
+                        <label>Allocated RAM (MB)</label>
+                        <input id="instMemory" type="number" min="512" step="256" />
+                        <p class="muted small">0 = inherit the global setting.</p>
+                    </div>
+                    <div class="card">
+                        <h4>Java runtime</h4>
+                        <label>Java</label>
+                        <select id="instJavaSel"></select>
+                        <div id="instJavaCustomRow" class="hidden">
+                            <label>Java path</label>
+                            <input id="instJavaPath" type="text" />
+                        </div>
+                        <p id="instJavaHint" class="muted small"></p>
+                    </div>
+                    <div class="card">
+                        <h4>Java arguments</h4>
+                        <label>Extra JVM arguments</label>
+                        <input id="instJavaArgs" type="text" placeholder="-Dfoo=bar -XX:..." spellcheck="false" />
+                        <p class="muted small">Optional, space-separated. Appended to the launcher's JVM flags.</p>
+                    </div>
+                    <div class="card">
+                        <h4>Behavior</h4>
+                        <label>After game exits</label>
+                        <div class="segmented">
+                            <label class="seg"><input type="radio" name="instAfterRun" value="" hidden><span>Inherit</span></label>
+                            <label class="seg"><input type="radio" name="instAfterRun" value="hide" hidden><span>Hide</span></label>
+                            <label class="seg"><input type="radio" name="instAfterRun" value="close" hidden><span>Close</span></label>
+                            <label class="seg"><input type="radio" name="instAfterRun" value="appear" hidden><span>Appear</span></label>
+                        </div>
+                    </div>
+                    <div class="actions">
+                        <button id="instSaveSettings" class="btn primary">Save settings</button>
+                        <p id="instSettingsStatus" class="muted small"></p>
+                    </div>
                 </div>
             </div>
         </section>
