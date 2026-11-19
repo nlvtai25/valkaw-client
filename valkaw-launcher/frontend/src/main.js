@@ -1512,7 +1512,6 @@ async function openInstanceDetail(id) {
     if (ar) ar.checked = true;
     $('instSettingsStatus').textContent = '';
     $('instContentStatus').textContent = '';
-    $('instContentVersions').innerHTML = '';
     $('instJavaPath').value = '';
     populateJavaSel();
     try { instCtx = await GetInstanceContentContext(id); } catch (_) {}
@@ -1647,7 +1646,6 @@ function instSearch() {
     $('instDetail').classList.add('hidden');
     $('instContentResults').classList.remove('hidden');
     $('instContentStatus').textContent = 'Searching…';
-    $('instContentVersions').innerHTML = '';
     $('instContentResults').innerHTML = '';
     instLoadPage(q, type, loader, true);
 }
@@ -1806,7 +1804,6 @@ document.querySelectorAll('#instDownload .inst-content-tab').forEach(b =>
     b.addEventListener('click', () => {
         document.querySelectorAll('#instDownload .inst-content-tab').forEach(x => x.classList.toggle('active', x === b));
         instCType = b.dataset.ctype;
-        $('instContentVersions').innerHTML = '';
         if (currentInstance) instSearch();
     })
 );
