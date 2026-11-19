@@ -1512,3 +1512,13 @@ main { display: flex; flex-direction: column; padding: 0; }
   cursor: not-allowed;
   border-color: var(--border);
 }
+
+/* Solid panels for the instance content areas so the cards/names read clearly
+   against the Saturn backdrop behind the page. */
+.mode-modrinth #instDownload,
+.mode-modrinth #instManage {
+  background: linear-gradient(180deg, rgba(28,24,19,0.96), rgba(20,17,13,0.96));
+  border: 1px solid var(--border-strong);
+  border-radius: 14px;
+  padding: 14px;
+}
