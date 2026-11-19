@@ -399,7 +399,10 @@ pre {
 }
 
 /* ---------- Setup popup ---------- */
-.hidden { display: none; }
+/* .hidden must always win regardless of where a display-setting class is
+   defined (e.g. .ni-body, .inst-tab-body). !important makes a hidden element
+   impossible to render, so this class of bug cannot happen again. */
+.hidden { display: none !important; }
 
 .modal {
     position: fixed;
