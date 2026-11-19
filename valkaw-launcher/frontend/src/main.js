@@ -1483,7 +1483,11 @@ function showInstanceTab(tab) {
     $('instManage').classList.toggle('hidden', tab !== 'manage');
     $('instDownload').classList.toggle('hidden', tab !== 'download');
     $('instSettings').classList.toggle('hidden', tab !== 'settings');
-    if (tab === 'manage') refreshManageList();
+    if (tab === 'manage') {
+        refreshManageList();
+    } else if (tab === 'download') {
+        instSearch();
+    }
 }
 
 async function openInstanceDetail(id) {
