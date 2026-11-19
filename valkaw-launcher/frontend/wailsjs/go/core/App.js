@@ -138,6 +138,10 @@ export function ListModpackInstances() {
   return window['go']['core']['App']['ListModpackInstances']();
 }
 
+export function OpenFolder(arg1) {
+  return window['go']['core']['App']['OpenFolder'](arg1);
+}
+
 export function OpenInstanceCategoryFolder(arg1, arg2) {
   return window['go']['core']['App']['OpenInstanceCategoryFolder'](arg1, arg2);
 }

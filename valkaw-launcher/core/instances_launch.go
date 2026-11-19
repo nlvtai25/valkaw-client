@@ -330,7 +330,8 @@ func (a *App) LaunchInstance(id string) string {
 		afterRun = in.AfterRun
 	}
 	go func() {
-		_ = cmd.Wait()
+		err := cmd.Wait()
+		a.handleGameExit(err, gameDir)
 		if afterRun == "hide" {
 			wailsruntime.WindowShow(a.ctx)
 			wailsruntime.WindowUnminimise(a.ctx)

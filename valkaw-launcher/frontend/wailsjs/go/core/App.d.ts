@@ -70,6 +70,8 @@ export function ListInstanceContent(arg1:string,arg2:string):Promise<Array<strin
 
 export function ListModpackInstances():Promise<Array<core.Instance>>;
 
+export function OpenFolder(arg1:string):Promise<void>;
+
 export function OpenInstanceCategoryFolder(arg1:string,arg2:string):Promise<void>;
 
 export function OpenInstanceFolder(arg1:string):Promise<void>;

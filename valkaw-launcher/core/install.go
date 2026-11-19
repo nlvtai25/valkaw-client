@@ -1484,7 +1484,8 @@ func (a *App) Launch() string {
 	}
 	afterRun := a.config.AfterRun
 	go func() {
-		_ = cmd.Wait()
+		err := cmd.Wait()
+		a.handleGameExit(err, gameDir)
 		// A hidden launcher has no way back on its own: bring it back as soon
 		// as the game exits, otherwise the player is left with nothing.
 		if afterRun == "hide" {

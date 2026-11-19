@@ -1,6 +1,6 @@
 import './style.css';
 
-import { GetConfig, SaveConfig, Launch, CheckUpdate, OpenReleases, InstallClient, CheckInstalled, DetectJava, InstallUpdate, InstallOffline, GetVersions, ListGPUs, CheckRequirements, InstallJava, SetGpuPreference, CheckVulkan, GetResourceBrowserContext, SearchModrinth, GetModrinthProject, GetModrinthProjectVersions, GetModrinthVersion, DownloadResource, OpenResourceDir, ScanConflictMods, GetVersionProfiles, ListModpackInstances, CreateInstance, InstallModpack, DeleteInstance, LaunchInstance, OpenInstanceFolder, GetInstance, SaveInstanceSettings, GetMinecraftVersions, GetLoaderVersions, ListInstalledJavaMajors, InstallTemurin, GetInstanceContentContext, DownloadResourceToInstance, ListInstanceContent, DeleteInstanceFile, OpenInstanceCategoryFolder } from '../wailsjs/go/core/App';
+import { GetConfig, SaveConfig, Launch, CheckUpdate, OpenReleases, InstallClient, CheckInstalled, DetectJava, InstallUpdate, InstallOffline, GetVersions, ListGPUs, CheckRequirements, InstallJava, SetGpuPreference, CheckVulkan, GetResourceBrowserContext, SearchModrinth, GetModrinthProject, GetModrinthProjectVersions, GetModrinthVersion, DownloadResource, OpenResourceDir, ScanConflictMods, GetVersionProfiles, ListModpackInstances, CreateInstance, InstallModpack, DeleteInstance, LaunchInstance, OpenInstanceFolder, GetInstance, SaveInstanceSettings, GetMinecraftVersions, GetLoaderVersions, ListInstalledJavaMajors, InstallTemurin, GetInstanceContentContext, DownloadResourceToInstance, ListInstanceContent, DeleteInstanceFile, OpenInstanceCategoryFolder, OpenFolder } from '../wailsjs/go/core/App';
 import { EventsOn, BrowserOpenURL } from '../wailsjs/runtime/runtime';
 
 const $ = (id) => document.getElementById(id);
@@ -1841,3 +1841,23 @@ EventsOn('install:progress', (stage, pct) => {
     $('instanceProgressBar').style.width = p + '%';
     $('instanceProgressStage').textContent = `${stage} ${pct || 0}%`;
 });
+
+/* ----- Crash popup (works in both Valkaw and Modrinth mode) ----- */
+let crashDir = '';
+EventsOn('game:crash', (p) => {
+    crashDir = p.gameDir || '';
+    $('crashReason').textContent = p.reason || 'The game exited unexpectedly.';
+    $('crashPath').textContent = p.logPath || '';
+    $('crashLog').textContent = p.log || '(no log content)';
+    $('crashModal').classList.remove('hidden');
+});
+$('crashClose').addEventListener('click', () => $('crashModal').classList.add('hidden'));
+$('crashCopy').addEventListener('click', async () => {
+    const text = $('crashLog').textContent;
+    try { await navigator.clipboard.writeText(text); } catch (_) {}
+    const b = $('crashCopy');
+    const old = b.textContent;
+    b.textContent = 'Copied';
+    setTimeout(() => { b.textContent = old; }, 1200);
+});
+$('crashOpenFolder').addEventListener('click', () => { if (crashDir) OpenFolder(crashDir); });
