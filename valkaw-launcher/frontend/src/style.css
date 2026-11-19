@@ -1250,21 +1250,29 @@ main { display: flex; flex-direction: column; padding: 0; }
 }
 .mode-btn {
   flex: 1;
-  padding: 7px 6px;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  color: var(--muted);
+  display: grid;
+  place-items: center;
+  padding: 6px 8px;
   background: transparent;
   border: 1px solid transparent;
   border-radius: 6px;
   cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease;
+  transition: background 0.15s ease;
 }
-.mode-btn:hover { color: var(--text); }
-.mode-btn.active {
-  background: linear-gradient(135deg, var(--accent), var(--accent-2));
-  color: #17130c;
+.mode-logo {
+  display: block;
+  height: 22px;
+  width: auto;
+  opacity: 0.55;
+  filter: saturate(0.7);
+  transition: opacity 0.15s ease, filter 0.15s ease;
+}
+.valkaw-logo { height: 20px; border-radius: 4px; }
+.modrinth-logo { height: 24px; }
+.mode-btn:hover .mode-logo { opacity: 0.85; filter: none; }
+.mode-btn.active .mode-logo {
+  opacity: 1;
+  filter: none;
 }
 
 /* Instances page */

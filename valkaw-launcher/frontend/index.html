@@ -12,9 +12,13 @@
             <img src="./src/assets/images/logo.png" alt="" class="logo" />
             <span class="ver" id="launcherVer">Launcher</span>
         </div>
-        <div class="mode-switch">
-            <button class="mode-btn active" data-mode="valkaw">Valkaw</button>
-            <button class="mode-btn" data-mode="modrinth">Modrinth</button>
+        <div class="mode-switch" role="tablist" aria-label="Launcher mode">
+            <button class="mode-btn active" data-mode="valkaw" title="Valkaw mode" role="tab" aria-selected="true">
+                <img src="./src/assets/images/logo.png" class="mode-logo valkaw-logo" alt="Valkaw" />
+            </button>
+            <button class="mode-btn" data-mode="modrinth" title="Modrinth mode" role="tab" aria-selected="false">
+                <img src="./src/assets/images/modrinth-logo.svg" class="mode-logo modrinth-logo" alt="Modrinth" />
+            </button>
         </div>
         <nav>
             <button class="nav active" data-page="play"><span class="icon">▶</span><span class="label">Play</span></button>
