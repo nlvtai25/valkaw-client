@@ -1271,8 +1271,10 @@ function openNewInstance() {
         GetMinecraftVersions().then(list => {
             niMCVersions = list || [];
             const sel = $('niMC');
-            sel.innerHTML = '<option value="">Select Minecraft version</option>' +
-                niMCVersions.map(v => `<option value="${v}">${v}</option>`).join('');
+            // Present newest-first and preselect the latest as the default.
+            const ordered = [...niMCVersions].reverse();
+            sel.innerHTML = ordered.map(v => `<option value="${v}">${v}</option>`).join('');
+            if (ordered.length) sel.value = ordered[0];
             refreshNiLoaderVer();
         }).catch(() => {
             $('niMC').innerHTML = '<option value="">Failed to load</option>';
