@@ -1715,6 +1715,7 @@ async function openInstDetail(hit) {
     const slug = hit.slug || hit.project_id || hit.id;
     const type = instCType;
     const loader = type === 'mod' ? (instCtx.loader || 'fabric') : '';
+    $('instDetailModal').classList.remove('hidden');
     $('instDetailVersions').innerHTML = '';
     $('instDetailChangelog').innerHTML = '<p class="muted small">Loading…</p>';
     $('instContentStatus').textContent = '';
