@@ -10,13 +10,27 @@ export function CheckUpdate():Promise<string>;
 
 export function CheckVulkan():Promise<core.VulkanCheck>;
 
+export function CreateInstance(arg1:string,arg2:string,arg3:string,arg4:string):Promise<core.Instance>;
+
+export function DeleteInstance(arg1:string):Promise<void>;
+
 export function DetectJava():Promise<string>;
 
 export function DownloadResource(arg1:string,arg2:string,arg3:string,arg4:string):Promise<void>;
 
+export function DownloadResourceToInstance(arg1:string,arg2:string,arg3:string,arg4:string):Promise<void>;
+
 export function GetConfig():Promise<core.Config>;
 
+export function GetInstance(arg1:string):Promise<core.Instance>;
+
+export function GetInstanceContentContext(arg1:string):Promise<Record<string, any>>;
+
 export function GetInstances():Promise<Array<string>>;
+
+export function GetLoaderVersions(arg1:string,arg2:string):Promise<Array<string>>;
+
+export function GetMinecraftVersions():Promise<Array<string>>;
 
 export function GetModrinthProject(arg1:string):Promise<string>;
 
@@ -32,19 +46,33 @@ export function InstallClient(arg1:string):Promise<string>;
 
 export function InstallJava():Promise<string>;
 
+export function InstallModpack(arg1:string,arg2:string):Promise<string>;
+
 export function InstallOffline(arg1:string):Promise<string>;
+
+export function InstallTemurin(arg1:number):Promise<string>;
 
 export function InstallUpdate():Promise<string>;
 
 export function Launch():Promise<string>;
 
+export function LaunchInstance(arg1:string):Promise<string>;
+
 export function ListGPUs():Promise<Array<core.GPU>>;
+
+export function ListInstalledJavaMajors():Promise<Array<number>>;
+
+export function ListModpackInstances():Promise<Array<core.Instance>>;
+
+export function OpenInstanceFolder(arg1:string):Promise<void>;
 
 export function OpenReleases():Promise<void>;
 
 export function OpenResourceDir(arg1:string):Promise<void>;
 
 export function SaveConfig(arg1:core.Config):Promise<string>;
+
+export function SaveInstanceSettings(arg1:string,arg2:number,arg3:string):Promise<void>;
 
 export function ScanConflictMods():Promise<string>;
 

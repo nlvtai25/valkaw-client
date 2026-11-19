@@ -12,10 +12,15 @@
             <img src="./src/assets/images/logo.png" alt="" class="logo" />
             <span class="ver" id="launcherVer">Launcher</span>
         </div>
+        <div class="mode-switch">
+            <button class="mode-btn active" data-mode="valkaw">Valkaw</button>
+            <button class="mode-btn" data-mode="modrinth">Modrinth</button>
+        </div>
         <nav>
             <button class="nav active" data-page="play"><span class="icon">▶</span><span class="label">Play</span></button>
-            <button class="nav" data-page="settings"><span class="icon">⚙</span><span class="label">Settings</span></button>
             <button class="nav" data-page="resources"><span class="icon">⬇</span><span class="label">Resources</span></button>
+            <button class="nav hidden" data-page="instances"><span class="icon">▦</span><span class="label">Instances</span></button>
+            <button class="nav" data-page="settings"><span class="icon">⚙</span><span class="label">Settings</span></button>
         </nav>
         <div class="sidebar-foot">
             <button id="updateBtn" class="btn ghost small">Check updates</button>
@@ -151,6 +156,72 @@
             </div>
         </section>
 
+        <section id="page-instances" class="page hidden">
+            <div class="sheet">
+                <div class="inst-head">
+                    <div>
+                        <p class="eyebrow">// MODRINTH MODE</p>
+                        <h3>Instances</h3>
+                    </div>
+                    <button id="newInstanceBtn" class="btn primary">+ New Instance</button>
+                </div>
+                <p class="muted small">Instances are fully separate from the Valkaw client. Each one has its own mods, saves and settings.</p>
+                <div id="instanceList" class="instance-list"></div>
+                <p id="instanceListStatus" class="muted small"></p>
+                <div class="progress"><div id="instanceProgressBar"></div></div>
+                <p id="instanceProgressStage" class="muted small"></p>
+            </div>
+        </section>
+
+        <section id="page-instance" class="page hidden">
+            <div class="sheet">
+                <div class="inst-detail-head">
+                    <button id="instBack" class="btn ghost small">← All instances</button>
+                    <div class="inst-detail-title">
+                        <h3 id="instDetailName"></h3>
+                        <p id="instDetailMeta" class="muted small"></p>
+                    </div>
+                    <button id="instPlayBtn" class="play-btn">▶ Play</button>
+                </div>
+                <div class="card">
+                    <h4>Instance settings</h4>
+                    <div class="field-row">
+                        <div><label>Memory (MB)</label><input id="instMemory" type="number" min="512" step="256" /></div>
+                        <div><label>Java</label><select id="instJavaSel"></select></div>
+                    </div>
+                    <div id="instJavaCustomRow" class="hidden">
+                        <label>Java path</label>
+                        <input id="instJavaPath" type="text" />
+                    </div>
+                    <div class="hub-actions">
+                        <button id="instSaveSettings" class="btn ghost small">Save</button>
+                        <button id="instOpenFolder" class="btn ghost small">Open folder</button>
+                    </div>
+                    <p id="instSettingsStatus" class="muted small"></p>
+                </div>
+                <div class="card">
+                    <h4>Content</h4>
+                    <div class="inst-content-tabs">
+                        <button class="inst-content-tab active" data-ctype="mod">Mods</button>
+                        <button class="inst-content-tab" data-ctype="datapack">Datapacks</button>
+                        <button class="inst-content-tab" data-ctype="shaderpack">Shaderpacks</button>
+                        <button class="inst-content-tab" data-ctype="resourcepack">Resourcepacks</button>
+                    </div>
+                    <div class="resource-search">
+                        <input id="instQuery" type="text" placeholder="Search on Modrinth..." autocomplete="off" spellcheck="false" />
+                        <button id="instSearchBtn" class="btn ghost small">Search</button>
+                    </div>
+                    <div id="instContentResults" class="resource-grid inst-grid"></div>
+                    <p id="instContentStatus" class="muted small"></p>
+                    <div id="instContentVersions" class="resource-versions"></div>
+                </div>
+                <div class="card inst-danger">
+                    <button id="instDeleteBtn" class="btn danger">Delete instance</button>
+                    <p class="muted small">Deletes the whole instance folder permanently, including its saves.</p>
+                </div>
+            </div>
+        </section>
+
         <section id="page-resources" class="page hidden">
             <div class="sheet">
                 <div class="card resource-hub">
@@ -205,6 +276,62 @@
                 <button id="vkSodium" class="btn ghost">Use Sodium instead</button>
                 <button id="vkClose" class="btn ghost">Close</button>
             </div>
+        </div>
+    </div>
+
+    <div id="newInstanceModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="niTitle">
+        <div class="modal-card">
+            <div class="resource-header">
+                <div>
+                    <p class="eyebrow">// NEW INSTANCE</p>
+                    <h3 id="niTitle">Create instance</h3>
+                    <p class="muted small">Instances are independent games with their own mods, saves and settings. The Valkaw client is never involved.</p>
+                </div>
+                <button id="niClose" class="btn ghost small">Close</button>
+            </div>
+            <div class="resource-toolbar">
+                <div class="resource-tabs">
+                    <button class="resource-tab active" data-tab="custom">Custom</button>
+                    <button class="resource-tab" data-tab="modpack">Modpack</button>
+                </div>
+            </div>
+            <div id="niCustom" class="ni-body">
+                <label>Name</label>
+                <input id="niName" type="text" placeholder="My instance" />
+                <div class="field-row">
+                    <div><label>Minecraft version</label><select id="niMC"><option value="">Loading…</option></select></div>
+                    <div><label>Loader</label><select id="niLoader"><option value="vanilla">Vanilla</option><option value="fabric">Fabric</option><option value="neoforge">NeoForge</option></select></div>
+                </div>
+                <div><label>Loader version</label><select id="niLoaderVer"><option value="">Latest</option></select></div>
+                <div class="modal-actions">
+                    <button id="niCreate" class="btn primary">Create</button>
+                    <span id="niStatus" class="muted small"></span>
+                </div>
+            </div>
+            <div id="niModpack" class="ni-body hidden">
+                <div class="resource-search">
+                    <input id="niPackQuery" type="text" placeholder="Search modpacks on Modrinth..." autocomplete="off" spellcheck="false" />
+                    <button id="niPackSearch" class="btn ghost small">Search</button>
+                </div>
+                <div id="niPackResults" class="resource-grid inst-grid"></div>
+                <p id="niPackStatus" class="muted small"></p>
+                <div id="niPackVersions" class="resource-versions"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="deleteInstModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="diTitle">
+        <div class="modal-card">
+            <p class="eyebrow">// DELETE INSTANCE</p>
+            <h3 id="diTitle">Delete instance</h3>
+            <p class="muted small">This permanently deletes the instance and all its files. Type its name to confirm.</p>
+            <label>Instance name</label>
+            <input id="diName" type="text" autocomplete="off" />
+            <div class="modal-actions">
+                <button id="diCancel" class="btn ghost">Cancel</button>
+                <button id="diConfirm" class="btn danger" disabled>Delete forever</button>
+            </div>
+            <p id="diStatus" class="muted small"></p>
         </div>
     </div>
 

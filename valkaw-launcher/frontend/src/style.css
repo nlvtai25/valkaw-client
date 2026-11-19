@@ -1233,3 +1233,135 @@ main { display: flex; flex-direction: column; padding: 0; }
 .icon-btn:hover {
   background: rgba(255,255,255,0.16);
 }
+
+/* ======================================================================
+   Modrinth mode (Prism-style instances)
+   ====================================================================== */
+
+/* Mode switch */
+.mode-switch {
+  display: flex;
+  gap: 2px;
+  margin: 14px 16px 4px;
+  padding: 3px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.mode-btn {
+  flex: 1;
+  padding: 7px 6px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.mode-btn:hover { color: var(--text); }
+.mode-btn.active {
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  color: #17130c;
+}
+
+/* Instances page */
+.inst-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.inst-head h3 { margin: 0; font-size: 17px; }
+.instance-list { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
+.inst-empty {
+  border: 1px dashed var(--border-strong);
+  border-radius: 10px;
+  padding: 28px;
+  text-align: center;
+}
+.instance-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.instance-row:hover { border-color: var(--border-strong); background: rgba(255,255,255,0.05); }
+.instance-icon {
+  width: 40px;
+  height: 40px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  font-weight: 700;
+  font-size: 17px;
+  color: #17130c;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+}
+.instance-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.instance-info strong { font-size: 14px; }
+.hub-actions { display: flex; gap: 8px; flex: none; }
+
+/* Instance detail */
+.inst-detail-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.inst-detail-title { flex: 1; min-width: 0; }
+.inst-detail-title h3 { margin: 0; font-size: 18px; }
+.inst-detail-title p { margin: 2px 0 0; }
+.inst-danger { border-color: rgba(248,113,113,0.35) !important; }
+.btn.danger {
+  background: transparent;
+  color: var(--danger);
+  border-color: rgba(248,113,113,0.45);
+}
+.btn.danger:hover { background: rgba(248,113,113,0.1); border-color: var(--danger); }
+
+/* Instance content tabs */
+.inst-content-tabs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin: 4px 0 12px;
+}
+.inst-content-tab {
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.inst-content-tab:hover { color: var(--text); }
+.inst-content-tab.active {
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  color: #17130c;
+  border-color: transparent;
+}
+.inst-grid { margin-top: 12px; }
+
+/* New instance dialog body */
+.ni-body { display: flex; flex-direction: column; gap: 12px; min-height: 220px; }
+.ni-body label { font-size: 12px; color: var(--muted); }
+.ni-body input[type="text"], .ni-body select {
+  width: 100%;
+  padding: 9px 10px;
+  background: rgba(0,0,0,0.25);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  font-size: 13px;
+}
+.ni-body input:focus, .ni-body select:focus { outline: none; border-color: var(--accent); }

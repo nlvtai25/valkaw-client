@@ -1,6 +1,6 @@
 import './style.css';
 
-import { GetConfig, SaveConfig, Launch, CheckUpdate, OpenReleases, InstallClient, CheckInstalled, DetectJava, InstallUpdate, InstallOffline, GetVersions, ListGPUs, CheckRequirements, InstallJava, SetGpuPreference, CheckVulkan, GetResourceBrowserContext, SearchModrinth, GetModrinthProject, GetModrinthProjectVersions, DownloadResource, OpenResourceDir, ScanConflictMods, GetVersionProfiles } from '../wailsjs/go/core/App';
+import { GetConfig, SaveConfig, Launch, CheckUpdate, OpenReleases, InstallClient, CheckInstalled, DetectJava, InstallUpdate, InstallOffline, GetVersions, ListGPUs, CheckRequirements, InstallJava, SetGpuPreference, CheckVulkan, GetResourceBrowserContext, SearchModrinth, GetModrinthProject, GetModrinthProjectVersions, DownloadResource, OpenResourceDir, ScanConflictMods, GetVersionProfiles, ListModpackInstances, CreateInstance, InstallModpack, DeleteInstance, LaunchInstance, OpenInstanceFolder, GetInstance, SaveInstanceSettings, GetMinecraftVersions, GetLoaderVersions, ListInstalledJavaMajors, InstallTemurin, GetInstanceContentContext, DownloadResourceToInstance } from '../wailsjs/go/core/App';
 import { EventsOn, BrowserOpenURL } from '../wailsjs/runtime/runtime';
 
 const $ = (id) => document.getElementById(id);
@@ -1165,3 +1165,445 @@ const saturnSize = { w: 720, h: 388 };
     }
     host.appendChild(frag);
 })();
+
+/* ======================================================================
+   Modrinth mode (Prism-style instances). Fully separate from Valkaw mode.
+   ====================================================================== */
+
+const MODE_PAGES = {
+    valkaw: ['play', 'resources', 'settings'],
+    modrinth: ['instances', 'settings'],
+};
+
+let currentMode = 'valkaw';
+let instances = [];
+let currentInstance = null;
+let instCtx = null;
+let instCType = 'mod';
+let deletingId = null;
+let niMCVersions = [];
+
+function loaderLabel(l) {
+    if (l === 'neoforge') return 'NeoForge';
+    if (l === 'fabric') return 'Fabric';
+    if (l === 'vanilla') return 'Vanilla';
+    return l || '';
+}
+
+function applyMode(mode) {
+    currentMode = mode;
+    document.body.classList.toggle('mode-modrinth', mode === 'modrinth');
+    document.querySelectorAll('.mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+    document.querySelectorAll('.nav').forEach(b => {
+        const isSettings = b.dataset.page === 'settings';
+        const ok = isSettings || (MODE_PAGES[mode] || []).includes(b.dataset.page);
+        b.classList.toggle('hidden', !ok);
+    });
+    if (mode === 'modrinth') {
+        showPage('instances');
+        refreshInstances();
+    } else {
+        showPage('play');
+    }
+}
+
+document.querySelectorAll('.mode-btn').forEach(b =>
+    b.addEventListener('click', () => applyMode(b.dataset.mode))
+);
+
+async function refreshInstances() {
+    const el = $('instanceList');
+    $('instanceListStatus').textContent = '';
+    try {
+        instances = await ListModpackInstances();
+    } catch (e) {
+        el.innerHTML = `<p class="muted small">Failed to load instances: ${esc(e)}</p>`;
+        return;
+    }
+    if (!instances.length) {
+        el.innerHTML = '<div class="inst-empty"><p class="muted small">No instances yet. Click “+ New Instance” to get started.</p></div>';
+        return;
+    }
+    el.innerHTML = '';
+    for (const inst of instances) {
+        const metaParts = [inst.mcVersion, loaderLabel(inst.loader), inst.loaderVersion && loaderLabel(inst.loader) !== 'Vanilla' ? inst.loaderVersion : ''].filter(Boolean);
+        const row = document.createElement('div');
+        row.className = 'instance-row';
+        row.innerHTML = `
+            <div class="instance-icon">${esc((inst.name || inst.id || '?')[0].toUpperCase())}</div>
+            <div class="instance-info">
+                <strong>${esc(inst.name || inst.id)}</strong>
+                <span class="muted small">${esc(metaParts.join(' • '))}</span>
+            </div>
+            <div class="hub-actions">
+                <button class="btn primary small play-inst" data-id="${esc(inst.id)}">▶ Play</button>
+                <button class="btn ghost small open-inst" data-id="${esc(inst.id)}">Open</button>
+                <button class="btn ghost small detail-inst" data-id="${esc(inst.id)}">Manage</button>
+            </div>`;
+        row.querySelector('.play-inst').addEventListener('click', () => launchInstance(inst.id));
+        row.querySelector('.open-inst').addEventListener('click', () => OpenInstanceFolder(inst.id));
+        row.querySelector('.detail-inst').addEventListener('click', () => openInstanceDetail(inst.id));
+        el.appendChild(row);
+    }
+}
+
+async function launchInstance(id) {
+    const status = $('instanceListStatus');
+    status.textContent = 'Launching…';
+    try {
+        const res = await LaunchInstance(id);
+        status.textContent = res;
+    } catch (e) {
+        status.textContent = 'Launch error: ' + e;
+    }
+}
+
+/* ----- New Instance dialog ----- */
+function openNewInstance() {
+    $('newInstanceModal').classList.remove('hidden');
+    $('niCustom').classList.remove('hidden');
+    $('niModpack').classList.add('hidden');
+    document.querySelectorAll('#newInstanceModal .resource-tab').forEach(b =>
+        b.classList.toggle('active', b.dataset.tab === 'custom'));
+    $('niStatus').textContent = '';
+    $('niPackStatus').textContent = '';
+    if (!niMCVersions.length) {
+        GetMinecraftVersions().then(list => {
+            niMCVersions = list || [];
+            const sel = $('niMC');
+            sel.innerHTML = '<option value="">Select Minecraft version</option>' +
+                niMCVersions.map(v => `<option value="${v}">${v}</option>`).join('');
+            refreshNiLoaderVer();
+        }).catch(() => {
+            $('niMC').innerHTML = '<option value="">Failed to load</option>';
+        });
+    } else {
+        refreshNiLoaderVer();
+    }
+}
+
+function refreshNiLoaderVer() {
+    const mc = $('niMC').value, loader = $('niLoader').value;
+    const sel = $('niLoaderVer');
+    sel.innerHTML = '<option value="">Latest</option>';
+    if (!mc || loader === 'vanilla') return;
+    GetLoaderVersions(mc, loader).then(list => {
+        sel.innerHTML = '<option value="">Latest</option>' +
+            (list || []).map(v => `<option value="${v}">${v}</option>`).join('');
+    }).catch(() => {});
+}
+
+document.querySelectorAll('#newInstanceModal .resource-tab').forEach(btn =>
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('#newInstanceModal .resource-tab').forEach(b =>
+            b.classList.toggle('active', b === btn));
+        $('niCustom').classList.toggle('hidden', btn.dataset.tab !== 'custom');
+        $('niModpack').classList.toggle('hidden', btn.dataset.tab !== 'modpack');
+    })
+);
+$('niMC').addEventListener('change', refreshNiLoaderVer);
+$('niLoader').addEventListener('change', refreshNiLoaderVer);
+$('niClose').addEventListener('click', () => $('newInstanceModal').classList.add('hidden'));
+$('newInstanceBtn').addEventListener('click', openNewInstance);
+
+$('niCreate').addEventListener('click', async () => {
+    const name = $('niName').value.trim();
+    const mc = $('niMC').value;
+    const loader = $('niLoader').value;
+    const lv = $('niLoaderVer').value;
+    if (!name || !mc) { $('niStatus').textContent = 'Name and Minecraft version are required.'; return; }
+    $('niCreate').disabled = true;
+    $('niStatus').textContent = 'Creating (downloading game files)…';
+    try {
+        const inst = await CreateInstance(name, mc, loader, lv);
+        $('newInstanceModal').classList.add('hidden');
+        showPage('instances');
+        await refreshInstances();
+        openInstanceDetail(inst.id);
+    } catch (e) {
+        $('niStatus').textContent = 'Error: ' + e;
+    } finally {
+        $('niCreate').disabled = false;
+    }
+});
+
+/* ----- Modpack tab inside New Instance ----- */
+function searchNiPacks() {
+    const q = $('niPackQuery').value || '';
+    $('niPackResults').innerHTML = '<p class="muted small">Searching…</p>';
+    $('niPackVersions').innerHTML = '';
+    SearchModrinth(q, 'modpack', '', '', 'relevance', 0, 12, '').then(raw => {
+        const data = JSON.parse(raw);
+        renderNiPackResults(data.hits || []);
+    }).catch(e => { $('niPackStatus').textContent = 'Search failed: ' + e; });
+}
+
+function renderNiPackResults(hits) {
+    const grid = $('niPackResults');
+    grid.innerHTML = '';
+    if (!hits.length) {
+        grid.innerHTML = '<p class="muted small">No modpacks found.</p>';
+        return;
+    }
+    for (const hit of hits) {
+        const item = document.createElement('button');
+        item.className = 'resource-card-item';
+        const icon = hit.icon_url || hit.icon_url_png || '';
+        item.innerHTML = `
+            <img class="resource-icon" src="${esc(icon)}" alt="" width="40" height="40"
+                 loading="lazy" decoding="async" referrerpolicy="no-referrer"
+                 onerror="this.style.display='none'">
+            <div class="resource-card-body">
+                <strong>${esc(hit.title || hit.slug || '')}</strong>
+                <span class="muted small">${hit.downloads ? hit.downloads.toLocaleString() + ' downloads' : ''}</span>
+            </div>`;
+        item.addEventListener('click', () => selectNiPack(hit));
+        grid.appendChild(item);
+    }
+}
+
+async function selectNiPack(hit) {
+    const slug = hit.slug || hit.project_id || hit.id;
+    $('niPackStatus').textContent = 'Loading versions…';
+    try {
+        const vers = JSON.parse(await GetModrinthProjectVersions(slug, '', '')) || [];
+        const box = $('niPackVersions');
+        box.innerHTML = '<h4 class="resource-versions-title">Choose a version</h4>';
+        if (!vers.length) { box.innerHTML = '<p class="muted small">No versions available.</p>'; return; }
+        for (const v of vers) {
+            const file = (v.files || []).find(f => f.primary) || (v.files || [])[0];
+            const url = file ? file.url : '';
+            const name = file ? file.filename : (v.name || v.version_number);
+            const row = document.createElement('div');
+            row.className = 'resource-version';
+            row.innerHTML = `
+                <div class="resource-version-info">
+                    <strong>${esc(v.version_number || v.name || '')}</strong>
+                    <div class="resource-version-meta">
+                        <span>${(v.game_versions || []).join(', ')}</span>
+                        <span>•</span><span>${(v.loaders || []).join(', ')}</span>
+                        <span>•</span><span>${esc(name)}</span>
+                    </div>
+                </div>
+                <button class="btn ghost small">Install</button>`;
+            row.querySelector('button').addEventListener('click', async () => {
+                const b = row.querySelector('button');
+                b.disabled = true; b.textContent = 'Installing…';
+                $('niPackStatus').textContent = 'Installing modpack (this downloads the whole pack)…';
+                try {
+                    const id = await InstallModpack(slug, v.id || v.version_number);
+                    $('niPackStatus').textContent = 'Installed.';
+                    $('newInstanceModal').classList.add('hidden');
+                    showPage('instances');
+                    await refreshInstances();
+                    openInstanceDetail(id);
+                } catch (e) {
+                    $('niPackStatus').textContent = 'Install error: ' + e;
+                    b.disabled = false; b.textContent = 'Install';
+                }
+            });
+            box.appendChild(row);
+        }
+        $('niPackStatus').textContent = '';
+    } catch (e) {
+        $('niPackStatus').textContent = 'Error: ' + e;
+    }
+}
+
+$('niPackSearch').addEventListener('click', () => { $('niPackVersions').innerHTML = ''; searchNiPacks(); });
+$('niPackQuery').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('niPackVersions').innerHTML = ''; searchNiPacks(); } });
+
+/* ----- Instance detail ----- */
+async function openInstanceDetail(id) {
+    try {
+        currentInstance = await GetInstance(id);
+    } catch (e) {
+        $('instanceListStatus').textContent = 'Error: ' + e;
+        return;
+    }
+    showPage('instance');
+    $('instDetailName').textContent = currentInstance.name || currentInstance.id;
+    $('instDetailMeta').textContent =
+        `${currentInstance.mcVersion} • ${loaderLabel(currentInstance.loader)}` +
+        (currentInstance.loaderVersion && currentInstance.loader !== 'vanilla' ? ' • ' + currentInstance.loaderVersion : '');
+    $('instMemory').value = currentInstance.memoryMB || '';
+    $('instSettingsStatus').textContent = '';
+    $('instContentStatus').textContent = '';
+    $('instContentVersions').innerHTML = '';
+    $('instJavaPath').value = '';
+    populateJavaSel();
+    try {
+        instCtx = await GetInstanceContentContext(id);
+        instSearch();
+    } catch (e) {
+        $('instContentStatus').textContent = 'Error loading instance context: ' + e;
+    }
+}
+
+function populateJavaSel() {
+    const sel = $('instJavaSel');
+    sel.innerHTML = '';
+    const auto = document.createElement('option');
+    auto.value = ''; auto.textContent = 'Auto (recommended)';
+    sel.appendChild(auto);
+    const custom = document.createElement('option');
+    custom.value = 'custom'; custom.textContent = 'Custom path…';
+    sel.appendChild(custom);
+    ListInstalledJavaMajors().then(majors => {
+        for (const m of majors) {
+            const o = document.createElement('option');
+            o.value = String(m); o.textContent = 'Temurin ' + m + ' (installed)';
+            sel.appendChild(o);
+        }
+        const ov = currentInstance.javaOverride || '';
+        if (ov && !/^\d+$/.test(ov)) { sel.value = 'custom'; $('instJavaPath').value = ov; }
+        else if (ov) sel.value = ov;
+        syncJavaSel();
+    });
+}
+
+function syncJavaSel() {
+    const custom = $('instJavaSel').value === 'custom';
+    $('instJavaCustomRow').classList.toggle('hidden', !custom);
+}
+$('instJavaSel').addEventListener('change', syncJavaSel);
+$('instSaveSettings').addEventListener('click', async () => {
+    let javaOverride = $('instJavaSel').value;
+    if (javaOverride === 'custom') javaOverride = $('instJavaPath').value.trim();
+    const mem = parseInt($('instMemory').value) || 0;
+    try {
+        await SaveInstanceSettings(currentInstance.id, mem, javaOverride);
+        $('instSettingsStatus').textContent = 'Saved.';
+        currentInstance = await GetInstance(currentInstance.id);
+    } catch (e) {
+        $('instSettingsStatus').textContent = 'Error: ' + e;
+    }
+});
+$('instOpenFolder').addEventListener('click', () => OpenInstanceFolder(currentInstance.id));
+$('instBack').addEventListener('click', () => { showPage('instances'); refreshInstances(); });
+$('instPlayBtn').addEventListener('click', () => launchInstance(currentInstance.id));
+
+/* ----- Instance content browser ----- */
+function instSearch() {
+    const q = $('instQuery').value || '';
+    const type = instCType;
+    const loader = type === 'mod' ? (instCtx.loader || 'fabric') : '';
+    $('instContentStatus').textContent = 'Searching…';
+    $('instContentVersions').innerHTML = '';
+    SearchModrinth(q, type, instCtx.gameVersion, loader, 'relevance', 0, 12, '').then(raw => {
+        const data = JSON.parse(raw);
+        renderInstResults(data.hits || []);
+        $('instContentStatus').textContent = (data.hits && data.hits.length) ? '' : 'No results found.';
+    }).catch(e => $('instContentStatus').textContent = 'Search failed: ' + e);
+}
+
+function renderInstResults(hits) {
+    const grid = $('instContentResults');
+    grid.innerHTML = '';
+    if (!hits.length) { grid.innerHTML = '<p class="muted small">Nothing found.</p>'; return; }
+    for (const hit of hits) {
+        const item = document.createElement('button');
+        item.className = 'resource-card-item';
+        const icon = hit.icon_url || hit.icon_url_png || '';
+        item.innerHTML = `
+            <img class="resource-icon" src="${esc(icon)}" alt="" width="40" height="40"
+                 loading="lazy" decoding="async" referrerpolicy="no-referrer"
+                 onerror="this.style.display='none'">
+            <div class="resource-card-body">
+                <strong>${esc(hit.title || hit.slug || '')}</strong>
+                <span class="muted small">${esc(hit.author || hit.team || '')}</span>
+            </div>`;
+        item.addEventListener('click', () => instSelectVersion(hit));
+        grid.appendChild(item);
+    }
+}
+
+function instSelectVersion(hit) {
+    const slug = hit.slug || hit.project_id || hit.id;
+    const type = instCType;
+    const loader = type === 'mod' ? (instCtx.loader || 'fabric') : '';
+    $('instContentStatus').textContent = 'Loading versions…';
+    GetModrinthProjectVersions(slug, instCtx.gameVersion, loader).then(raw => {
+        const vers = JSON.parse(raw) || [];
+        const box = $('instContentVersions');
+        box.innerHTML = '<h4 class="resource-versions-title">Versions</h4>';
+        if (!vers.length) {
+            box.innerHTML = '<p class="muted small">No versions match this instance&#39;s Minecraft version / loader.</p>';
+            return;
+        }
+        for (const v of vers) {
+            const file = (v.files || []).find(f => f.primary) || (v.files || [])[0];
+            const url = file ? file.url : '';
+            const name = file ? file.filename : (v.version_number || v.name);
+            const row = document.createElement('div');
+            row.className = 'resource-version';
+            row.innerHTML = `
+                <div class="resource-version-info">
+                    <strong>${esc(v.version_number || v.name || '')}</strong>
+                    <div class="resource-version-meta">
+                        <span>${(v.game_versions || []).join(', ')}</span>
+                        <span>•</span><span>${esc(name)}</span>
+                    </div>
+                </div>
+                <button class="btn ghost small">Install</button>`;
+            row.querySelector('button').addEventListener('click', async () => {
+                const b = row.querySelector('button');
+                b.disabled = true; b.textContent = 'Installing…';
+                try {
+                    await DownloadResourceToInstance(url, name, type, currentInstance.id);
+                    $('instContentStatus').textContent = 'Installed ' + name + ' ✅';
+                } catch (e) {
+                    $('instContentStatus').textContent = 'Error: ' + e;
+                    b.disabled = false; b.textContent = 'Install';
+                }
+            });
+            box.appendChild(row);
+        }
+        $('instContentStatus').textContent = '';
+    }).catch(e => $('instContentStatus').textContent = 'Error: ' + e);
+}
+
+document.querySelectorAll('.inst-content-tab').forEach(b =>
+    b.addEventListener('click', () => {
+        document.querySelectorAll('.inst-content-tab').forEach(x => x.classList.toggle('active', x === b));
+        instCType = b.dataset.ctype;
+        $('instContentVersions').innerHTML = '';
+        if (currentInstance) instSearch();
+    })
+);
+$('instSearchBtn').addEventListener('click', () => instSearch());
+$('instQuery').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); instSearch(); } });
+
+/* ----- Delete instance (two-step) ----- */
+$('instDeleteBtn').addEventListener('click', () => {
+    deletingId = currentInstance.id;
+    $('diName').value = '';
+    $('diName').placeholder = currentInstance.name || currentInstance.id;
+    $('diConfirm').disabled = true;
+    $('diStatus').textContent = '';
+    $('deleteInstModal').classList.remove('hidden');
+});
+$('diName').addEventListener('input', () => {
+    $('diConfirm').disabled = $('diName').value.trim() !== (currentInstance?.name || '');
+});
+$('diCancel').addEventListener('click', () => $('deleteInstModal').classList.add('hidden'));
+$('diConfirm').addEventListener('click', async () => {
+    $('diConfirm').disabled = true;
+    $('diStatus').textContent = 'Deleting…';
+    try {
+        await DeleteInstance(deletingId);
+        $('deleteInstModal').classList.add('hidden');
+        showPage('instances');
+        refreshInstances();
+    } catch (e) {
+        $('diStatus').textContent = 'Error: ' + e;
+        $('diConfirm').disabled = false;
+    }
+});
+
+/* Mirror install progress onto the Modrinth-mode progress bar. */
+EventsOn('install:progress', (stage, pct) => {
+    const p = Math.max(0, Math.min(100, pct || 0));
+    $('instanceProgressBar').style.width = p + '%';
+    $('instanceProgressStage').textContent = `${stage} ${pct || 0}%`;
+});

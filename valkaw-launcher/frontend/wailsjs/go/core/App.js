@@ -18,6 +18,14 @@ export function CheckVulkan() {
   return window['go']['core']['App']['CheckVulkan']();
 }
 
+export function CreateInstance(arg1, arg2, arg3, arg4) {
+  return window['go']['core']['App']['CreateInstance'](arg1, arg2, arg3, arg4);
+}
+
+export function DeleteInstance(arg1) {
+  return window['go']['core']['App']['DeleteInstance'](arg1);
+}
+
 export function DetectJava() {
   return window['go']['core']['App']['DetectJava']();
 }
@@ -26,12 +34,32 @@ export function DownloadResource(arg1, arg2, arg3, arg4) {
   return window['go']['core']['App']['DownloadResource'](arg1, arg2, arg3, arg4);
 }
 
+export function DownloadResourceToInstance(arg1, arg2, arg3, arg4) {
+  return window['go']['core']['App']['DownloadResourceToInstance'](arg1, arg2, arg3, arg4);
+}
+
 export function GetConfig() {
   return window['go']['core']['App']['GetConfig']();
 }
 
+export function GetInstance(arg1) {
+  return window['go']['core']['App']['GetInstance'](arg1);
+}
+
+export function GetInstanceContentContext(arg1) {
+  return window['go']['core']['App']['GetInstanceContentContext'](arg1);
+}
+
 export function GetInstances() {
   return window['go']['core']['App']['GetInstances']();
+}
+
+export function GetLoaderVersions(arg1, arg2) {
+  return window['go']['core']['App']['GetLoaderVersions'](arg1, arg2);
+}
+
+export function GetMinecraftVersions() {
+  return window['go']['core']['App']['GetMinecraftVersions']();
 }
 
 export function GetModrinthProject(arg1) {
@@ -62,8 +90,16 @@ export function InstallJava() {
   return window['go']['core']['App']['InstallJava']();
 }
 
+export function InstallModpack(arg1, arg2) {
+  return window['go']['core']['App']['InstallModpack'](arg1, arg2);
+}
+
 export function InstallOffline(arg1) {
   return window['go']['core']['App']['InstallOffline'](arg1);
+}
+
+export function InstallTemurin(arg1) {
+  return window['go']['core']['App']['InstallTemurin'](arg1);
 }
 
 export function InstallUpdate() {
@@ -74,8 +110,24 @@ export function Launch() {
   return window['go']['core']['App']['Launch']();
 }
 
+export function LaunchInstance(arg1) {
+  return window['go']['core']['App']['LaunchInstance'](arg1);
+}
+
 export function ListGPUs() {
   return window['go']['core']['App']['ListGPUs']();
+}
+
+export function ListInstalledJavaMajors() {
+  return window['go']['core']['App']['ListInstalledJavaMajors']();
+}
+
+export function ListModpackInstances() {
+  return window['go']['core']['App']['ListModpackInstances']();
+}
+
+export function OpenInstanceFolder(arg1) {
+  return window['go']['core']['App']['OpenInstanceFolder'](arg1);
 }
 
 export function OpenReleases() {
@@ -88,6 +140,10 @@ export function OpenResourceDir(arg1) {
 
 export function SaveConfig(arg1) {
   return window['go']['core']['App']['SaveConfig'](arg1);
+}
+
+export function SaveInstanceSettings(arg1, arg2, arg3) {
+  return window['go']['core']['App']['SaveInstanceSettings'](arg1, arg2, arg3);
 }
 
 export function ScanConflictMods() {
