@@ -1718,6 +1718,7 @@ async function openInstDetail(hit) {
     $('instDetailModal').classList.remove('hidden');
     $('instDetailVersions').innerHTML = '';
     $('instDetailChangelog').innerHTML = '<p class="muted small">Loading…</p>';
+    $('instDetailStatus').textContent = '';
     $('instContentStatus').textContent = '';
     try {
         const proj = JSON.parse(await GetModrinthProject(slug));
@@ -1769,11 +1770,13 @@ function renderInstDetailVersions(vers, type) {
         row.querySelector('.inst-install').addEventListener('click', async () => {
             const b = row.querySelector('.inst-install');
             b.disabled = true; b.textContent = 'Installing…';
+            $('instDetailStatus').textContent = 'Downloading ' + name + '…';
             try {
                 await DownloadResourceToInstance(url, name, type, currentInstance.id);
-                $('instContentStatus').textContent = 'Installed ' + name + ' ✅';
+                $('instDetailStatus').textContent = 'Installed ' + name + ' ✅';
+                b.textContent = 'Installed';
             } catch (e) {
-                $('instContentStatus').textContent = 'Error: ' + e;
+                $('instDetailStatus').textContent = 'Error: ' + e;
                 b.disabled = false; b.textContent = 'Install';
             }
         });
@@ -1793,7 +1796,7 @@ async function loadInstChangelog(versionID) {
     }
 }
 
-$('instDetailClose').addEventListener('click', () => $('instDetailModal').classList.add('hidden'));
+$('instDetailClose').addEventListener('click', () => { $('instDetailModal').classList.add('hidden'); $('instDetailStatus').textContent = ''; });
 
 document.querySelectorAll('#instDownload .inst-content-tab').forEach(b =>
     b.addEventListener('click', () => {
