@@ -1445,20 +1445,21 @@ main { display: flex; flex-direction: column; padding: 0; }
 /* Modrinth-mode pages: top-aligned, scrollable, wider sheet. The Play page
    bottom-anchors content; instance pages carry a lot of content so they need
    their own layout. */
-.mode-modrinth .page-instances,
-.mode-modrinth .page-instance {
+.mode-modrinth #page-instances,
+.mode-modrinth #page-instance {
   justify-content: flex-start;
   overflow-y: auto;
 }
-.mode-modrinth .page-instances .sheet,
-.mode-modrinth .page-instance .sheet {
+.mode-modrinth #page-instances .sheet,
+.mode-modrinth #page-instance .sheet {
   width: min(920px, 100%);
   padding-bottom: 28px;
 }
-.mode-modrinth .page-instances .card,
-.mode-modrinth .page-instance .card {
+.mode-modrinth #page-instances .card,
+.mode-modrinth #page-instance .card {
   min-height: 0;
 }
+.mode-modrinth #page-instance { font-size: 14px; }
 .inst-detail-head { flex-wrap: wrap; }
 .instance-row { flex-wrap: wrap; }
 .hub-actions { flex-wrap: wrap; justify-content: flex-end; }
