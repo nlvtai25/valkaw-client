@@ -1374,3 +1374,70 @@ main { display: flex; flex-direction: column; padding: 0; }
   font-size: 13px;
 }
 .ni-body input:focus, .ni-body select:focus { outline: none; border-color: var(--accent); }
+
+/* Searchable Minecraft-version combo (New Instance) */
+.ni-combo { position: relative; }
+.ni-combo-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 9px 10px;
+  background: rgba(0,0,0,0.25);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+.ni-combo-trigger:hover { border-color: var(--accent); }
+.ni-combo-trigger .chev { color: var(--muted); font-size: 11px; }
+.ni-combo-panel {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 6px);
+  z-index: 40;
+  background: #181510;
+  border: 1px solid var(--border-strong);
+  border-radius: 9px;
+  padding: 8px;
+  box-shadow: 0 16px 40px rgba(0,0,0,0.55);
+}
+.ni-combo-panel input {
+  width: 100%;
+  padding: 8px 10px;
+  background: rgba(0,0,0,0.3);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 13px;
+}
+.ni-combo-panel input:focus { outline: none; border-color: var(--accent); }
+.ni-combo-list {
+  margin-top: 6px;
+  max-height: 210px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.ni-combo-opt {
+  text-align: left;
+  padding: 8px 10px;
+  font-size: 13px;
+  color: var(--text);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.ni-combo-opt:hover { background: rgba(230,178,92,0.1); }
+.ni-combo-opt.sel {
+  background: linear-gradient(90deg, rgba(230,178,92,0.18), rgba(201,138,91,0.08));
+  border-color: rgba(230,178,92,0.35);
+}
+.ni-combo-empty { padding: 10px 6px; }

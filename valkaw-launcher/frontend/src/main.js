@@ -1182,6 +1182,8 @@ let instCtx = null;
 let instCType = 'mod';
 let deletingId = null;
 let niMCVersions = [];
+let niMCSelected = '';
+let niMCOrdered = [];
 
 function loaderLabel(l) {
     if (l === 'neoforge') return 'NeoForge';
@@ -1270,22 +1272,56 @@ function openNewInstance() {
     if (!niMCVersions.length) {
         GetMinecraftVersions().then(list => {
             niMCVersions = list || [];
-            const sel = $('niMC');
-            // Present newest-first and preselect the latest as the default.
-            const ordered = [...niMCVersions].reverse();
-            sel.innerHTML = ordered.map(v => `<option value="${v}">${v}</option>`).join('');
-            if (ordered.length) sel.value = ordered[0];
+            niMCOrdered = [...niMCVersions].reverse();
+            // Preselect the latest version as the convenient default.
+            setNiMC(niMCOrdered[0] || '');
+            renderNiMCList('');
             refreshNiLoaderVer();
         }).catch(() => {
-            $('niMC').innerHTML = '<option value="">Failed to load</option>';
+            $('niMCValue').textContent = 'Failed to load';
         });
     } else {
         refreshNiLoaderVer();
     }
 }
 
+function setNiMC(v) {
+    niMCSelected = v || '';
+    $('niMCValue').textContent = niMCSelected || 'Select Minecraft version';
+    refreshNiLoaderVer();
+}
+
+function renderNiMCList(filter) {
+    const q = (filter || '').trim().toLowerCase();
+    const listEl = $('niMCList');
+    listEl.innerHTML = '';
+    let count = 0;
+    for (const v of niMCOrdered) {
+        if (q && !v.toLowerCase().includes(q)) continue;
+        count++;
+        const opt = document.createElement('button');
+        opt.type = 'button';
+        opt.className = 'ni-combo-opt' + (v === niMCSelected ? ' sel' : '');
+        opt.textContent = v;
+        opt.addEventListener('click', () => { setNiMC(v); closeNiMC(); });
+        listEl.appendChild(opt);
+    }
+    if (!count) listEl.innerHTML = '<p class="muted small ni-combo-empty">No version matches “' + (filter || '') + '”</p>';
+}
+
+function openNiMC() {
+    $('niMCPanel').classList.remove('hidden');
+    $('niMCFilter').value = '';
+    renderNiMCList('');
+    $('niMCFilter').focus();
+}
+function closeNiMC() { $('niMCPanel').classList.add('hidden'); }
+function toggleNiMC() {
+    if ($('niMCPanel').classList.contains('hidden')) openNiMC(); else closeNiMC();
+}
+
 function refreshNiLoaderVer() {
-    const mc = $('niMC').value, loader = $('niLoader').value;
+    const mc = niMCSelected, loader = $('niLoader').value;
     const sel = $('niLoaderVer');
     sel.innerHTML = '<option value="">Latest</option>';
     if (!mc || loader === 'vanilla') return;
@@ -1303,14 +1339,21 @@ document.querySelectorAll('#newInstanceModal .resource-tab').forEach(btn =>
         $('niModpack').classList.toggle('hidden', btn.dataset.tab !== 'modpack');
     })
 );
-$('niMC').addEventListener('change', refreshNiLoaderVer);
+$('niMCTrigger').addEventListener('click', toggleNiMC);
+$('niMCFilter').addEventListener('input', () => renderNiMCList($('niMCFilter').value));
+$('niMCFilter').addEventListener('keydown', e => { if (e.key === 'Enter') e.preventDefault(); });
 $('niLoader').addEventListener('change', refreshNiLoaderVer);
-$('niClose').addEventListener('click', () => $('newInstanceModal').classList.add('hidden'));
+$('niClose').addEventListener('click', () => { closeNiMC(); $('newInstanceModal').classList.add('hidden'); });
 $('newInstanceBtn').addEventListener('click', openNewInstance);
+// Close the MC combo when clicking anywhere outside it.
+document.addEventListener('click', (e) => {
+    const combo = $('niMCCombo');
+    if (combo && !combo.contains(e.target)) closeNiMC();
+});
 
 $('niCreate').addEventListener('click', async () => {
     const name = $('niName').value.trim();
-    const mc = $('niMC').value;
+    const mc = niMCSelected;
     const loader = $('niLoader').value;
     const lv = $('niLoaderVer').value;
     if (!name || !mc) { $('niStatus').textContent = 'Name and Minecraft version are required.'; return; }

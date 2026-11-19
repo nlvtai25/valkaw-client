@@ -303,7 +303,19 @@
                 <label>Name</label>
                 <input id="niName" type="text" placeholder="My instance" />
                 <div class="field-row">
-                    <div><label>Minecraft version</label><select id="niMC"><option value="">Loading…</option></select></div>
+                    <div>
+                        <label>Minecraft version</label>
+                        <div class="ni-combo" id="niMCCombo">
+                            <button type="button" class="ni-combo-trigger" id="niMCTrigger">
+                                <span id="niMCValue">Loading…</span>
+                                <span class="chev">▾</span>
+                            </button>
+                            <div class="ni-combo-panel hidden" id="niMCPanel">
+                                <input id="niMCFilter" type="text" placeholder="Search Minecraft version…" autocomplete="off" spellcheck="false" />
+                                <div class="ni-combo-list" id="niMCList"></div>
+                            </div>
+                        </div>
+                    </div>
                     <div><label>Loader</label><select id="niLoader"><option value="vanilla">Vanilla</option><option value="fabric">Fabric</option><option value="neoforge">NeoForge</option></select></div>
                 </div>
                 <div><label>Loader version</label><select id="niLoaderVer"><option value="">Latest</option></select></div>
