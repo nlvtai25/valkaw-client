@@ -1614,23 +1614,46 @@ function mrProjectType(t) {
     return t === 'shaderpack' ? 'shader' : t;
 }
 
+const INST_PAGE = 24; // 4 cols × 6 rows per load
+let instOffset = 0;
+let instTotal = 0;
+let instLoading = false;
+
 function instSearch() {
     const q = $('instQuery').value || '';
     const type = mrProjectType(instCType);
     const loader = type === 'mod' ? (instCtx.loader || 'fabric') : '';
+    instOffset = 0; instTotal = 0;
     $('instContentStatus').textContent = 'Searching…';
     $('instContentVersions').innerHTML = '';
-    SearchModrinth(q, type, instCtx.gameVersion, loader, 'relevance', 0, 12, '', false).then(raw => {
-        const data = JSON.parse(raw);
-        renderInstResults(data.hits || []);
-        $('instContentStatus').textContent = (data.hits && data.hits.length) ? '' : 'No results found.';
-    }).catch(e => $('instContentStatus').textContent = 'Search failed: ' + e);
+    $('instContentResults').innerHTML = '';
+    instLoadPage(q, type, loader, true);
 }
 
-function renderInstResults(hits) {
+async function instLoadPage(q, type, loader, reset) {
+    if (instLoading) return;
+    instLoading = true;
+    try {
+        const raw = await SearchModrinth(q, type, instCtx.gameVersion, loader, 'relevance', instOffset, INST_PAGE, '', false);
+        const data = JSON.parse(raw);
+        const hits = data.hits || [];
+        instTotal = data.total_hits || 0;
+        renderInstResults(hits, reset);
+        instOffset += hits.length;
+        if (!hits.length) $('instContentStatus').textContent = 'No results found.';
+        else if (instOffset >= instTotal) $('instContentStatus').textContent = '';
+        else $('instContentStatus').textContent = '';
+    } catch (e) {
+        $('instContentStatus').textContent = 'Search failed: ' + e;
+    } finally {
+        instLoading = false;
+    }
+}
+
+function renderInstResults(hits, reset) {
     const grid = $('instContentResults');
-    grid.innerHTML = '';
-    if (!hits.length) { grid.innerHTML = '<p class="muted small">Nothing found.</p>'; return; }
+    if (reset) grid.innerHTML = '';
+    if (!hits.length) { if (reset) grid.innerHTML = '<p class="muted small">Nothing found.</p>'; return; }
     for (const hit of hits) {
         const item = document.createElement('button');
         item.className = 'resource-card-item';
@@ -1646,6 +1669,21 @@ function renderInstResults(hits) {
         item.addEventListener('click', () => instSelectVersion(hit));
         grid.appendChild(item);
     }
+}
+
+// Infinite scroll: load the next 24 items when the instance page is scrolled
+// near the bottom of the results grid, until Modrinth has no more results.
+const instPageEl = $('page-instance');
+if (instPageEl) {
+    instPageEl.addEventListener('scroll', () => {
+        if (instLoading || instOffset >= instTotal) return;
+        const nearBottom = instPageEl.scrollTop + instPageEl.clientHeight >= instPageEl.scrollHeight - 140;
+        if (!nearBottom) return;
+        const q = $('instQuery').value || '';
+        const type = mrProjectType(instCType);
+        const loader = type === 'mod' ? (instCtx.loader || 'fabric') : '';
+        instLoadPage(q, type, loader, false);
+    });
 }
 
 function instSelectVersion(hit) {
