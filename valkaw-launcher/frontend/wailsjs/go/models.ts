@@ -66,6 +66,9 @@ export namespace core {
 	    javaArgs: string;
 	    afterRun: string;
 	    memoryMB: number;
+	    memoryOverride: boolean;
+	    memoryMinMB: number;
+	    memoryMaxMB: number;
 	    // Go type: time
 	    created: any;
 	    modpackSlug?: string;
@@ -86,6 +89,9 @@ export namespace core {
 	        this.javaArgs = source["javaArgs"];
 	        this.afterRun = source["afterRun"];
 	        this.memoryMB = source["memoryMB"];
+	        this.memoryOverride = source["memoryOverride"];
+	        this.memoryMinMB = source["memoryMinMB"];
+	        this.memoryMaxMB = source["memoryMaxMB"];
 	        this.created = this.convertValues(source["created"], null);
 	        this.modpackSlug = source["modpackSlug"];
 	        this.modpackName = source["modpackName"];

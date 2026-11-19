@@ -235,9 +235,12 @@
                 <div id="instSettings" class="inst-tab-body hidden">
                     <div class="card">
                         <h4>Memory</h4>
-                        <label>Allocated RAM (MB)</label>
-                        <input id="instMemory" type="number" min="512" step="256" />
-                        <p class="muted small">0 = inherit the global setting.</p>
+                        <label class="checkbox"><input id="instRamOverride" type="checkbox"> Override Global RAM</label>
+                        <div class="field-row">
+                            <div><label>Min (MB)</label><input id="instMemoryMin" type="number" min="256" step="256" /></div>
+                            <div><label>Max (MB)</label><input id="instMemoryMax" type="number" min="256" step="256" /></div>
+                        </div>
+                        <p id="instMemoryHint" class="muted small"></p>
                     </div>
                     <div class="card">
                         <h4>Java runtime</h4>

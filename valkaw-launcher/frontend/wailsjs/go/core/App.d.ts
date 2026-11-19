@@ -78,7 +78,7 @@ export function OpenResourceDir(arg1:string):Promise<void>;
 
 export function SaveConfig(arg1:core.Config):Promise<string>;
 
-export function SaveInstanceSettings(arg1:string,arg2:number,arg3:string,arg4:string,arg5:string):Promise<void>;
+export function SaveInstanceSettings(arg1:string,arg2:boolean,arg3:number,arg4:number,arg5:string,arg6:string,arg7:string):Promise<void>;
 
 export function ScanConflictMods():Promise<string>;
 

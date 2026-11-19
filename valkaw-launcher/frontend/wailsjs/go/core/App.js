@@ -154,8 +154,8 @@ export function SaveConfig(arg1) {
   return window['go']['core']['App']['SaveConfig'](arg1);
 }
 
-export function SaveInstanceSettings(arg1, arg2, arg3, arg4, arg5) {
-  return window['go']['core']['App']['SaveInstanceSettings'](arg1, arg2, arg3, arg4, arg5);
+export function SaveInstanceSettings(arg1, arg2, arg3, arg4, arg5, arg6, arg7) {
+  return window['go']['core']['App']['SaveInstanceSettings'](arg1, arg2, arg3, arg4, arg5, arg6, arg7);
 }
 
 export function ScanConflictMods() {

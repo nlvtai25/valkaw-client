@@ -35,7 +35,10 @@ type Instance struct {
 	JavaOverride  string    `json:"javaOverride"` // "" = auto; "17" = Temurin 17; else a path
 	JavaArgs     string    `json:"javaArgs"`     // extra JVM args, space-separated
 	AfterRun     string    `json:"afterRun"`     // "" = inherit global; hide|close|appear
-	MemoryMB     int       `json:"memoryMB"`     // 0 = inherit global setting
+	MemoryMB     int       `json:"memoryMB"`     // legacy single value (0 = inherit global)
+	MemoryOverride bool    `json:"memoryOverride"` // true = use Min/Max below, false = inherit global
+	MemoryMinMB  int       `json:"memoryMinMB"`
+	MemoryMaxMB  int       `json:"memoryMaxMB"`
 	Created      time.Time `json:"created"`
 	ModpackSlug  string    `json:"modpackSlug,omitempty"`
 	ModpackName  string    `json:"modpackName,omitempty"`
@@ -157,12 +160,14 @@ func (a *App) saveInstance(in Instance) error {
 
 // SaveInstanceSettings updates the mutable runtime settings of an instance
 // (RAM, Java override, extra JVM args, after-run behaviour).
-func (a *App) SaveInstanceSettings(id string, memoryMB int, javaOverride, javaArgs, afterRun string) error {
+func (a *App) SaveInstanceSettings(id string, memoryOverride bool, memoryMin, memoryMax int, javaOverride, javaArgs, afterRun string) error {
 	in, err := a.findInstance(id)
 	if err != nil {
 		return err
 	}
-	in.MemoryMB = memoryMB
+	in.MemoryOverride = memoryOverride
+	in.MemoryMinMB = memoryMin
+	in.MemoryMaxMB = memoryMax
 	in.JavaOverride = javaOverride
 	in.JavaArgs = javaArgs
 	switch afterRun {

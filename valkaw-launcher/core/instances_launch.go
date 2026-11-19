@@ -271,8 +271,8 @@ func (a *App) LaunchInstance(id string) string {
 	}
 
 	jvmArgs := []string{
-		fmt.Sprintf("-Xms%dM", a.instanceMemory(*in)),
-		fmt.Sprintf("-Xmx%dM", a.instanceMemory(*in)),
+		fmt.Sprintf("-Xms%dM", a.instanceMemoryMin(*in)),
+		fmt.Sprintf("-Xmx%dM", a.instanceMemoryMax(*in)),
 		"-XX:+UnlockExperimentalVMOptions",
 		"-XX:+UseG1GC",
 		"-XX:+ParallelRefProcEnabled",
@@ -348,14 +348,38 @@ func (a *App) LaunchInstance(id string) string {
 	return "ok"
 }
 
-func (a *App) instanceMemory(in Instance) int {
-	if in.MemoryMB > 0 {
-		return in.MemoryMB
-	}
+func (a *App) globalMemory() int {
 	if a.config.MemoryMB > 0 {
 		return a.config.MemoryMB
 	}
 	return 3072
+}
+
+// instanceMemoryMin/Max resolve the -Xms/-Xmx values for an instance. Without
+// an override the instance inherits the global RAM; with an override it uses
+// the per-instance Min/Max (falling back to the global value when unset).
+func (a *App) instanceMemoryMin(in Instance) int {
+	if in.MemoryOverride {
+		if in.MemoryMinMB > 0 {
+			return in.MemoryMinMB
+		}
+		return a.globalMemory()
+	}
+	return a.globalMemory()
+}
+
+func (a *App) instanceMemoryMax(in Instance) int {
+	if in.MemoryOverride {
+		max := in.MemoryMaxMB
+		if max > 0 {
+			if min := a.instanceMemoryMin(in); max < min {
+				max = min
+			}
+			return max
+		}
+		return a.instanceMemoryMin(in)
+	}
+	return a.globalMemory()
 }
 
 // ---------------------------------------------------------------------------

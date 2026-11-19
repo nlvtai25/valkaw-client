@@ -1467,6 +1467,16 @@ const MANAGE_CATEGORIES = {
     images: 'screenshots', worlds: 'saves', servers: 'servers',
 };
 
+function syncRamOverride() {
+    const ov = $('instRamOverride').checked;
+    $('instMemoryMin').disabled = !ov;
+    $('instMemoryMax').disabled = !ov;
+    $('instMemoryHint').textContent = ov
+        ? 'Per-instance RAM is used for this instance.'
+        : 'Inheriting global RAM (' + (cfg.memoryMB || 3072) + ' MB).';
+}
+$('instRamOverride').addEventListener('change', syncRamOverride);
+
 function showInstanceTab(tab) {
     instTopTab = tab;
     document.querySelectorAll('.inst-top-tab').forEach(b => b.classList.toggle('active', b.dataset.itab === tab));
@@ -1488,7 +1498,10 @@ async function openInstanceDetail(id) {
     $('instDetailMeta').textContent =
         `${currentInstance.mcVersion} • ${loaderLabel(currentInstance.loader)}` +
         (currentInstance.loaderVersion && currentInstance.loader !== 'vanilla' ? ' • ' + currentInstance.loaderVersion : '');
-    $('instMemory').value = currentInstance.memoryMB || '';
+    $('instRamOverride').checked = !!currentInstance.memoryOverride;
+    $('instMemoryMin').value = currentInstance.memoryMinMB || '';
+    $('instMemoryMax').value = currentInstance.memoryMaxMB || '';
+    syncRamOverride();
     $('instJavaArgs').value = currentInstance.javaArgs || '';
     const ar = document.querySelector(`input[name="instAfterRun"][value="${currentInstance.afterRun || ''}"]`)
         || document.querySelector('input[name="instAfterRun"][value=""]');
@@ -1536,12 +1549,14 @@ $('instJavaSel').addEventListener('change', syncJavaSel);
 $('instSaveSettings').addEventListener('click', async () => {
     let javaOverride = $('instJavaSel').value;
     if (javaOverride === 'custom') javaOverride = $('instJavaPath').value.trim();
-    const mem = parseInt($('instMemory').value) || 0;
+    const ov = $('instRamOverride').checked;
+    const memMin = parseInt($('instMemoryMin').value) || 0;
+    const memMax = parseInt($('instMemoryMax').value) || 0;
     const javaArgs = $('instJavaArgs').value.trim();
     const afterRun = document.querySelector('input[name="instAfterRun"]:checked')?.value || '';
     $('instSaveSettings').disabled = true;
     try {
-        await SaveInstanceSettings(currentInstance.id, mem, javaOverride, javaArgs, afterRun);
+        await SaveInstanceSettings(currentInstance.id, ov, memMin, memMax, javaOverride, javaArgs, afterRun);
         $('instSettingsStatus').textContent = 'Saved.';
         currentInstance = await GetInstance(currentInstance.id);
     } catch (e) {

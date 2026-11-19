@@ -1505,3 +1505,10 @@ main { display: flex; flex-direction: column; padding: 0; }
 /* Manage list rows */
 .inst-manage-list { display: flex; flex-direction: column; gap: 8px; }
 .manage-row { padding: 10px 14px; }
+
+/* Grey out inherited (Global) inputs until Override is ticked. */
+.card input:disabled, .card select:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  border-color: var(--border);
+}
