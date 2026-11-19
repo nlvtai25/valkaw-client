@@ -1530,9 +1530,15 @@ $('instBack').addEventListener('click', () => { showPage('instances'); refreshIn
 $('instPlayBtn').addEventListener('click', () => launchInstance(currentInstance.id));
 
 /* ----- Instance content browser ----- */
+// Map our tab keys to Modrinth's search project_type tokens. Shaders are
+// "shader" on the search API ("shaderpack" returns nothing).
+function mrProjectType(t) {
+    return t === 'shaderpack' ? 'shader' : t;
+}
+
 function instSearch() {
     const q = $('instQuery').value || '';
-    const type = instCType;
+    const type = mrProjectType(instCType);
     const loader = type === 'mod' ? (instCtx.loader || 'fabric') : '';
     $('instContentStatus').textContent = 'Searching…';
     $('instContentVersions').innerHTML = '';
