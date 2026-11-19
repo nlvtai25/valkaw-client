@@ -1642,9 +1642,8 @@ function instSearch() {
     const type = mrProjectType(instCType);
     const loader = type === 'mod' ? (instCtx.loader || 'fabric') : '';
     instOffset = 0; instTotal = 0;
-    // Leave any open detail page and show the results grid.
-    $('instDetail').classList.add('hidden');
-    $('instContentResults').classList.remove('hidden');
+    // Close any open detail popup and show the results grid.
+    $('instDetailModal').classList.add('hidden');
     $('instContentStatus').textContent = 'Searching…';
     $('instContentResults').innerHTML = '';
     instLoadPage(q, type, loader, true);
@@ -1716,8 +1715,6 @@ async function openInstDetail(hit) {
     const slug = hit.slug || hit.project_id || hit.id;
     const type = instCType;
     const loader = type === 'mod' ? (instCtx.loader || 'fabric') : '';
-    $('instContentResults').classList.add('hidden');
-    $('instDetail').classList.remove('hidden');
     $('instDetailVersions').innerHTML = '';
     $('instDetailChangelog').innerHTML = '<p class="muted small">Loading…</p>';
     $('instContentStatus').textContent = '';
@@ -1795,10 +1792,7 @@ async function loadInstChangelog(versionID) {
     }
 }
 
-$('instDetailBack').addEventListener('click', () => {
-    $('instDetail').classList.add('hidden');
-    $('instContentResults').classList.remove('hidden');
-});
+$('instDetailClose').addEventListener('click', () => $('instDetailModal').classList.add('hidden'));
 
 document.querySelectorAll('#instDownload .inst-content-tab').forEach(b =>
     b.addEventListener('click', () => {

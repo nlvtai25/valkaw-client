@@ -1548,3 +1548,10 @@ main { display: flex; flex-direction: column; padding: 0; }
   overflow-y: auto;
   white-space: pre-wrap;
 }
+
+/* Instance project detail popup */
+.modal-card.inst-detail {
+  width: min(720px, 92vw);
+  max-height: 76vh;
+  overflow-y: auto;
+}

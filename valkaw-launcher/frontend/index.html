@@ -227,23 +227,6 @@
                         <button id="instSearchBtn" class="btn ghost small">Search</button>
                     </div>
                     <div id="instContentResults" class="resource-grid inst-grid"></div>
-                    <div id="instDetail" class="hidden inst-detail">
-                        <div class="resource-detail-header">
-                            <button id="instDetailBack" class="btn ghost small">← Back to results</button>
-                            <div id="instDetailMeta" class="muted small"></div>
-                        </div>
-                        <div class="inst-detail-title-row">
-                            <img id="instDetailIcon" class="resource-icon" alt="" width="56" height="56" />
-                            <div>
-                                <h4 id="instDetailTitle"></h4>
-                                <span id="instDetailSub" class="muted small"></span>
-                            </div>
-                        </div>
-                        <p id="instDetailDesc" class="muted small inst-detail-desc"></p>
-                        <div id="instDetailChangelog" class="inst-changelog"></div>
-                        <h4 class="resource-versions-title">Versions</h4>
-                        <div id="instDetailVersions" class="resource-versions"></div>
-                    </div>
                     <p id="instContentStatus" class="muted small"></p>
                 </div>
 
@@ -414,6 +397,29 @@
                 <button id="diConfirm" class="btn danger" disabled>Delete forever</button>
             </div>
             <p id="diStatus" class="muted small"></p>
+        </div>
+    </div>
+
+    <div id="instDetailModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="instDetailTitle">
+        <div class="modal-card inst-detail">
+            <div class="resource-header">
+                <div>
+                    <p class="eyebrow">// PROJECT DETAILS</p>
+                    <h3 id="instDetailTitle"></h3>
+                    <p id="instDetailSub" class="muted small"></p>
+                </div>
+                <div class="resource-header-actions">
+                    <button id="instDetailClose" class="btn ghost small">Close</button>
+                </div>
+            </div>
+            <div class="inst-detail-title-row">
+                <img id="instDetailIcon" class="resource-icon" alt="" width="56" height="56" />
+                <span id="instDetailMeta" class="muted small"></span>
+            </div>
+            <p id="instDetailDesc" class="muted small inst-detail-desc"></p>
+            <div id="instDetailChangelog" class="inst-changelog"></div>
+            <h4 class="resource-versions-title">Versions</h4>
+            <div id="instDetailVersions" class="resource-versions"></div>
         </div>
     </div>
 
