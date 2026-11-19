@@ -25,6 +25,8 @@ func TestResourceSubdir(t *testing.T) {
 		"resourcepack": "resourcepacks",
 		"shader":       "shaderpacks",
 		"ShaderPack":   "shaderpacks",
+		"datapack":    "datapacks",
+		"Datapacks":   "datapacks",
 	}
 	for in, want := range cases {
 		got, err := resourceSubdir(in)
@@ -35,7 +37,7 @@ func TestResourceSubdir(t *testing.T) {
 			t.Errorf("resourceSubdir(%q) = %q, want %q", in, got, want)
 		}
 	}
-	if _, err := resourceSubdir("datapack"); err == nil {
-		t.Error("resourceSubdir(datapack) should fail")
+	if _, err := resourceSubdir("unknown-thing"); err == nil {
+		t.Error("resourceSubdir(unknown-thing) should fail")
 	}
 }

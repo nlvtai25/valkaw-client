@@ -292,6 +292,8 @@ func resourceSubdir(resourceType string) (string, error) {
 		return "resourcepacks", nil
 	case "shaderpack", "shaderpacks", "shader_pack", "shader":
 		return "shaderpacks", nil
+	case "datapack", "datapacks", "data_pack":
+		return "datapacks", nil
 	}
 	return "", fmt.Errorf("unknown resource type: %s", resourceType)
 }
