@@ -74,7 +74,9 @@ func webview2Installed() bool {
 		if base == "" {
 			continue
 		}
-		matches, _ := filepath.Glob(filepath.Join(base, "Microsoft", "EdgeWebView2", "Application", "*", "msedgewebview2.exe"))
+		// Match both the standard EdgeWebView2 folder and alternate layouts (e.g.
+		// EdgeWebView fixed-version shares that skip the registry client GUID).
+		matches, _ := filepath.Glob(filepath.Join(base, "Microsoft", "*WebView*", "Application", "*", "msedgewebview2.exe"))
 		if len(matches) > 0 {
 			return true
 		}
