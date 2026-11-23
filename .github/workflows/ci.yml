@@ -18,10 +18,8 @@ jobs:
           java-version: 25
       - name: Build client snapshots
         run: |
-          chmod +x scripts/build-version.sh
-          ./scripts/build-version.sh 1.21.11 --profiles all
-          ./scripts/build-version.sh 26.2 --profiles all
-          ./scripts/build-version.sh 26.3 --profiles sodium
+          chmod +x scripts/build-all.sh scripts/build-version.sh
+          ./scripts/build-all.sh --clients
 
   launcher:
     runs-on: ubuntu-latest

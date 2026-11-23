@@ -12,7 +12,10 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 OUT="$ROOT/version"
-JDK="${JAVA_HOME:-$HOME/.local/share/jdk-25}"
+# Prefer JAVA_HOME, then the repo's usual JDK location, then whatever is on PATH.
+if [[ -z "${JAVA_HOME:-}" && -d "$HOME/.local/share/jdk-25" ]]; then
+	export JAVA_HOME="$HOME/.local/share/jdk-25"
+fi
 
 usage() {
 	sed -n '2,9p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
@@ -52,7 +55,12 @@ fi
 if [[ ${#PROFILES[@]} -eq 0 ]]; then
 	PROFILES=(sodium)
 elif [[ ${PROFILES[0]} == "all" ]]; then
-	PROFILES=(sodium vulkan)
+	PROFILES=(sodium)
+	# Snapshots without a Vulkan build (26.3) reject the variant, so only add it
+	# when build.gradle actually handles it.
+	if grep -q 'valkawVariant == "vulkan"' "$PROJECT/build.gradle"; then
+		PROFILES+=(vulkan)
+	fi
 fi
 
 CLIENT_VER="$(sed -n 's/^version=//p' "$PROJECT/gradle.properties" | head -1)"
@@ -72,12 +80,11 @@ echo "==> $GAME_VER · client $CLIENT_VER · task $TASK · profiles ${PROFILES[*
 
 for profile in "${PROFILES[@]}"; do
 	if [[ $CLEAN -eq 1 ]]; then
-		( cd "$PROJECT" && JAVA_HOME="$JDK" ./gradlew clean >/dev/null )
+		( cd "$PROJECT" && ./gradlew clean >/dev/null )
 	fi
 
 	echo "==> building $profile"
-	( cd "$PROJECT" && JAVA_HOME="$JDK" ./gradlew "$TASK" \
-		-Pvalkaw_variant="$profile" )
+	( cd "$PROJECT" && ./gradlew "$TASK" -Pvalkaw_variant="$profile" )
 
 	src="$PROJECT/build/libs/valkawclient-$CLIENT_VER-$profile.jar"
 	if [[ ! -f "$src" ]]; then

@@ -17,19 +17,17 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --clients) CLIENTS=1; LAUNCHERS=0; shift ;;
     --launchers) CLIENTS=0; LAUNCHERS=1; shift ;;
-    -h|--help) sed -n "2,14p" "${BASH_SOURCE[0]}" | sed "s/^# \{0,1\}//"; exit 0 ;;
+    -h|--help) sed -n "2,9p" "${BASH_SOURCE[0]}" | sed "s/^# \{0,1\}//"; exit 0 ;;
     *) echo "unknown argument: $1" >&2; exit 1 ;;
   esac
 done
 
 if [[ $CLIENTS -eq 1 ]]; then
   echo "==> building client snapshots"
-  for ver in 1.21.11 26.1.2 26.2 26.3; do
-    if [[ -d "$ROOT/$ver/valkaw-client" ]]; then
-      "$ROOT/scripts/build-version.sh" "$ver" --profiles all
-    else
-      echo "   (skip $ver: no snapshot)"
-    fi
+  # One snapshot per [0-9]*/ directory; no version list to keep in sync.
+  for dir in "$ROOT"/[0-9]*/; do
+    [[ -d "$dir/valkaw-client" ]] || continue
+    "$ROOT/scripts/build-version.sh" "$(basename "$dir")" --profiles all
   done
 fi
 
