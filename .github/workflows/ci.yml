@@ -50,4 +50,37 @@ jobs:
         run: |
           export PATH="$HOME/go/bin:$PATH"
           cd valkaw-launcher && ./build.sh
+      - name: Package artifact
+        run: |
+          VER=$(sed -n 's/.*launcherVersion = "\(.*\)"/\1/p' valkaw-launcher/main.go)
+          cp valkaw-launcher/build/bin/valkaw-launcher "valkaw-launcher-$VER-linux-amd64"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: valkaw-launcher-linux-amd64
+          path: valkaw-launcher-*-linux-amd64
+
+  launcher-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: 1.26
+      - name: Install wails
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.17.1
+      - name: Build launcher
+        shell: bash
+        run: |
+          export PATH="$HOME/go/bin:$PATH"
+          cd valkaw-launcher-win && ./build.sh
+      - name: Package artifact
+        shell: bash
+        run: |
+          VER=$(sed -n 's/.*windowsVersion = "\(.*\)"/\1/p' valkaw-launcher-win/main.go)
+          cp valkaw-launcher-win/build/bin/valkaw-launcher-win.exe "valkaw-launcher-win-$VER-windows-amd64.exe"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: valkaw-launcher-windows-amd64
+          path: valkaw-launcher-win-*-windows-amd64.exe
   

@@ -32,8 +32,12 @@ if [[ $CLIENTS -eq 1 ]]; then
 fi
 
 if [[ $LAUNCHERS -eq 1 ]]; then
-  echo "==> building launcher (Linux)"
-  ( cd "$ROOT/valkaw-launcher" && ./build.sh )
+  if [[ "$(uname -s)" == Linux ]]; then
+    echo "==> building launcher (Linux)"
+    ( cd "$ROOT/valkaw-launcher" && ./build.sh )
+  else
+    echo "   (skip Linux launcher: only buildable on Linux)"
+  fi
   echo "==> building launcher (Windows)"
   ( cd "$ROOT/valkaw-launcher-win" && ./build.sh )
 fi
