@@ -4,6 +4,8 @@ valkaw-client/build/
 valkaw-launcher/build/
 valkaw-launcher/frontend/node_modules/
 valkaw-launcher/frontend/dist/
+# wails writes this cache file on every build
+valkaw-launcher/frontend/package.json.md5
 
 # build inputs that ship as release assets, not as source
 
