@@ -25,10 +25,6 @@ Thumbs.db
 .opencode/
 .design-os/
 
-# stray go build output
-valkaw-launcher/valkaw-launcher
-valkaw-launcher/frontend/package.json.md5
-
 # local game-run artifacts (dev/test)
 /cache/
 /config/
@@ -45,14 +41,8 @@ init
 
 # per-version client snapshots: tracked as source (src/, gradle files, libs/);
 # generated build output and Gradle caches are excluded.
-/1.21.11/valkaw-client/build/
-/1.21.11/valkaw-client/.gradle/
-/26.1.2/valkaw-client/build/
-/26.1.2/valkaw-client/.gradle/
-/26.2/valkaw-client/build/
-/26.2/valkaw-client/.gradle/
-/26.3/valkaw-client/build/
-/26.3/valkaw-client/.gradle/
+/*/valkaw-client/build/
+/*/valkaw-client/.gradle/
 
 # generated assets (not source)
 graphify-out/
