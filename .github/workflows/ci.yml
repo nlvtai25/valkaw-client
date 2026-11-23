@@ -54,6 +54,19 @@ jobs:
         run: |
           VER=$(sed -n 's/.*launcherVersion = "\(.*\)"/\1/p' valkaw-launcher/main.go)
           cp valkaw-launcher/build/bin/valkaw-launcher "valkaw-launcher-$VER-linux-amd64"
+      - name: Smoke test (headless)
+        run: |
+          sudo apt-get install -y xvfb xauth
+          VER=$(sed -n 's/.*launcherVersion = "\(.*\)"/\1/p' valkaw-launcher/main.go)
+          BIN="valkaw-launcher-$VER-linux-amd64"
+          if ldd "$BIN" | grep -q 'not found'; then ldd "$BIN"; exit 1; fi
+          # No display on the runner: run under Xvfb. Timeout 124 means it was
+          # still up after 20s, i.e. the window and WebKit started fine.
+          export WEBKIT_DISABLE_COMPOSITING_MODE=1 WEBKIT_DISABLE_DMABUF_RENDERER=1
+          code=0
+          timeout 20 xvfb-run -a "./$BIN" || code=$?
+          if [ "$code" != 124 ]; then echo "launcher exited early (code $code)"; exit 1; fi
+          grep -q "\"launcherVersion\": \"$VER\"" "$HOME/.valkaw/config.json"
       - uses: actions/upload-artifact@v4
         with:
           name: valkaw-launcher-linux-amd64
