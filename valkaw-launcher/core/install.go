@@ -1424,7 +1424,7 @@ func (a *App) Launch() string {
 	}
 
 	jvmArgs := []string{
-		fmt.Sprintf("-Xms%dM", a.config.MemoryMB),
+		fmt.Sprintf("-Xms%dM", initialHeapMB(a.config.MemoryMB)),
 		fmt.Sprintf("-Xmx%dM", a.config.MemoryMB),
 		"-XX:+UnlockExperimentalVMOptions",
 		"-XX:+UseG1GC",

@@ -271,7 +271,7 @@ func (a *App) LaunchInstance(id string) string {
 	}
 
 	jvmArgs := []string{
-		fmt.Sprintf("-Xms%dM", a.instanceMemoryMin(*in)),
+		fmt.Sprintf("-Xms%dM", initialHeapMB(a.instanceMemoryMax(*in))),
 		fmt.Sprintf("-Xmx%dM", a.instanceMemoryMax(*in)),
 		"-XX:+UnlockExperimentalVMOptions",
 		"-XX:+UseG1GC",
@@ -354,6 +354,16 @@ func (a *App) globalMemory() int {
 		return a.config.MemoryMB
 	}
 	return 3072
+}
+
+// initialHeapMB is the starting heap for a game JVM. Older builds used
+// -Xms == -Xmx, which pre-commits the whole heap and immediately OOMs on
+// machines with little free commit before the game boots.
+func initialHeapMB(maxMB int) int {
+	if maxMB >= 512 {
+		return 256
+	}
+	return maxMB / 2
 }
 
 // instanceMemoryMin/Max resolve the -Xms/-Xmx values for an instance. Without
