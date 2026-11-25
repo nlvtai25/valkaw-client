@@ -11,6 +11,9 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Stream;
+import java.nio.charset.StandardCharsets;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import org.lwjgl.opengl.GL11;
@@ -22,6 +25,8 @@ public class PcInfoModule extends HudModule {
 	private static Path gpuPath;
 	private static boolean gpuResolved;
 	private static String gpuName;
+	private static final AtomicInteger WIN_BUSY = new AtomicInteger(-1);
+	private static volatile boolean winStarted;
 
 	private Layout layout = Layout.VERTICAL;
 	private boolean ramPercent;
@@ -117,6 +122,9 @@ public class PcInfoModule extends HudModule {
 		}
 
 		int busy = gpuBusyPercent();
+		if (busy < 0) {
+			busy = windowsGpuBusyPercent();
+		}
 		gpu = busy < 0 ? rendererName() : busy + "%";
 	}
 
@@ -161,6 +169,45 @@ public class PcInfoModule extends HudModule {
 		} catch (Exception ignored) {
 		}
 		return gpuName != null ? gpuName : "N/A";
+	}
+
+	/** Windows-only: sample total GPU utilization from Windows performance counters, in the background. */
+	private static int windowsGpuBusyPercent() {
+		if (!winStarted) {
+			winStarted = true;
+			Executors.newSingleThreadExecutor().execute(() -> {
+				while (true) {
+					try {
+						int pct = queryWindowsGpuBusy();
+						WIN_BUSY.set(pct < 0 ? -1 : Math.min(pct, 100));
+					} catch (Exception ignored) {
+						WIN_BUSY.set(-1);
+					}
+					try {
+						Thread.sleep(2000);
+					} catch (InterruptedException e) {
+						return;
+					}
+				}
+			});
+		}
+		return WIN_BUSY.get();
+	}
+
+	// shortcut: sums every "GPU Engine" utilization counter (can overshoot 100% when
+	// several engines run at once; capped at 100). Needs Windows perfmon; Linux uses sysfs.
+	private static int queryWindowsGpuBusy() {
+		try {
+			Process p = new ProcessBuilder("powershell", "-NoProfile", "-Command",
+					"$s=(Get-Counter '\\GPU Engine(*)\\Utilization Percentage' -ErrorAction SilentlyContinue).CounterSamples;",
+					"$m=$s | Measure-Object -Property CookedValue -Sum;",
+					"if($m -and $m.Sum -ne $null){[math]::Round($m.Sum)}else{'-1'}").start();
+			String out = new String(p.getInputStream().readAllBytes(), StandardCharsets.UTF_8).trim();
+			p.waitFor();
+			return Integer.parseInt(out);
+		} catch (Exception e) {
+			return -1;
+		}
 	}
 
 	@Override
