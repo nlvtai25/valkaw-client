@@ -12,9 +12,40 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 OUT="$ROOT/version"
-# Prefer JAVA_HOME, then the repo's usual JDK location, then whatever is on PATH.
-if [[ -z "${JAVA_HOME:-}" && -d "$HOME/.local/share/jdk-25" ]]; then
-	export JAVA_HOME="$HOME/.local/share/jdk-25"
+
+# Windows (Git Bash / MSYS / Cygwin) vs POSIX.
+IS_WINDOWS=0
+case "$(uname -s)" in
+	MINGW*|MSYS*|CYGWIN*) IS_WINDOWS=1 ;;
+esac
+
+# Prefer JAVA_HOME, then the repo's usual JDK location, then a Windows JDK.
+if [[ -z "${JAVA_HOME:-}" ]]; then
+	if [[ -d "$HOME/.local/share/jdk-25" ]]; then
+		export JAVA_HOME="$HOME/.local/share/jdk-25"
+	elif [[ $IS_WINDOWS -eq 1 ]]; then
+		# Locate an installed JDK (Temurin/JDK 25 preferred) under standard roots.
+		for root in "${PROGRAMFILES:-}" "$LOCALAPPDATA/Programs"; do
+			[[ -n "$root" ]] || continue
+			for d in "$root"/Eclipse\ Adoptium/* "$root"/Java/* "$root"/Microsoft/*; do
+				case "$d" in
+					*jdk-25*|*jdk-21*|*jdk*) ;;
+					*) continue ;;
+				esac
+				if [[ -d "$d/bin" ]]; then
+					export JAVA_HOME="$d"
+					break 2
+				fi
+			done
+		done
+	fi
+fi
+
+# Use the platform's Gradle wrapper: gradlew on POSIX, gradlew.bat on Windows.
+if [[ $IS_WINDOWS -eq 1 ]]; then
+	GRADLEW=(cmd //c gradlew.bat)
+else
+	GRADLEW=(./gradlew)
 fi
 
 usage() {
@@ -80,11 +111,11 @@ echo "==> $GAME_VER · client $CLIENT_VER · task $TASK · profiles ${PROFILES[*
 
 for profile in "${PROFILES[@]}"; do
 	if [[ $CLEAN -eq 1 ]]; then
-		( cd "$PROJECT" && ./gradlew clean >/dev/null )
+		( cd "$PROJECT" && "${GRADLEW[@]}" clean >/dev/null )
 	fi
 
 	echo "==> building $profile"
-	( cd "$PROJECT" && ./gradlew "$TASK" -Pvalkaw_variant="$profile" )
+	( cd "$PROJECT" && "${GRADLEW[@]}" "$TASK" -Pvalkaw_variant="$profile" )
 
 	src="$PROJECT/build/libs/valkawclient-$CLIENT_VER-$profile.jar"
 	if [[ ! -f "$src" ]]; then
