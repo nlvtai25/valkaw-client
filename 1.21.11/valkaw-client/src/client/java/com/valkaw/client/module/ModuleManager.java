@@ -40,6 +40,7 @@ import com.valkaw.client.module.utility.CopyChatModule;
 import com.valkaw.client.module.utility.CopyCoordsModule;
 import com.valkaw.client.module.utility.FreelookModule;
 import com.valkaw.client.module.utility.FullbrightModule;
+import com.valkaw.client.module.utility.HidePlayersModule;
 import com.valkaw.client.module.utility.NoBobbingModule;
 import com.valkaw.client.module.utility.NoFireModule;
 import com.valkaw.client.module.utility.NoHurtCamModule;
@@ -127,6 +128,7 @@ public final class ModuleManager {
 		register(new CopyChatModule());
 		register(new FreelookModule());
 		register(new FullbrightModule());
+		register(new HidePlayersModule());
 		register(new NoBobbingModule());
 		register(new BlockOutlineModule());
 		register(new AutoTextModule());

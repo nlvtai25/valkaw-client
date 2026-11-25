@@ -23,6 +23,8 @@
 		"LightTextureMixin",
 		"MultiPlayerGameModeMixin",
 		"LevelRendererMixin",
+		"LivingEntityRendererMixin",
+		"LivingEntityRenderStateMixin",
 		"FogRendererAccessor",
 		"KeyMappingAccessor",
 		"WaterFogEnvironmentMixin",
