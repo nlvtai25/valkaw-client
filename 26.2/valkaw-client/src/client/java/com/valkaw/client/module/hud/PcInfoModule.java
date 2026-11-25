@@ -13,6 +13,7 @@ import java.util.Locale;
 import java.util.stream.Stream;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import org.lwjgl.opengl.GL11;
 
 /** CPU/GPU load and the memory allocated to this JVM. Samples twice a second. */
 public class PcInfoModule extends HudModule {
@@ -20,6 +21,7 @@ public class PcInfoModule extends HudModule {
 	private static final Path DRM = Path.of("/sys/class/drm");
 	private static Path gpuPath;
 	private static boolean gpuResolved;
+	private static String gpuName;
 
 	private Layout layout = Layout.VERTICAL;
 	private boolean ramPercent;
@@ -115,7 +117,7 @@ public class PcInfoModule extends HudModule {
 		}
 
 		int busy = gpuBusyPercent();
-		gpu = busy < 0 ? "N/A" : busy + "%";
+		gpu = busy < 0 ? rendererName() : busy + "%";
 	}
 
 	private static int gpuBusyPercent() {
@@ -147,6 +149,18 @@ public class PcInfoModule extends HudModule {
 		} catch (Exception ignored) {
 			return null;
 		}
+	}
+
+	/** Fallback when no utilization source exists (Windows / non-AMD): show the GPU name. */
+	private static String rendererName() {
+		if (gpuName != null) {
+			return gpuName;
+		}
+		try {
+			gpuName = GL11.glGetString(GL11.GL_RENDERER);
+		} catch (Exception ignored) {
+		}
+		return gpuName != null ? gpuName : "N/A";
 	}
 
 	@Override
