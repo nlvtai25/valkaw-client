@@ -6,6 +6,7 @@
 #   ./scripts/build-version.sh 1.21.11
 #   ./scripts/build-version.sh 26.2 --profiles sodium vulkan
 #   ./scripts/build-version.sh 1.21.11 --profiles all --clean
+#   ./scripts/build-version.sh 26.1.2 --profiles all --out ../version-beta
 #
 # Run from anywhere; paths are resolved relative to this file.
 set -euo pipefail
@@ -67,6 +68,7 @@ while [[ $# -gt 0 ]]; do
 			while [[ $# -gt 0 && "$1" != --* ]]; do PROFILES+=("$1"); shift; done
 			;;
 		--clean) CLEAN=1; shift ;;
+		--out) shift; case "$1" in /*|[A-Za-z]:/*) OUT="$1";; *) OUT="$ROOT/$1";; esac; shift ;;
 		-h|--help) usage 0 ;;
 		*) echo "unknown argument: $1" >&2; usage 1 ;;
 	esac
