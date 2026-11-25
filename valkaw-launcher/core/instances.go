@@ -514,6 +514,23 @@ func (a *App) InstallTemurin(major int) (string, error) {
 	return a.installTemurin(major)
 }
 
+// resolveJavaForVersion returns a Java binary whose major satisfies mc's
+// requirement: any available Java of at least that major, else an installed
+// Temurin of exactly that major, else install one.
+func (a *App) resolveJavaForVersion(mc string) (string, error) {
+	req := requireJavaForMC(mc)
+	if p, major, err := a.resolvedJava(); err == nil && major >= req {
+		return p, nil
+	}
+	if p := findTemurin(req); p != "" {
+		return p, nil
+	}
+	if p, err := a.installTemurin(req); err == nil {
+		return p, nil
+	}
+	return "", fmt.Errorf("no Java %d available; install Temurin %d first", req, req)
+}
+
 // resolveJavaForInstance resolves the Java binary for an instance.
 func (a *App) resolveJavaForInstance(in Instance) (string, error) {
 	ov := strings.TrimSpace(in.JavaOverride)
@@ -529,17 +546,7 @@ func (a *App) resolveJavaForInstance(in Instance) (string, error) {
 		}
 		return ov, nil
 	}
-	req := requireJavaForMC(in.MCVersion)
-	if p := findTemurin(req); p != "" {
-		return p, nil
-	}
-	if p, err := a.installTemurin(req); err == nil {
-		return p, nil
-	}
-	if p, major, err := a.resolvedJava(); err == nil && major >= req {
-		return p, nil
-	}
-	return "", fmt.Errorf("no Java %d available; install Temurin %d first", req, req)
+	return a.resolveJavaForVersion(in.MCVersion)
 }
 
 // ---------------------------------------------------------------------------

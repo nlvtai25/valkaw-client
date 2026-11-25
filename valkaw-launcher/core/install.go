@@ -1329,12 +1329,9 @@ func fullscreenEnabled(gameDir string) bool {
 }
 
 func (a *App) Launch() string {
-	java, major, err := a.resolvedJava()
+	java, err := a.resolveJavaForVersion(a.gameVersion())
 	if err != nil {
 		return "error: " + err.Error()
-	}
-	if major < 21 {
-		return "error: Java 21+ required"
 	}
 	// java.exe is a console program: started from a GUI app on Windows it opens
 	// a black window next to the game. javaw.exe is the same JVM without one.
