@@ -41,6 +41,11 @@ public class PcInfoModule extends HudModule {
 	public PcInfoModule() {
 		super("pc-info", "PC Info", 120, 70);
 		setEnabled(true);
+		// Warm up the Windows GPU poll at mod init so the HUD has data before the
+		// first draw instead of showing N/A for the first few seconds.
+		if (System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("win")) {
+			windowsGpuBusyPercent();
+		}
 	}
 
 	@Override
