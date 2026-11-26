@@ -25,6 +25,7 @@
 		"LevelRendererMixin",
 		"LivingEntityRendererMixin",
 		"LivingEntityRenderStateMixin",
+		"AvatarRendererMixin",
 		"FogRendererAccessor",
 		"KeyMappingAccessor",
 		"WaterFogEnvironmentMixin",
