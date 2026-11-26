@@ -1,4 +1,4 @@
-package com.valkaw.client.mixin;
+package com.valkaw.client.accessor;
 
 /** Lets entity-renderer mixins read/write the per-frame hide-body flag. */
 public interface LivingEntityRenderStateAccessor {

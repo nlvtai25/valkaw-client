@@ -1,5 +1,6 @@
 package com.valkaw.client.mixin;
 
+import com.valkaw.client.accessor.LivingEntityRenderStateAccessor;
 import net.minecraft.client.renderer.entity.state.LivingEntityRenderState;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;

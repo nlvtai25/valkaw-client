@@ -1,5 +1,6 @@
 package com.valkaw.client.mixin;
 
+import com.valkaw.client.accessor.LivingEntityRenderStateAccessor;
 import com.valkaw.client.module.ModuleManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.entity.LivingEntityRenderer;
