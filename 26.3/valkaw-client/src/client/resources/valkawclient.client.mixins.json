@@ -27,6 +27,9 @@
 		"KeyMappingAccessor",
 		"WaterFogEnvironmentMixin",
 		"LavaFogEnvironmentMixin",
+		"LivingEntityRendererMixin",
+		"LivingEntityRenderStateMixin",
+		"AvatarRendererMixin",
 		"ScreenTooltipMixin"
 	],
 	"injectors": {
