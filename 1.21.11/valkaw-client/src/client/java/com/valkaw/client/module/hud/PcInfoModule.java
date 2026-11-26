@@ -184,7 +184,7 @@ public class PcInfoModule extends HudModule {
 	}
 
 	/** Windows-only: overall GPU utilization from Windows performance counters. A single
-	 * long-lived PowerShell process streams a value every 2s, so a cold start is never
+	 * long-lived PowerShell process streams a value every 0.5s, so a cold start is never
 	 * paid per sample and a stuck child cannot block the reader. Keep the last good value.
 	 */
 	private static int windowsGpuBusyPercent() {
