@@ -53,13 +53,13 @@ public final class Keybinds {
 			return false;
 		}
 		KeyMapping mapping = MAPPINGS.get(module.id());
-		if (mapping != null)
+		int key = mapping != null ? ((KeyMappingAccessor) mapping).valkaw$getBoundKey().getValue() : module.key();
+		if (key < 0)
 		{
-			return mapping.isDown();
+			return false;
 		}
-		int key = module.key();
 		Minecraft minecraft = Minecraft.getInstance();
-		return key >= 0 && minecraft.gui.screen() == null
+		return minecraft.gui.screen() == null
 				&& InputConstants.isKeyDown(key);
 	}
 
