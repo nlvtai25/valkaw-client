@@ -13,6 +13,7 @@ import java.util.Locale;
 import java.util.stream.Stream;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -184,7 +185,7 @@ public class PcInfoModule extends HudModule {
 				while (true) {
 					try {
 						int pct = queryWindowsGpuBusy();
-						WIN_BUSY.set(pct < 0 ? -1 : Math.min(pct, 100));
+						WIN_BUSY.set(pct < 0 ? -1 : pct);
 					} catch (Exception ignored) {
 						WIN_BUSY.set(-1);
 					}
@@ -203,12 +204,18 @@ public class PcInfoModule extends HudModule {
 	// several engines run at once; capped at 100). Needs Windows perfmon; Linux uses sysfs.
 	private static int queryWindowsGpuBusy() {
 		try {
+			// Max across engines mirrors Task Manager's overall GPU util; the sum over
+			// hundreds of engine counters overshoots and reads as a stuck constant.
 			Process p = new ProcessBuilder("powershell", "-NoProfile", "-Command",
 					"$s=(Get-Counter '\\GPU Engine(*)\\Utilization Percentage' -ErrorAction SilentlyContinue).CounterSamples;",
-					"$m=$s | Measure-Object -Property CookedValue -Sum;",
-					"if($m -and $m.Sum -ne $null){[math]::Round($m.Sum)}else{'-1'}").start();
+					"$mx=$s | Measure-Object -Property CookedValue -Maximum;",
+					"if($mx -and $mx.Maximum -ne $null){[math]::Round($mx.Maximum)}else{'-1'}")
+					.redirectErrorStream(true).start();
+			if (!p.waitFor(5, TimeUnit.SECONDS)) {
+				p.destroyForcibly();
+				return -1;
+			}
 			String out = new String(p.getInputStream().readAllBytes(), StandardCharsets.UTF_8).trim();
-			p.waitFor();
 			return Integer.parseInt(out);
 		} catch (Exception e) {
 			return -1;
