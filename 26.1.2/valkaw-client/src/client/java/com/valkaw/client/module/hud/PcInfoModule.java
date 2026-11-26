@@ -198,7 +198,7 @@ public class PcInfoModule extends HudModule {
 							"while($true){$s=(Get-Counter '\\GPU Engine(*)\\Utilization Percentage' -ErrorAction SilentlyContinue).CounterSamples;",
 							"$mx=$s | Measure-Object -Property CookedValue -Maximum;",
 							"if($mx -and $mx.Maximum -ne $null){[Console]::Out.WriteLine([math]::Round($mx.Maximum))}else{[Console]::Out.WriteLine('-1')};",
-							"[Console]::Out.Flush(); Start-Sleep -Seconds 2}")
+							"[Console]::Out.Flush(); Start-Sleep -Seconds 0.5}")
 							.redirectErrorStream(true).start();
 					try (BufferedReader r = new BufferedReader(
 							new InputStreamReader(p.getInputStream(), StandardCharsets.UTF_8))) {
