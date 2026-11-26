@@ -53,7 +53,7 @@ public final class Keybinds {
 			return false;
 		}
 		KeyMapping mapping = MAPPINGS.get(module.id());
-		int key = mapping != null ? ((KeyMappingAccessor) mapping).valkaw$getBoundKey().getValue() : module.key();
+		int key = mapping != null ? KeyBindingHelper.getBoundKeyOf(mapping).getValue() : module.key();
 		if (key < 0)
 		{
 			return false;
