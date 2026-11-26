@@ -16,6 +16,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
+import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL11;
 
 /** CPU/GPU load and the memory allocated to this JVM. Samples twice a second. */
@@ -163,6 +164,10 @@ public class PcInfoModule extends HudModule {
 	private static String rendererName() {
 		if (gpuName != null) {
 			return gpuName;
+		}
+		// Only safe when an OpenGL context is current (Vulkan has none).
+		if (GLFW.glfwGetCurrentContext() == 0L) {
+			return "N/A";
 		}
 		try {
 			gpuName = GL11.glGetString(GL11.GL_RENDERER);
