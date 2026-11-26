@@ -12,8 +12,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.stream.Stream;
 import java.nio.charset.StandardCharsets;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -177,49 +178,41 @@ public class PcInfoModule extends HudModule {
 		return gpuName != null ? gpuName : "N/A";
 	}
 
-	/** Windows-only: sample total GPU utilization from Windows performance counters, in the background. */
+	/** Windows-only: overall GPU utilization from Windows performance counters. A single
+	 * long-lived PowerShell process streams a value every 2s, so a cold start is never
+	 * paid per sample and a stuck child cannot block the reader. Keep the last good value.
+	 */
 	private static int windowsGpuBusyPercent() {
 		if (!winStarted) {
 			winStarted = true;
 			Executors.newSingleThreadExecutor().execute(() -> {
-				while (true) {
-					try {
-						int pct = queryWindowsGpuBusy();
-						WIN_BUSY.set(pct < 0 ? -1 : pct);
-					} catch (Exception ignored) {
-						WIN_BUSY.set(-1);
+				try {
+					// Max across engines mirrors Task Manager's overall GPU util; the sum over
+					// hundreds of engine counters overshoots and reads as a stuck constant.
+					Process p = new ProcessBuilder("powershell", "-NoProfile", "-Command",
+							"while($true){$s=(Get-Counter '\\GPU Engine(*)\\Utilization Percentage' -ErrorAction SilentlyContinue).CounterSamples;",
+							"$mx=$s | Measure-Object -Property CookedValue -Maximum;",
+							"if($mx -and $mx.Maximum -ne $null){[Console]::Out.WriteLine([math]::Round($mx.Maximum))}else{[Console]::Out.WriteLine('-1')};",
+							"[Console]::Out.Flush(); Start-Sleep -Seconds 2}")
+							.redirectErrorStream(true).start();
+					try (BufferedReader r = new BufferedReader(
+							new InputStreamReader(p.getInputStream(), StandardCharsets.UTF_8))) {
+						String line;
+						while ((line = r.readLine()) != null) {
+							line = line.trim();
+							if (!line.isEmpty()) {
+								try {
+									WIN_BUSY.set(Integer.parseInt(line));
+								} catch (NumberFormatException ignored) {
+								}
+							}
+						}
 					}
-					try {
-						Thread.sleep(2000);
-					} catch (InterruptedException e) {
-						return;
-					}
+				} catch (Exception ignored) {
 				}
 			});
 		}
 		return WIN_BUSY.get();
-	}
-
-	// shortcut: sums every "GPU Engine" utilization counter (can overshoot 100% when
-	// several engines run at once; capped at 100). Needs Windows perfmon; Linux uses sysfs.
-	private static int queryWindowsGpuBusy() {
-		try {
-			// Max across engines mirrors Task Manager's overall GPU util; the sum over
-			// hundreds of engine counters overshoots and reads as a stuck constant.
-			Process p = new ProcessBuilder("powershell", "-NoProfile", "-Command",
-					"$s=(Get-Counter '\\GPU Engine(*)\\Utilization Percentage' -ErrorAction SilentlyContinue).CounterSamples;",
-					"$mx=$s | Measure-Object -Property CookedValue -Maximum;",
-					"if($mx -and $mx.Maximum -ne $null){[math]::Round($mx.Maximum)}else{'-1'}")
-					.redirectErrorStream(true).start();
-			if (!p.waitFor(5, TimeUnit.SECONDS)) {
-				p.destroyForcibly();
-				return -1;
-			}
-			String out = new String(p.getInputStream().readAllBytes(), StandardCharsets.UTF_8).trim();
-			return Integer.parseInt(out);
-		} catch (Exception e) {
-			return -1;
-		}
 	}
 
 	@Override

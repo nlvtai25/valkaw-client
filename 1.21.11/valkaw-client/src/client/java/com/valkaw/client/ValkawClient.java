@@ -26,7 +26,7 @@ public class ValkawClient implements ClientModInitializer {
 				.orElse("");
 	}
 
-	/** Window title: Valkaw <profile> <mc> <version>, e.g. Valkaw Sodium 1.21.11 v1.0.6.6. */
+	/** Window title: Valkaw <profile> <mc> <version>, e.g. Valkaw Sodium 1.21.11 v1.0.6.7. */
 	public static String windowTitle() {
 		String profile = FabricLoader.getInstance().isModLoaded("vulkanmod") ? "Vulkan" : "Sodium";
 		String mcVersion = mcVersion();

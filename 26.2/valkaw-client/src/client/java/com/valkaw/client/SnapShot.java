@@ -143,7 +143,7 @@ public final class SnapShot {
 			case "chat" -> {
 				mc.setScreenAndShow(new ChatScreen("", false));
 				if (mc.gui.screen() instanceof SnapChatAccess access) {
-					access.valkawSetInput("Valkaw v1.0.6.6 &bAurora &lWELCOME&r &7- &fDreams forge reality");
+					access.valkawSetInput("Valkaw v1.0.6.7 &bAurora &lWELCOME&r &7- &fDreams forge reality");
 				}
 				ChatSymbolPanel.setOpen(true, true);
 			}
