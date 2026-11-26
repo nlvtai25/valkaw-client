@@ -8,6 +8,17 @@ repositories {
 		url = "https://api.modrinth.com/maven"
 		content { includeGroup "maven.modrinth" }
 	}
+	// Must be named MavenCentralLWJGL before Loom's forceLWJGLFromMavenCentral runs,
+	// so it skips pinning org.lwjgl to Maven Central exclusively. This lets the
+	// -mojang- LWJGL variants (26.2/26.3) resolve from the Mojang mirror.
+	maven {
+		name = "MavenCentralLWJGL"
+		url = "https://repo.maven.apache.org/maven2/"
+	}
+	maven {
+		name = "MojangLibraries"
+		url = "https://libraries.minecraft.net"
+	}
 }
 
 def valkawVariant = (project.findProperty("valkaw_variant") ?: "sodium").toString()

@@ -8,6 +8,17 @@ repositories {
 		url = "https://api.modrinth.com/maven"
 		content { includeGroup "maven.modrinth" }
 	}
+	// Must be named MavenCentralLWJGL before Loom's forceLWJGLFromMavenCentral runs,
+	// so it skips pinning org.lwjgl to Maven Central exclusively. This lets the
+	// -mojang- LWJGL variants (26.2/26.3) resolve from the Mojang mirror.
+	maven {
+		name = "MavenCentralLWJGL"
+		url = "https://repo.maven.apache.org/maven2/"
+	}
+	maven {
+		name = "MojangLibraries"
+		url = "https://libraries.minecraft.net"
+	}
 }
 
 // 26.3 ships the Sodium (OpenGL) profile only: VulkanMod has no 26.3 build on
@@ -46,6 +57,10 @@ dependencies {
 
 	// Fabric API. This is technically optional, but you probably want it anyway.
 	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+
+	// 26.3 ships LWJGL graphics libs runtime-only, so GLFW isn't on the compile
+	// classpath; pull it in just for compilation (Minecraft provides it at runtime).
+	compileOnly "org.lwjgl:lwjgl-glfw:3.4.1"
 
 	// Jar-in-jar: one client jar carries its own dependencies.
 	include "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
