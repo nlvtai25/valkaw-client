@@ -66,7 +66,8 @@ jobs:
           code=0
           timeout 20 xvfb-run -a "./$BIN" || code=$?
           if [ "$code" != 124 ]; then echo "launcher exited early (code $code)"; exit 1; fi
-          grep -q "\"launcherVersion\": \"$VER\"" "$HOME/.valkaw/config.json"
+          # Config is written to ~/.valkaw/launcher/config.json (see app.go launcherDir).
+          grep -q "\"launcherVersion\": \"$VER\"" "$HOME/.valkaw/launcher/config.json"
       - uses: actions/upload-artifact@v4
         with:
           name: valkaw-launcher-linux-amd64
